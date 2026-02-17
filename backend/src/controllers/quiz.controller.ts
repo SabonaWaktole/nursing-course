@@ -123,7 +123,9 @@ export const submitQuiz = async (req: Request, res: Response) => {
                 const passedExamIds = new Set(passedFinalExams.map(pe => pe.quizId));
                 courseCompleted = finalExams.every(exam => passedExamIds.has(exam.id));
 
-                if (!courseCompleted) {
+                // Only suggest next FINAL exam if we are currently taking a FINAL exam
+                // For module quizzes, we want to route back to the course to find the next module
+                if (!courseCompleted && !quiz.moduleId) {
                     // Find the next unpassed exam in the sequence
                     const nextExam = finalExams.find(exam => !passedExamIds.has(exam.id));
                     if (nextExam) {

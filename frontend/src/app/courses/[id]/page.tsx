@@ -45,7 +45,7 @@ export default function CourseDetailPage() {
                             }
                         } else if (data.quizzes?.length > 0) {
                             // No more modules, go to final exam
-                            // (Navigation will handle this)
+                            router.push(`/quiz/${data.quizzes[0].id}`);
                         }
                         break;
                     }
@@ -111,6 +111,19 @@ export default function CourseDetailPage() {
     const handleNext = async () => {
         if (!course || currentLessonIndex < 0) return;
 
+        // Calculate progress immediately based on completing the current lesson
+        const newProgress = Math.min(
+            Math.round(((currentLessonIndex + 1) / totalLessons) * 100),
+            99 // Cap at 99% until course is fully completed
+        );
+
+        // Update progress optimistically (instant UI update)
+        if (newProgress > progress) {
+            setProgress(newProgress);
+            // Fire API call in the background (don't block navigation)
+            api.put(`/courses/${course.id}/progress`, { progress: newProgress }).catch(() => { });
+        }
+
         const currentMod = findModuleForLesson(allLessons[currentLessonIndex].id);
         const moduleLessons = currentMod?.lessons || [];
         const isLastInModule = currentLessonIndex >= 0 && allLessons[currentLessonIndex].id === moduleLessons[moduleLessons.length - 1]?.id;
@@ -124,15 +137,6 @@ export default function CourseDetailPage() {
             setActiveLesson(nextLesson.id);
             const mod = findModuleForLesson(nextLesson.id);
             if (mod) setExpandedModules(prev => new Set([...prev, mod.id]));
-            try {
-                // Calculate progress based on completing the current lesson (1-based index)
-                // If moving to next lesson, we have completed (currentLessonIndex + 1) lessons
-                const newProgress = Math.round(((currentLessonIndex + 1) / totalLessons) * 100);
-                if (newProgress > progress) {
-                    await api.put(`/courses/${course.id}/progress`, { progress: newProgress });
-                    setProgress(newProgress);
-                }
-            } catch { }
         } else if (course.quizzes?.length > 0) {
             // Last lesson of course, take final exam
             router.push(`/quiz/${course.quizzes[0].id}`);
