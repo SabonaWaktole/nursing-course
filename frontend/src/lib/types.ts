@@ -14,7 +14,7 @@ export interface Course {
     instructorId: string;
     instructor: { id: string; name: string };
     createdAt: string;
-    _count: { modules: number; quizzes: number; enrollments: number };
+    _count: { modules: number; quizzes: number; enrollments: number; lessons?: number };
 }
 
 export interface Module {
