@@ -95,7 +95,7 @@ export default function CertificatesPage() {
                                         View & Print
                                     </Link>
                                     <button
-                                        onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/certificates/download/${cert.id}`)}
+                                        onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL}/api/certificates/download/${cert.id}`)}
                                         className="flex items-center justify-center size-12 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-500 hover:text-indigo-600 transition-all"
                                         title="Download PDF"
                                     >
