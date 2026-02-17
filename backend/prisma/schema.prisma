@@ -1,0 +1,127 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      Role     @default(STUDENT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  enrollments Enrollment[]
+  results     Result[]
+  certificates Certificate[]
+  teachingCourses Course[] // Relation for instructors/admin
+}
+
+enum Role {
+  STUDENT
+  ADMIN
+}
+
+model Course {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  thumbnail   String?
+  price       Float?   @default(0)
+  instructorId String
+  instructor  User     @relation(fields: [instructorId], references: [id])
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  modules     Module[]
+  quizzes     Quiz[]
+  enrollments Enrollment[]
+  certificates Certificate[]
+}
+
+model Module {
+  id        String   @id @default(uuid())
+  title     String
+  order     Int      @default(0)
+  courseId   String
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons   Lesson[]
+  quizzes   Quiz[]
+  createdAt DateTime @default(now())
+}
+
+model Lesson {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  videoUrl    String?
+  materialUrl String?  // PDF/ZIP etc
+  order       Int      @default(0)
+  moduleId    String
+  module      Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+}
+
+model Quiz {
+  id           String   @id @default(uuid())
+  title        String
+  courseId     String
+  course       Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  moduleId     String?
+  module       Module?  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  passingScore Int      @default(50)
+  
+  questions    Question[]
+  results      Result[]
+  createdAt    DateTime @default(now())
+}
+
+model Question {
+  id            String   @id @default(uuid())
+  text          String
+  options       String[] // Array of strings
+  correctAnswer Int      // Index of correct answer in options array
+  quizId        String
+  quiz          Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+}
+
+model Result {
+  id        String   @id @default(uuid())
+  score     Int
+  passed    Boolean
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  quizId    String
+  quiz      Quiz     @relation(fields: [quizId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Certificate {
+  id        String   @id @default(uuid())
+  uniqueId  String   @unique @default(cuid())
+  issuedAt  DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id])
+}
+
+model Enrollment {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id])
+  progress  Int      @default(0) // Percentage 0-100
+  completed Boolean  @default(false)
+  
+  createdAt DateTime @default(now())
+  
+  @@unique([userId, courseId])
+}

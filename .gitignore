@@ -1,0 +1,9 @@
+_legacy_html/*
+node_modules/*
+.env
+backend/uploads/*
+backend/uploads/*
+.vscode/*
+backend/dist/*
+frontend/.next/*
+frontend/build_output.txt
