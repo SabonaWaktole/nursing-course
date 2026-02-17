@@ -27,7 +27,7 @@ export default function VerifyCertificatePage() {
 
     if (loading) return (
         <div className="flex h-screen items-center justify-center bg-slate-50">
-            <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-600 border-r-transparent"></div>
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-900 border-r-transparent"></div>
         </div>
     );
 
@@ -40,7 +40,7 @@ export default function VerifyCertificatePage() {
                     </div>
                     <h1 className="text-2xl font-bold text-slate-900 mb-2">Invalid Certificate</h1>
                     <p className="text-slate-500 mb-8">This certificate ID does not exist or has been revoked. Please check the ID and try again.</p>
-                    <Link href="/" className="inline-flex items-center justify-center px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-all">
+                    <Link href="/" className="inline-flex items-center justify-center px-6 py-3 bg-blue-900 text-white font-bold rounded-xl hover:bg-blue-800 transition-all">
                         Back to Home
                     </Link>
                 </div>
@@ -55,14 +55,14 @@ export default function VerifyCertificatePage() {
             {/* Header - Hide on print */}
             <header className="no-print sticky top-0 z-50 bg-white border-b border-slate-200 px-10 py-3 shadow-sm flex items-center justify-between whitespace-nowrap">
                 <div className="flex items-center gap-4">
-                    <div className="size-8 text-indigo-600">
+                    <div className="size-8 text-blue-900">
                         <span className="material-symbols-outlined text-3xl">medical_services</span>
                     </div>
                     <h2 className="text-slate-900 text-lg font-bold leading-tight tracking-tight">CareAcademy</h2>
                 </div>
                 <nav className="hidden md:flex items-center gap-9">
-                    <Link href="/courses" className="text-slate-600 hover:text-indigo-600 transition-colors text-sm font-medium">Courses</Link>
-                    <Link href="/my-courses" className="text-slate-600 hover:text-indigo-600 transition-colors text-sm font-medium">Dashboard</Link>
+                    <Link href="/courses" className="text-slate-600 hover:text-blue-900 transition-colors text-sm font-medium">Courses</Link>
+                    <Link href="/my-courses" className="text-slate-600 hover:text-blue-900 transition-colors text-sm font-medium">Dashboard</Link>
                 </nav>
             </header>
 
@@ -70,7 +70,7 @@ export default function VerifyCertificatePage() {
                 {/* Breadcrumbs and Actions - Hide on print */}
                 <div className="w-full max-w-5xl mb-8 no-print">
                     <div className="flex items-center gap-2 text-sm text-slate-500 mb-4">
-                        <Link href="/" className="hover:text-indigo-600 flex items-center gap-1">
+                        <Link href="/" className="hover:text-blue-900 flex items-center gap-1">
                             <span className="material-symbols-outlined text-[18px]">home</span> Home
                         </Link>
                         <span className="material-symbols-outlined text-[16px]">chevron_right</span>
@@ -84,7 +84,7 @@ export default function VerifyCertificatePage() {
                         <div className="flex gap-3">
                             <button
                                 onClick={handlePrint}
-                                className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors font-semibold text-sm shadow-md shadow-indigo-100"
+                                className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-900 text-white hover:bg-blue-800 transition-colors font-semibold text-sm shadow-md shadow-blue-100"
                             >
                                 <span className="material-symbols-outlined text-[20px]">download</span>
                                 Download PDF / Print
@@ -100,20 +100,20 @@ export default function VerifyCertificatePage() {
                         className="relative bg-white text-slate-900 w-full max-w-[900px] aspect-[1.414/1] shadow-2xl rounded-sm overflow-hidden flex flex-col"
                     >
                         {/* Borders */}
-                        <div className="absolute inset-4 border-[3px] border-double border-indigo-600/20 pointer-events-none z-10"></div>
-                        <div className="absolute inset-6 border border-indigo-600/10 pointer-events-none z-10"></div>
+                        <div className="absolute inset-4 border-[3px] border-double border-blue-900/20 pointer-events-none z-10"></div>
+                        <div className="absolute inset-6 border border-blue-900/10 pointer-events-none z-10"></div>
 
                         {/* Pattern Overlay */}
                         <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-repeat"></div>
 
                         {/* Corner Accents */}
-                        <div className="absolute top-0 left-0 size-32 bg-gradient-to-br from-indigo-600/10 to-transparent pointer-events-none"></div>
-                        <div className="absolute bottom-0 right-0 size-32 bg-gradient-to-tl from-indigo-600/10 to-transparent pointer-events-none"></div>
+                        <div className="absolute top-0 left-0 size-32 bg-gradient-to-br from-blue-600/10 to-transparent pointer-events-none"></div>
+                        <div className="absolute bottom-0 right-0 size-32 bg-gradient-to-tl from-blue-600/10 to-transparent pointer-events-none"></div>
 
                         {/* Content */}
                         <div className="relative z-20 flex flex-col items-center justify-between h-full py-12 px-12 text-center">
                             <div className="flex flex-col items-center gap-4">
-                                <div className="flex items-center gap-2 text-indigo-600 mb-1">
+                                <div className="flex items-center gap-2 text-blue-900 mb-1">
                                     <span className="material-symbols-outlined text-4xl">medical_services</span>
                                     <span className="text-xl font-bold tracking-tight text-slate-800">CareAcademy</span>
                                 </div>
@@ -121,7 +121,7 @@ export default function VerifyCertificatePage() {
                                     Certified Nursing Assistant<br />
                                     <span className="text-xl md:text-2xl font-semibold text-slate-700">(CNA) Completion Certificate</span>
                                 </h2>
-                                <div className="h-1 w-24 bg-indigo-600 rounded-full mt-2"></div>
+                                <div className="h-1 w-24 bg-blue-900 rounded-full mt-2"></div>
                             </div>
 
                             <div className="flex flex-col gap-4 w-full max-w-3xl">
@@ -134,12 +134,12 @@ export default function VerifyCertificatePage() {
                                 </div>
                                 <div className="space-y-3">
                                     <p className="text-slate-500 text-base uppercase tracking-widest font-medium">Has successfully completed the state-approved training program for</p>
-                                    <h4 className="text-2xl md:text-3xl font-bold text-indigo-600 max-w-2xl mx-auto leading-snug">
+                                    <h4 className="text-2xl md:text-3xl font-bold text-blue-900 max-w-2xl mx-auto leading-snug">
                                         {cert.courseName}
                                     </h4>
                                     <div className="flex justify-center mt-2">
-                                        <div className="bg-indigo-50 border border-indigo-100 px-4 py-2 rounded-lg inline-flex items-center gap-2">
-                                            <span className="material-symbols-outlined text-indigo-600 text-xl">verified</span>
+                                        <div className="bg-blue-50 border border-blue-100 px-4 py-2 rounded-lg inline-flex items-center gap-2">
+                                            <span className="material-symbols-outlined text-blue-900 text-xl">verified</span>
                                             <span className="text-slate-700 font-semibold">Authenticated Record ✓</span>
                                         </div>
                                     </div>
@@ -154,14 +154,14 @@ export default function VerifyCertificatePage() {
                                     <p className="text-xs uppercase tracking-wider text-slate-500 font-medium">Date Issued</p>
                                 </div>
 
-                                <div className="relative size-24 md:size-32 text-indigo-600/20">
-                                    <svg className="w-full h-full text-indigo-600" fill="none" viewBox="0 0 100 100">
+                                <div className="relative size-24 md:size-32 text-blue-900/20">
+                                    <svg className="w-full h-full text-blue-900" fill="none" viewBox="0 0 100 100">
                                         <circle cx="50" cy="50" r="45" stroke="currentColor" strokeDasharray="4 2" strokeWidth="2"></circle>
                                         <circle cx="50" cy="50" r="35" stroke="currentColor" strokeWidth="1"></circle>
                                         <path d="M50 35V75M40 45H60" stroke="currentColor" strokeLinecap="round" strokeWidth="2"></path>
                                     </svg>
                                     <div className="absolute inset-0 flex items-center justify-center">
-                                        <div className="text-[10px] font-bold text-indigo-600 tracking-tighter uppercase text-center w-20 leading-3 mt-12">Registry Verified</div>
+                                        <div className="text-[10px] font-bold text-blue-900 tracking-tighter uppercase text-center w-20 leading-3 mt-12">Registry Verified</div>
                                     </div>
                                 </div>
 
@@ -201,7 +201,7 @@ export default function VerifyCertificatePage() {
 
                     <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 flex flex-col gap-4">
                         <div className="flex items-center gap-3 text-slate-900 font-semibold">
-                            <div className="p-2 rounded-lg bg-indigo-50 text-indigo-600">
+                            <div className="p-2 rounded-lg bg-blue-50 text-blue-900">
                                 <span className="material-symbols-outlined">share</span>
                             </div>
                             Share Credential

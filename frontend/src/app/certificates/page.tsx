@@ -23,7 +23,7 @@ export default function CertificatesPage() {
 
     if (loading) return (
         <div className="flex h-screen items-center justify-center bg-slate-50">
-            <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-600 border-r-transparent"></div>
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-900 border-r-transparent"></div>
         </div>
     );
 
@@ -44,7 +44,7 @@ export default function CertificatesPage() {
                         </div>
                         <p className="text-xl font-bold text-slate-800">No certificates yet</p>
                         <p className="mt-2 text-slate-500 max-w-sm mx-auto">Complete course modules and pass your final exams to earn official nursing credentials.</p>
-                        <Link href="/courses" className="mt-8 inline-flex items-center gap-2 text-indigo-600 font-bold hover:underline">
+                        <Link href="/courses" className="mt-8 inline-flex items-center gap-2 text-blue-900 font-bold hover:underline">
                             Browse Courses <span className="material-symbols-outlined">arrow_forward</span>
                         </Link>
                     </div>
@@ -55,14 +55,14 @@ export default function CertificatesPage() {
                                 key={cert.id}
                                 className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-7 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
                             >
-                                <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-indigo-600 to-indigo-400"></div>
+                                <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-600 to-blue-400"></div>
 
                                 <div className="flex items-start gap-5 mb-6">
-                                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-900 shrink-0 group-hover:bg-blue-900 group-hover:text-white transition-colors">
                                         <span className="material-symbols-outlined text-3xl">workspace_premium</span>
                                     </div>
                                     <div className="min-w-0">
-                                        <h3 className="font-bold text-lg text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-2">{cert.course.title}</h3>
+                                        <h3 className="font-bold text-lg text-slate-900 group-hover:text-blue-900 transition-colors line-clamp-2">{cert.course.title}</h3>
                                         <p className="text-xs text-slate-400 mt-2 font-mono flex items-center gap-1">
                                             <span className="material-symbols-outlined text-[14px]">id_card</span>
                                             {cert.uniqueId}
@@ -89,14 +89,14 @@ export default function CertificatesPage() {
                                 <div className="mt-8 flex gap-3">
                                     <Link
                                         href={`/certificate/verify/${cert.uniqueId}`}
-                                        className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white hover:bg-indigo-700 shadow-md shadow-indigo-100 transition-all"
+                                        className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-blue-900 px-4 py-3 text-sm font-bold text-white hover:bg-blue-800 shadow-md shadow-blue-100 transition-all"
                                     >
                                         <span className="material-symbols-outlined text-[18px]">visibility</span>
                                         View & Print
                                     </Link>
                                     <button
                                         onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL}/api/certificates/download/${cert.id}`)}
-                                        className="flex items-center justify-center size-12 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-500 hover:text-indigo-600 transition-all"
+                                        className="flex items-center justify-center size-12 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-500 hover:text-blue-900 transition-all"
                                         title="Download PDF"
                                     >
                                         <span className="material-symbols-outlined">download</span>

@@ -15,7 +15,7 @@ export default function QuizPage() {
     const [loading, setLoading] = useState(true);
     const [answers, setAnswers] = useState<Record<string, number>>({});
     const [submitting, setSubmitting] = useState(false);
-    const [result, setResult] = useState<(QuizResult & { courseCompleted?: boolean; nextExamId?: string }) | null>(null);
+    const [result, setResult] = useState<(QuizResult & { courseCompleted?: boolean; nextExamId?: string; certificateId?: string; certificateUniqueId?: string }) | null>(null);
     const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
     const [timeLeft, setTimeLeft] = useState(2700); // 45:00 in seconds
     const [showMap, setShowMap] = useState(false);
@@ -73,7 +73,7 @@ export default function QuizPage() {
 
     if (loading) return (
         <div className="flex h-screen items-center justify-center bg-slate-50">
-            <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-600 border-r-transparent"></div>
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-900 border-r-transparent"></div>
         </div>
     );
     if (!quiz) return <div className="text-center py-20 text-slate-500">Quiz not found</div>;
@@ -88,6 +88,8 @@ export default function QuizPage() {
                 onRetry={handleRetry}
                 courseCompleted={!!result.courseCompleted}
                 nextExamId={result.nextExamId}
+                certificateId={result.certificateId}
+                certificateUniqueId={result.certificateUniqueId}
             />
         );
     }
@@ -100,7 +102,7 @@ export default function QuizPage() {
             {/* Header */}
             <header className="h-16 border-b border-slate-200 bg-white flex items-center justify-between px-6 sticky top-0 z-30 shadow-sm">
                 <div className="flex items-center gap-4">
-                    <div className="flex items-center justify-center size-8 rounded-lg bg-indigo-50 text-indigo-600">
+                    <div className="flex items-center justify-center size-8 rounded-lg bg-blue-50 text-blue-900">
                         <span className="material-symbols-outlined text-xl">medical_services</span>
                     </div>
                     <div>
@@ -116,7 +118,7 @@ export default function QuizPage() {
                     <button
                         onClick={handleSubmit}
                         disabled={submitting}
-                        className="flex items-center justify-center px-4 py-2 text-sm font-bold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200"
+                        className="flex items-center justify-center px-4 py-2 text-sm font-bold text-white bg-blue-900 rounded-lg hover:bg-blue-800 transition-all shadow-lg shadow-blue-900/20"
                     >
                         {submitting ? 'Submitting...' : 'Submit Quiz'}
                     </button>
@@ -133,11 +135,11 @@ export default function QuizPage() {
                         </div>
                         <div className="flex gap-4 text-xs text-slate-500 mb-2">
                             <div className="flex items-center gap-1.5">
-                                <div className="w-2.5 h-2.5 rounded-full bg-indigo-600"></div>
+                                <div className="w-2.5 h-2.5 rounded-full bg-blue-900"></div>
                                 <span>Current</span>
                             </div>
                             <div className="flex items-center gap-1.5">
-                                <div className="w-2.5 h-2.5 rounded-full bg-indigo-100 border border-indigo-200"></div>
+                                <div className="w-2.5 h-2.5 rounded-full bg-blue-100 border border-blue-200"></div>
                                 <span>Answered</span>
                             </div>
                         </div>
@@ -152,10 +154,10 @@ export default function QuizPage() {
                                         key={q.id}
                                         onClick={() => setCurrentQuestionIdx(i)}
                                         className={`aspect-square flex items-center justify-center rounded-lg text-sm font-medium transition-all relative ${isCurrent
-                                            ? 'bg-indigo-600 text-white shadow-md ring-2 ring-indigo-600 ring-offset-2 scale-105 z-10'
+                                            ? 'bg-blue-900 text-white shadow-md ring-2 ring-blue-600 ring-offset-2 scale-105 z-10'
                                             : isAnswered
-                                                ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
-                                                : 'bg-slate-50 text-slate-600 border border-slate-200 hover:border-indigo-300'
+                                                ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                                : 'bg-slate-50 text-slate-600 border border-slate-200 hover:border-blue-300'
                                             }`}
                                     >
                                         {i + 1}
@@ -189,14 +191,14 @@ export default function QuizPage() {
                         <div className="flex flex-col gap-4">
                             <div className="flex justify-between items-end">
                                 <div>
-                                    <span className="text-xs font-semibold tracking-wider text-indigo-600 uppercase mb-1 block">Question Section</span>
+                                    <span className="text-xs font-semibold tracking-wider text-blue-900 uppercase mb-1 block">Question Section</span>
                                     <h2 className="text-2xl font-bold text-slate-900">Question {currentQuestionIdx + 1}</h2>
                                 </div>
                                 <span className="text-sm font-medium text-slate-500 hidden md:block">Step {currentQuestionIdx + 1} of {quiz.questions.length}</span>
                             </div>
                             <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
                                 <div
-                                    className="bg-indigo-600 h-full rounded-full transition-all duration-300"
+                                    className="bg-blue-900 h-full rounded-full transition-all duration-300"
                                     style={{ width: `${((currentQuestionIdx + 1) / quiz.questions.length) * 100}%` }}
                                 ></div>
                             </div>
@@ -215,8 +217,8 @@ export default function QuizPage() {
                                         <label
                                             key={oi}
                                             className={`group relative flex items-center p-4 md:p-5 rounded-xl border-2 cursor-pointer transition-all duration-200 shadow-sm ${isSelected
-                                                ? 'border-indigo-600 bg-indigo-50 ring-1 ring-indigo-200'
-                                                : 'border-slate-100 hover:border-indigo-200 hover:bg-slate-50'
+                                                ? 'border-blue-900 bg-blue-50 ring-1 ring-blue-200'
+                                                : 'border-slate-100 hover:border-blue-200 hover:bg-slate-50'
                                                 }`}
                                         >
                                             <input
@@ -226,15 +228,15 @@ export default function QuizPage() {
                                                 checked={isSelected}
                                                 onChange={() => handleAnswer(currentQuestion.id, oi)}
                                             />
-                                            <div className={`flex items-center justify-center size-8 rounded-full text-sm font-bold mr-4 shrink-0 transition-transform group-hover:scale-110 ${isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'
+                                            <div className={`flex items-center justify-center size-8 rounded-full text-sm font-bold mr-4 shrink-0 transition-transform group-hover:scale-110 ${isSelected ? 'bg-blue-900 text-white' : 'bg-slate-100 text-slate-500'
                                                 }`}>
                                                 {label}
                                             </div>
-                                            <span className={`text-base md:text-lg font-medium flex-1 ${isSelected ? 'text-indigo-900' : 'text-slate-700'}`}>
+                                            <span className={`text-base md:text-lg font-medium flex-1 ${isSelected ? 'text-blue-900' : 'text-slate-700'}`}>
                                                 {option}
                                             </span>
                                             {isSelected && (
-                                                <div className="absolute right-5 text-indigo-600">
+                                                <div className="absolute right-5 text-blue-900">
                                                     <span className="material-symbols-outlined">check_circle</span>
                                                 </div>
                                             )}
@@ -257,7 +259,7 @@ export default function QuizPage() {
                             {currentQuestionIdx < quiz.questions.length - 1 ? (
                                 <button
                                     onClick={() => setCurrentQuestionIdx(idx => idx + 1)}
-                                    className="flex items-center gap-2 px-8 py-3 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all transform hover:-translate-y-0.5"
+                                    className="flex items-center gap-2 px-8 py-3 rounded-xl text-sm font-bold text-white bg-blue-900 hover:bg-blue-800 shadow-lg shadow-blue-100 transition-all transform hover:-translate-y-0.5"
                                 >
                                     Next Question
                                     <span className="material-symbols-outlined text-lg">arrow_forward</span>
@@ -279,13 +281,15 @@ export default function QuizPage() {
     );
 }
 
-function QuizResultScreen({ result, user, quiz, onRetry, courseCompleted, nextExamId }: {
-    result: QuizResult & { courseCompleted?: boolean, nextExamId?: string },
+function QuizResultScreen({ result, user, quiz, onRetry, courseCompleted, nextExamId, certificateId, certificateUniqueId }: {
+    result: QuizResult & { courseCompleted?: boolean, nextExamId?: string, certificateId?: string, certificateUniqueId?: string },
     user: any,
     quiz: Quiz,
     onRetry: () => void,
     courseCompleted: boolean,
-    nextExamId?: string
+    nextExamId?: string,
+    certificateId?: string,
+    certificateUniqueId?: string
 }) {
     const [courses, setCourses] = useState<Course[]>([]);
     const isExam = !quiz.moduleId;
@@ -300,14 +304,14 @@ function QuizResultScreen({ result, user, quiz, onRetry, courseCompleted, nextEx
                 <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-8">
                         <Link href="/" className="flex items-center gap-3 group">
-                            <div className="size-8 bg-indigo-50 rounded-lg flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                            <div className="size-8 bg-blue-50 rounded-lg flex items-center justify-center text-blue-900 group-hover:bg-blue-900 group-hover:text-white transition-colors">
                                 <span className="material-symbols-outlined text-[20px]">medical_services</span>
                             </div>
                             <h2 className="text-slate-900 text-lg font-bold tracking-tight">LearnFlow</h2>
                         </Link>
                     </div>
                     <div className="flex items-center gap-4">
-                        <div className="size-9 rounded-full bg-indigo-100 border-2 border-indigo-200 flex items-center justify-center text-indigo-700 font-bold">
+                        <div className="size-9 rounded-full bg-blue-100 border-2 border-blue-200 flex items-center justify-center text-blue-700 font-bold">
                             {user?.name?.[0]}
                         </div>
                     </div>
@@ -317,8 +321,8 @@ function QuizResultScreen({ result, user, quiz, onRetry, courseCompleted, nextEx
             <main className="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 py-8 md:py-12">
                 <div className="bg-white rounded-2xl p-8 md:p-12 shadow-sm border border-slate-200 flex flex-col lg:flex-row items-center justify-between gap-12 relative overflow-hidden">
                     {/* Decorative Blurs */}
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
-                    <div className="absolute bottom-0 left-0 w-48 h-48 bg-indigo-500/5 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+                    <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-500/5 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
 
                     <div className="flex flex-col items-center lg:items-start text-center lg:text-left flex-1 z-10">
                         {result.passed ? (
@@ -347,14 +351,31 @@ function QuizResultScreen({ result, user, quiz, onRetry, courseCompleted, nextEx
                             {result.passed ? (
                                 <>
                                     {courseCompleted ? (
-                                        <Link href="/certificates" className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3.5 rounded-lg font-semibold transition-all shadow-lg shadow-indigo-200">
-                                            <span className="material-symbols-outlined">workspace_premium</span>
-                                            Get Your Certificate
-                                        </Link>
+                                        <div className="flex flex-col sm:flex-row gap-3">
+                                            {certificateUniqueId && (
+                                                <Link href={`/certificate/verify/${certificateUniqueId}`} className="flex items-center justify-center gap-2 bg-blue-900 hover:bg-blue-800 text-white px-6 py-3.5 rounded-lg font-semibold transition-all shadow-lg shadow-blue-900/20">
+                                                    <span className="material-symbols-outlined">workspace_premium</span>
+                                                    View Certificate
+                                                </Link>
+                                            )}
+                                            {certificateId && (
+                                                <button
+                                                    onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL}/api/certificates/download/${certificateId}`)}
+                                                    className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3.5 rounded-lg font-semibold transition-all shadow-lg shadow-green-200"
+                                                >
+                                                    <span className="material-symbols-outlined">download</span>
+                                                    Download PDF
+                                                </button>
+                                            )}
+                                            <Link href="/certificates" className="flex items-center justify-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-6 py-3.5 rounded-lg font-medium transition-colors">
+                                                <span className="material-symbols-outlined">folder</span>
+                                                All Certificates
+                                            </Link>
+                                        </div>
                                     ) : nextExamId ? (
                                         <Link
                                             href={`/quiz/${nextExamId}`}
-                                            className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3.5 rounded-lg font-semibold transition-all shadow-lg shadow-indigo-200"
+                                            className="flex items-center justify-center gap-2 bg-blue-900 hover:bg-blue-800 text-white px-6 py-3.5 rounded-lg font-semibold transition-all shadow-lg shadow-blue-900/20"
                                         >
                                             <span className="material-symbols-outlined">arrow_forward</span>
                                             Next Final Exam
@@ -362,7 +383,7 @@ function QuizResultScreen({ result, user, quiz, onRetry, courseCompleted, nextEx
                                     ) : (
                                         <Link
                                             href={`/courses/${quiz.courseId}?fromQuiz=${quiz.id}`}
-                                            className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3.5 rounded-lg font-semibold transition-all shadow-lg shadow-indigo-200"
+                                            className="flex items-center justify-center gap-2 bg-blue-900 hover:bg-blue-800 text-white px-6 py-3.5 rounded-lg font-semibold transition-all shadow-lg shadow-blue-900/20"
                                         >
                                             <span className="material-symbols-outlined">arrow_forward</span>
                                             {isExam ? 'Back to Course' : 'Next Lesson'}
@@ -370,7 +391,7 @@ function QuizResultScreen({ result, user, quiz, onRetry, courseCompleted, nextEx
                                     )}
                                 </>
                             ) : (
-                                <button onClick={onRetry} className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3.5 rounded-lg font-semibold transition-all shadow-lg shadow-indigo-200">
+                                <button onClick={onRetry} className="flex items-center justify-center gap-2 bg-blue-900 hover:bg-blue-800 text-white px-6 py-3.5 rounded-lg font-semibold transition-all shadow-lg shadow-blue-900/20">
                                     <span className="material-symbols-outlined">refresh</span>
                                     Try Again
                                 </button>
@@ -396,7 +417,7 @@ function QuizResultScreen({ result, user, quiz, onRetry, courseCompleted, nextEx
                                     cy="50"
                                 />
                                 <circle
-                                    className={result.passed ? 'text-indigo-600' : 'text-orange-500'}
+                                    className={result.passed ? 'text-blue-900' : 'text-orange-500'}
                                     strokeWidth="8"
                                     strokeDasharray={42 * 2 * Math.PI}
                                     strokeDashoffset={42 * 2 * Math.PI * (1 - result.score / 100)}
@@ -416,7 +437,7 @@ function QuizResultScreen({ result, user, quiz, onRetry, courseCompleted, nextEx
                             </div>
 
                             {result.passed && isExam && (
-                                <div className="absolute -bottom-4 -right-4 bg-white p-3 rounded-xl shadow-lg border border-slate-100 flex items-center gap-3 animate-bounce shadow-indigo-100">
+                                <div className="absolute -bottom-4 -right-4 bg-white p-3 rounded-xl shadow-lg border border-slate-100 flex items-center gap-3 animate-bounce shadow-blue-100">
                                     <div className="size-10 bg-yellow-100 rounded-lg flex items-center justify-center text-yellow-600">
                                         <span className="material-symbols-outlined">workspace_premium</span>
                                     </div>
@@ -449,9 +470,9 @@ function QuizResultScreen({ result, user, quiz, onRetry, courseCompleted, nextEx
                                     </div>
                                 </div>
                                 <div className="p-4 flex flex-col flex-grow">
-                                    <h3 className="text-base font-bold text-slate-900 mb-2 leading-tight group-hover:text-indigo-600 transition-colors line-clamp-2">{course.title}</h3>
+                                    <h3 className="text-base font-bold text-slate-900 mb-2 leading-tight group-hover:text-blue-900 transition-colors line-clamp-2">{course.title}</h3>
                                     <div className="mt-auto pt-4 border-t border-slate-50 flex items-center justify-between">
-                                        <span className="text-xs font-bold text-indigo-600">${course.price}</span>
+                                        <span className="text-xs font-bold text-blue-900">${course.price}</span>
                                         <span className="text-[10px] text-slate-400 font-medium">Enrol Now →</span>
                                     </div>
                                 </div>

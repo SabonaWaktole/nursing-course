@@ -42,13 +42,13 @@ export default function CoursesPage() {
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Search courses..."
-                        className="w-full rounded-lg border border-slate-300 pl-10 pr-4 py-2.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition"
+                        className="w-full rounded-lg border border-slate-300 pl-10 pr-4 py-2.5 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition"
                     />
                 </div>
 
                 {loading ? (
                     <div className="text-center py-20">
-                        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-r-transparent"></div>
+                        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-blue-900 border-r-transparent"></div>
                         <p className="mt-4 text-slate-500">Loading courses...</p>
                     </div>
                 ) : filtered.length === 0 ? (
@@ -74,7 +74,7 @@ export default function CoursesPage() {
                                             src={course.thumbnail}
                                         />
                                     ) : (
-                                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-indigo-400 to-purple-500">
+                                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-400 to-emerald-500">
                                             <span className="text-5xl font-black text-white/20">{course.title.charAt(0)}</span>
                                         </div>
                                     )}
@@ -99,12 +99,12 @@ export default function CoursesPage() {
                                     {/* Footer: instructor + price */}
                                     <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
                                         <div className="flex items-center gap-2">
-                                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 text-xs font-bold">
+                                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-900 text-xs font-bold">
                                                 {(course.instructor?.name || 'I').charAt(0).toUpperCase()}
                                             </div>
                                             <span className="text-sm font-medium text-slate-700">{course.instructor?.name || 'Instructor'}</span>
                                         </div>
-                                        <span className="text-lg font-bold text-indigo-600">
+                                        <span className="text-lg font-bold text-blue-900">
                                             {course.price && course.price > 0 ? `$${course.price}` : 'Free'}
                                         </span>
                                     </div>

@@ -24,7 +24,7 @@ export default function MyCoursesPage() {
 
     if (loading) return (
         <div className="flex items-center justify-center py-20">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-r-transparent"></div>
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-900 border-r-transparent"></div>
         </div>
     );
 
@@ -38,7 +38,7 @@ export default function MyCoursesPage() {
                         <BookOpen className="mx-auto h-12 w-12 text-slate-300" />
                         <p className="mt-4 text-lg font-medium text-slate-500">No courses yet</p>
                         <p className="text-sm text-slate-400 mb-4">Start your learning journey by enrolling in a course.</p>
-                        <Link href="/courses" className="rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-bold text-white hover:bg-indigo-700 transition">
+                        <Link href="/courses" className="rounded-lg bg-blue-900 px-6 py-2.5 text-sm font-bold text-white hover:bg-blue-800 transition">
                             Browse Courses
                         </Link>
                     </div>
@@ -52,12 +52,12 @@ export default function MyCoursesPage() {
                             >
                                 <div className="h-2 bg-slate-100">
                                     <div
-                                        className="h-full bg-indigo-600 transition-all"
+                                        className="h-full bg-blue-900 transition-all"
                                         style={{ width: `${enrollment.progress}%` }}
                                     />
                                 </div>
                                 <div className="p-5">
-                                    <h3 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition">{enrollment.course.title}</h3>
+                                    <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-900 transition">{enrollment.course.title}</h3>
                                     <p className="mt-1 text-sm text-slate-500 line-clamp-2">{enrollment.course.description}</p>
 
                                     <div className="mt-4 flex items-center justify-between text-sm">
@@ -70,7 +70,7 @@ export default function MyCoursesPage() {
                                                 <CheckCircle className="h-3.5 w-3.5" /> Completed
                                             </span>
                                         ) : (
-                                            <span className="text-indigo-600 font-medium">{enrollment.progress}% done</span>
+                                            <span className="text-blue-900 font-medium">{enrollment.progress}% done</span>
                                         )}
                                     </div>
                                 </div>

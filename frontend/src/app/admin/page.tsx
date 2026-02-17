@@ -281,7 +281,7 @@ export default function AdminDashboard() {
 
     if (loading) return (
         <div className="flex items-center justify-center py-20">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-r-transparent"></div>
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-900 border-r-transparent"></div>
         </div>
     );
 
@@ -291,10 +291,10 @@ export default function AdminDashboard() {
                 <div className="flex items-center justify-between mb-8">
                     <h1 className="text-3xl font-bold tracking-tight text-slate-900">Admin Dashboard</h1>
                     <div className="flex gap-2">
-                        <button onClick={() => handleUpload('video')} className="flex items-center gap-1 rounded-lg bg-indigo-50 px-3 py-2 text-xs font-medium text-indigo-600 hover:bg-indigo-100 transition">
+                        <button onClick={() => handleUpload('video')} className="flex items-center gap-1 rounded-lg bg-blue-50 px-3 py-2 text-xs font-medium text-blue-900 hover:bg-blue-100 transition">
                             <Upload className="h-3.5 w-3.5" /> Upload Video
                         </button>
-                        <button onClick={() => handleUpload('material')} className="flex items-center gap-1 rounded-lg bg-indigo-50 px-3 py-2 text-xs font-medium text-indigo-600 hover:bg-indigo-100 transition">
+                        <button onClick={() => handleUpload('material')} className="flex items-center gap-1 rounded-lg bg-blue-50 px-3 py-2 text-xs font-medium text-blue-900 hover:bg-blue-100 transition">
                             <FileText className="h-3.5 w-3.5" /> Upload Material
                         </button>
                     </div>
@@ -310,7 +310,7 @@ export default function AdminDashboard() {
                                 if (t === 'users') loadUsers();
                                 if (t === 'results') loadResults();
                             }}
-                            className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition capitalize ${tab === t ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                            className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition capitalize ${tab === t ? 'bg-white text-blue-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
                                 }`}
                         >
                             {t}
@@ -323,8 +323,8 @@ export default function AdminDashboard() {
                     <div>
                         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
                             {[
-                                { icon: Users, label: 'Total Users', value: stats.stats.totalUsers, color: 'indigo' },
-                                { icon: BookOpen, label: 'Total Courses', value: stats.stats.totalCourses, color: 'purple' },
+                                { icon: Users, label: 'Total Users', value: stats.stats.totalUsers, color: 'blue' },
+                                { icon: BookOpen, label: 'Total Courses', value: stats.stats.totalCourses, color: 'emerald' },
                                 { icon: BarChart3, label: 'Enrollments', value: stats.stats.totalEnrollments, color: 'blue' },
                                 { icon: Award, label: 'Certificates', value: stats.stats.totalCertificates, color: 'green' },
                             ].map((stat) => (
@@ -372,18 +372,18 @@ export default function AdminDashboard() {
                             <h2 className="text-lg font-bold text-slate-900">Manage Courses ({courses.length})</h2>
                             <button
                                 onClick={() => setShowCourseForm(!showCourseForm)}
-                                className="flex items-center gap-1 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-700 transition"
+                                className="flex items-center gap-1 rounded-lg bg-blue-900 px-4 py-2 text-sm font-bold text-white hover:bg-blue-800 transition"
                             >
                                 <Plus className="h-4 w-4" /> New Course
                             </button>
                         </div>
 
                         {showCourseForm && (
-                            <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4 mb-6 space-y-3">
+                            <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 mb-6 space-y-3">
                                 <input value={courseForm.title} onChange={(e) => setCourseForm({ ...courseForm, title: e.target.value })} placeholder="Course title" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
                                 <textarea value={courseForm.description} onChange={(e) => setCourseForm({ ...courseForm, description: e.target.value })} placeholder="Description" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" rows={3} />
                                 <div className="flex gap-2">
-                                    <button onClick={handleCreateCourse} disabled={saving} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-50">{saving ? 'Creating...' : 'Create Course'}</button>
+                                    <button onClick={handleCreateCourse} disabled={saving} className="rounded-lg bg-blue-900 px-4 py-2 text-sm font-bold text-white hover:bg-blue-800 disabled:opacity-50">{saving ? 'Creating...' : 'Create Course'}</button>
                                     <button onClick={() => setShowCourseForm(false)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-600">Cancel</button>
                                 </div>
                             </div>
@@ -415,15 +415,15 @@ export default function AdminDashboard() {
                                                             loadCourseDetail(course.id);
                                                         }
                                                     }}
-                                                    className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-indigo-600 transition"
+                                                    className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-blue-900 transition"
                                                     title="Toggle modules"
                                                 >
                                                     {expandedCourse === course.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                                                 </button>
-                                                <button onClick={() => setShowModuleForm(showModuleForm === course.id ? null : course.id)} className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-indigo-600 transition" title="Add Module">
+                                                <button onClick={() => setShowModuleForm(showModuleForm === course.id ? null : course.id)} className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-blue-900 transition" title="Add Module">
                                                     <Layers className="h-4 w-4" />
                                                 </button>
-                                                <button onClick={() => setShowQuizForm(showQuizForm?.id === course.id ? null : { id: course.id, type: 'course' })} className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-purple-600 transition" title="Add Exam">
+                                                <button onClick={() => setShowQuizForm(showQuizForm?.id === course.id ? null : { id: course.id, type: 'course' })} className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-emerald-600 transition" title="Add Exam">
                                                     <ClipboardList className="h-4 w-4" />
                                                 </button>
                                                 <button onClick={() => handleDeleteCourse(course.id)} className="rounded p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 transition" title="Delete Course">
@@ -439,7 +439,7 @@ export default function AdminDashboard() {
                                             <p className="text-sm font-bold text-blue-700">Add Module</p>
                                             <input value={moduleTitle} onChange={(e) => setModuleTitle(e.target.value)} placeholder="Module title (e.g. Introduction to Patient Care)" className="w-full rounded border border-slate-300 px-3 py-1.5 text-sm" />
                                             <div className="flex gap-2">
-                                                <button onClick={() => handleAddModule(course.id)} className="rounded bg-blue-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-700">Add Module</button>
+                                                <button onClick={() => handleAddModule(course.id)} className="rounded bg-blue-900 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-800">Add Module</button>
                                                 <button onClick={() => { setShowModuleForm(null); setModuleTitle(''); }} className="rounded border border-slate-300 px-3 py-1.5 text-xs text-slate-600">Cancel</button>
                                             </div>
                                         </div>
@@ -456,21 +456,21 @@ export default function AdminDashboard() {
                                                     {/* Module header */}
                                                     <div className="flex items-center justify-between px-3 py-2">
                                                         <div>
-                                                            <span className="text-xs font-semibold text-indigo-600 uppercase">Module {mi + 1}</span>
+                                                            <span className="text-xs font-semibold text-blue-900 uppercase">Module {mi + 1}</span>
                                                             <span className="ml-2 text-sm font-medium text-slate-800">{mod.title}</span>
                                                             <span className="ml-2 text-xs text-slate-400">({mod.lessons?.length || 0} lessons)</span>
                                                         </div>
                                                         <div className="flex gap-1">
                                                             <button
                                                                 onClick={() => setShowLessonForm(showLessonForm === mod.id ? null : mod.id)}
-                                                                className="rounded p-1 text-slate-400 hover:bg-white hover:text-indigo-600 transition"
+                                                                className="rounded p-1 text-slate-400 hover:bg-white hover:text-blue-900 transition"
                                                                 title="Add Lesson"
                                                             >
                                                                 <Plus className="h-3.5 w-3.5" />
                                                             </button>
                                                             <button
                                                                 onClick={() => setShowQuizForm(showQuizForm?.id === mod.id ? null : { id: mod.id, type: 'module' })}
-                                                                className="rounded p-1 text-slate-400 hover:bg-white hover:text-purple-600 transition"
+                                                                className="rounded p-1 text-slate-400 hover:bg-white hover:text-emerald-600 transition"
                                                                 title="Add Quiz"
                                                             >
                                                                 <ClipboardList className="h-3.5 w-3.5" />
@@ -491,7 +491,7 @@ export default function AdminDashboard() {
                                                             <div className="flex items-center gap-2">
                                                                 <span className="text-xs text-slate-400 font-mono">{mi + 1}.{li + 1}</span>
                                                                 <span className="text-slate-700">{lesson.title}</span>
-                                                                {lesson.videoUrl && <span className="text-[10px] bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded font-medium">Video</span>}
+                                                                {lesson.videoUrl && <span className="text-[10px] bg-blue-100 text-blue-900 px-1.5 py-0.5 rounded font-medium">Video</span>}
                                                                 {lesson.materialUrl && <span className="text-[10px] bg-green-100 text-green-600 px-1.5 py-0.5 rounded font-medium">Material</span>}
                                                             </div>
                                                             <button
@@ -505,15 +505,15 @@ export default function AdminDashboard() {
 
                                                     {/* Module Quizzes list */}
                                                     {mod.quizzes?.map((quiz: any) => (
-                                                        <div key={quiz.id} className="flex items-center justify-between px-3 py-1.5 pl-8 text-sm border-t border-purple-50 bg-purple-50/30">
+                                                        <div key={quiz.id} className="flex items-center justify-between px-3 py-1.5 pl-8 text-sm border-t border-emerald-50 bg-emerald-50/30">
                                                             <div className="flex items-center gap-2">
-                                                                <span className="text-xs font-bold text-purple-600 uppercase">Quiz</span>
+                                                                <span className="text-xs font-bold text-emerald-600 uppercase">Quiz</span>
                                                                 <span className="text-slate-700">{quiz.title}</span>
                                                             </div>
                                                             <div className="flex gap-1">
                                                                 <button
                                                                     onClick={() => openQuizEdit(quiz, 'module')}
-                                                                    className="rounded p-1 text-slate-300 hover:text-indigo-600 transition"
+                                                                    className="rounded p-1 text-slate-300 hover:text-blue-900 transition"
                                                                     title="Edit Quiz"
                                                                 >
                                                                     <FileText className="h-3 w-3" />
@@ -532,7 +532,7 @@ export default function AdminDashboard() {
                                                     {/* Add Lesson Form (under specific module) */}
                                                     {showLessonForm === mod.id && (
                                                         <div className="border-t border-slate-200 p-3 bg-white rounded-b-lg space-y-2">
-                                                            <p className="text-xs font-bold text-indigo-700">Add Lesson to {mod.title}</p>
+                                                            <p className="text-xs font-bold text-blue-700">Add Lesson to {mod.title}</p>
                                                             <input value={lessonForm.title} onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })} placeholder="Lesson title" className="w-full rounded border border-slate-300 px-3 py-1.5 text-sm" />
                                                             <input value={lessonForm.description} onChange={(e) => setLessonForm({ ...lessonForm, description: e.target.value })} placeholder="Description" className="w-full rounded border border-slate-300 px-3 py-1.5 text-sm" />
 
@@ -571,7 +571,7 @@ export default function AdminDashboard() {
                                                             </div>
 
                                                             <div className="flex gap-2">
-                                                                <button onClick={() => handleAddLesson(mod.id)} className="rounded bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-indigo-700">Add Lesson</button>
+                                                                <button onClick={() => handleAddLesson(mod.id)} className="rounded bg-blue-900 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-800">Add Lesson</button>
                                                                 <button onClick={() => setShowLessonForm(null)} className="rounded border border-slate-300 px-3 py-1.5 text-xs text-slate-600">Cancel</button>
                                                             </div>
                                                         </div>
@@ -584,17 +584,17 @@ export default function AdminDashboard() {
                                                 <div className="mt-6">
                                                     <h4 className="px-1 text-sm font-bold text-slate-900 mb-2">Final Examinations</h4>
                                                     {courseDetails.quizzes.map((quiz: any) => (
-                                                        <div key={quiz.id} className="mb-2 rounded-lg border border-purple-200 bg-purple-50">
+                                                        <div key={quiz.id} className="mb-2 rounded-lg border border-emerald-200 bg-emerald-50">
                                                             <div className="flex items-center justify-between px-3 py-2">
                                                                 <div className="flex items-center gap-2">
-                                                                    <span className="text-xs font-bold text-purple-700 uppercase">Exam</span>
+                                                                    <span className="text-xs font-bold text-emerald-700 uppercase">Exam</span>
                                                                     <span className="text-sm font-medium text-slate-800">{quiz.title}</span>
                                                                     <span className="text-xs text-slate-400">({quiz._count?.questions || 0} questions)</span>
                                                                 </div>
                                                                 <div className="flex gap-1">
                                                                     <button
                                                                         onClick={() => openQuizEdit(quiz, 'course')}
-                                                                        className="rounded p-1 text-slate-400 hover:bg-white hover:text-indigo-600 transition"
+                                                                        className="rounded p-1 text-slate-400 hover:bg-white hover:text-blue-900 transition"
                                                                         title="Edit Exam"
                                                                     >
                                                                         <FileText className="h-4 w-4" />
@@ -617,8 +617,8 @@ export default function AdminDashboard() {
 
                                     {/* Quiz Creation Form (Unified for Course Exam or Module Quiz) */}
                                     {showQuizForm?.id && (
-                                        <div className="mx-4 mb-4 rounded-lg border border-purple-200 bg-purple-50 p-3 space-y-3">
-                                            <p className="text-sm font-bold text-purple-700 mb-2">
+                                        <div className="mx-4 mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 space-y-3">
+                                            <p className="text-sm font-bold text-emerald-700 mb-2">
                                                 {showQuizForm.mode === 'edit' 
                                                     ? (showQuizForm.type === 'course' ? 'Edit Final Exam' : 'Edit Module Quiz')
                                                     : (showQuizForm.type === 'course' ? 'Create Final Exam' : 'Create Module Quiz')}
@@ -650,7 +650,7 @@ export default function AdminDashboard() {
                                                                 type="radio"
                                                                 checked={q.correctAnswer === oi}
                                                                 onChange={() => updateQuestion(qi, 'correctAnswer', oi)}
-                                                                className="h-3 w-3 text-indigo-600"
+                                                                className="h-3 w-3 text-blue-900"
                                                             />
                                                             <input
                                                                 value={opt}
@@ -664,8 +664,8 @@ export default function AdminDashboard() {
                                             ))}
 
                                             <div className="flex gap-2">
-                                                <button onClick={addQuestion} className="rounded border border-dashed border-slate-300 px-3 py-1.5 text-xs text-slate-500 hover:border-indigo-400 hover:text-indigo-600">+ Add Question</button>
-                                                <button onClick={() => handleSaveQuiz(showQuizForm.id, showQuizForm.type)} className="rounded bg-purple-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-purple-700">
+                                                <button onClick={addQuestion} className="rounded border border-dashed border-slate-300 px-3 py-1.5 text-xs text-slate-500 hover:border-blue-400 hover:text-blue-900">+ Add Question</button>
+                                                <button onClick={() => handleSaveQuiz(showQuizForm.id, showQuizForm.type)} className="rounded bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700">
                                                     {showQuizForm.mode === 'edit' ? 'Save Changes' : (showQuizForm.type === 'course' ? 'Create Exam' : 'Create Quiz')}
                                                 </button>
                                                 <button onClick={() => setShowQuizForm(null)} className="rounded border border-slate-300 px-3 py-1.5 text-xs text-slate-600">Cancel</button>
@@ -698,7 +698,7 @@ export default function AdminDashboard() {
                                         <td className="px-4 py-3 font-medium text-slate-900">{u.name || '—'}</td>
                                         <td className="px-4 py-3 text-slate-600">{u.email}</td>
                                         <td className="px-4 py-3">
-                                            <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${u.role === 'ADMIN' ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-600'}`}>{u.role}</span>
+                                            <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${u.role === 'ADMIN' ? 'bg-blue-100 text-blue-900' : 'bg-slate-100 text-slate-600'}`}>{u.role}</span>
                                         </td>
                                         <td className="px-4 py-3 text-slate-600">{u._count?.enrollments || 0}</td>
                                         <td className="px-4 py-3 text-slate-600">{u._count?.certificates || 0}</td>

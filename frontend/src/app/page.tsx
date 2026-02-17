@@ -20,16 +20,16 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-12 lg:grid-cols-2 lg:gap-8 items-center">
             <div className="flex flex-col items-start gap-6">
-              <div className="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-600">
+              <div className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-900">
                 <span className="mr-2 flex h-2 w-2 relative">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-500 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-600"></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-900"></span>
                 </span>
                 Next Cohort Starting Soon
               </div>
               <h1 className="text-4xl font-black leading-tight tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
                 Start Your Career in Healthcare with{' '}
-                <span className="text-indigo-600">Certified Nursing Assistant</span> Courses
+                <span className="text-blue-900">Certified Nursing Assistant</span> Courses
               </h1>
               <p className="max-w-xl text-lg text-slate-600">
                 Join thousands of compassionate caregivers. Get certified, gain practical skills, and secure a job in hospitals or nursing homes in just 4 weeks.
@@ -37,19 +37,19 @@ export default function LandingPage() {
               <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
                 <Link
                   href="/courses"
-                  className="flex h-12 items-center justify-center rounded-lg bg-indigo-600 px-8 text-base font-bold text-white transition hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-500/25"
+                  className="flex h-12 items-center justify-center rounded-lg bg-blue-900 px-8 text-base font-bold text-white transition hover:bg-blue-800 hover:shadow-lg hover:shadow-blue-500/25"
                 >
                   Start Learning
                 </Link>
                 <Link
                   href="/login"
-                  className="flex h-12 items-center justify-center rounded-lg bg-white border border-indigo-200 px-8 text-base font-bold text-indigo-600 transition hover:bg-indigo-50"
+                  className="flex h-12 items-center justify-center rounded-lg bg-white border border-blue-200 px-8 text-base font-bold text-blue-900 transition hover:bg-blue-50"
                 >
                   Sign In
                 </Link>
                 <Link
                   href="/courses"
-                  className="flex h-12 items-center justify-center rounded-lg bg-white border border-slate-200 px-8 text-base font-bold text-slate-700 transition hover:bg-slate-50 hover:text-indigo-600"
+                  className="flex h-12 items-center justify-center rounded-lg bg-white border border-slate-200 px-8 text-base font-bold text-slate-700 transition hover:bg-slate-50 hover:text-blue-900"
                 >
                   View Syllabus
                 </Link>
@@ -57,7 +57,7 @@ export default function LandingPage() {
               <div className="mt-4 flex items-center gap-4 text-sm font-medium text-slate-500">
                 <div className="flex -space-x-2">
                   {[1, 2, 3].map((i) => (
-                    <div key={i} className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 ring-2 ring-white text-xs font-bold text-white">
+                    <div key={i} className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-emerald-500 ring-2 ring-white text-xs font-bold text-white">
                       {String.fromCharCode(64 + i)}
                     </div>
                   ))}
@@ -69,16 +69,16 @@ export default function LandingPage() {
               </div>
             </div>
             <div className="relative lg:ml-auto">
-              <div className="aspect-[4/3] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-2xl flex items-center justify-center">
+              <div className="aspect-[4/3] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 to-emerald-600 shadow-2xl flex items-center justify-center">
                 <div className="text-center text-white p-8">
                   <Sparkles className="h-16 w-16 mx-auto mb-4 opacity-80" />
                   <p className="text-2xl font-bold">Learn. Certify. Heal.</p>
-                  <p className="mt-2 text-indigo-100">Your healthcare journey starts here</p>
+                  <p className="mt-2 text-blue-100">Your healthcare journey starts here</p>
                 </div>
               </div>
               <div className="absolute -bottom-6 -left-6 hidden rounded-xl bg-white p-4 shadow-xl md:block max-w-[240px]">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-900">
                     <ShieldCheck className="h-5 w-5" />
                   </div>
                   <div>
@@ -120,7 +120,7 @@ export default function LandingPage() {
                 <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Core Curriculum</h2>
                 <p className="mt-2 text-lg text-slate-600">Essential training modules for your Nursing Assistant certification.</p>
               </div>
-              <Link href="/courses" className="inline-flex items-center gap-2 text-sm font-bold text-indigo-600 hover:text-indigo-700 hover:underline">
+              <Link href="/courses" className="inline-flex items-center gap-2 text-sm font-bold text-blue-900 hover:text-blue-700 hover:underline">
                 View All Modules <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
@@ -131,7 +131,7 @@ export default function LandingPage() {
                   href={`/courses/${course.id}`}
                   className="group flex flex-col overflow-hidden rounded-xl bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg border border-slate-100"
                 >
-                  <div className="relative aspect-video w-full overflow-hidden bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center">
+                  <div className="relative aspect-video w-full overflow-hidden bg-gradient-to-br from-blue-400 to-emerald-500 flex items-center justify-center">
                     <span className="text-4xl font-black text-white/20">{course.title.charAt(0)}</span>
                   </div>
                   <div className="flex flex-1 flex-col p-5">
@@ -147,7 +147,7 @@ export default function LandingPage() {
                       <span className="text-sm font-medium text-slate-700">
                         {course.instructor?.name || 'Instructor'}
                       </span>
-                      <span className="text-sm font-bold text-indigo-600">
+                      <span className="text-sm font-bold text-blue-900">
                         {course._count?.lessons || 0} lessons
                       </span>
                     </div>
@@ -173,7 +173,7 @@ export default function LandingPage() {
               { icon: Briefcase, title: 'Job Assistance', desc: 'Direct connections to healthcare employers who are actively hiring our graduates.' },
             ].map((feature) => (
               <div key={feature.title} className="flex flex-col items-start rounded-xl border border-slate-100 bg-slate-50 p-8 transition hover:shadow-md">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 text-blue-900">
                   <feature.icon className="h-6 w-6" />
                 </div>
                 <h3 className="mt-6 text-xl font-bold text-slate-900">{feature.title}</h3>
@@ -187,13 +187,13 @@ export default function LandingPage() {
       {/* CTA */}
       <section className="bg-white py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="relative overflow-hidden rounded-2xl bg-indigo-600 px-6 py-12 text-center shadow-xl sm:px-12 sm:py-16">
+          <div className="relative overflow-hidden rounded-2xl bg-blue-900 px-6 py-12 text-center shadow-xl sm:px-12 sm:py-16">
             <div className="relative z-10 mx-auto max-w-2xl">
               <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Ready to Join the Healthcare Workforce?</h2>
-              <p className="mx-auto mt-4 max-w-xl text-lg text-indigo-100">Enroll today and start making a difference in patients&apos; lives in as little as 4 weeks.</p>
+              <p className="mx-auto mt-4 max-w-xl text-lg text-blue-100">Enroll today and start making a difference in patients&apos; lives in as little as 4 weeks.</p>
               <div className="mt-8 flex justify-center gap-4">
-                <Link href="/register" className="rounded-lg bg-white px-8 py-3 text-base font-bold text-indigo-600 transition hover:bg-indigo-50">Apply Now</Link>
-                <Link href="/courses" className="rounded-lg bg-indigo-700 px-8 py-3 text-base font-bold text-white transition hover:bg-indigo-800 border border-indigo-500">Browse Courses</Link>
+                <Link href="/register" className="rounded-lg bg-white px-8 py-3 text-base font-bold text-blue-900 transition hover:bg-blue-50">Apply Now</Link>
+                <Link href="/courses" className="rounded-lg bg-blue-700 px-8 py-3 text-base font-bold text-white transition hover:bg-blue-800 border border-blue-500">Browse Courses</Link>
               </div>
             </div>
             <div className="absolute -left-12 -top-12 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>

@@ -135,6 +135,35 @@ export const submitQuiz = async (req: Request, res: Response) => {
             }
         }
 
+        // Auto-generate certificate if course is fully completed
+        let certificateId: string | undefined = undefined;
+        let certificateUniqueId: string | undefined = undefined;
+
+        if (courseCompleted) {
+            // Check if certificate already exists
+            const existingCert = await prisma.certificate.findFirst({
+                where: { userId, courseId: quiz.courseId },
+            });
+            if (existingCert) {
+                certificateId = existingCert.id;
+                certificateUniqueId = existingCert.uniqueId;
+            } else {
+                const newCert = await prisma.certificate.create({
+                    data: { userId, courseId: quiz.courseId },
+                });
+                certificateId = newCert.id;
+                certificateUniqueId = newCert.uniqueId;
+            }
+
+            // Also set progress to 100%
+            try {
+                await prisma.enrollment.updateMany({
+                    where: { userId, courseId: quiz.courseId },
+                    data: { progress: 100 },
+                });
+            } catch { }
+        }
+
         res.json({
             result,
             totalQuestions,
@@ -144,6 +173,8 @@ export const submitQuiz = async (req: Request, res: Response) => {
             passingScore: quiz.passingScore,
             courseCompleted,
             nextExamId,
+            certificateId,
+            certificateUniqueId,
         });
     } catch (error: any) {
         console.error('submitQuiz error:', error);
