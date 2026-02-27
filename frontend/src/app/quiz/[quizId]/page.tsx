@@ -6,6 +6,7 @@ import api from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { Quiz, QuizResult, Course } from '@/lib/types';
 import Link from 'next/link';
+import RoleGuard from '@/components/RoleGuard';
 
 export default function QuizPage() {
     const { quizId } = useParams();
@@ -28,7 +29,7 @@ export default function QuizPage() {
     };
 
     useEffect(() => {
-        if (!user) { router.push('/login'); return; }
+        if (!user) return;
         if (!quizId) return;
         api.get(`/quizzes/${quizId}`).then((res) => {
             setQuiz(res.data);
@@ -81,16 +82,18 @@ export default function QuizPage() {
     // Result screen (Matches assesment_and_reward.html)
     if (result) {
         return (
-            <QuizResultScreen
-                result={result}
-                user={user}
-                quiz={quiz}
-                onRetry={handleRetry}
-                courseCompleted={!!result.courseCompleted}
-                nextExamId={result.nextExamId}
-                certificateId={result.certificateId}
-                certificateUniqueId={result.certificateUniqueId}
-            />
+            <RoleGuard allowedRoles={['STUDENT']}>
+                <QuizResultScreen
+                    result={result}
+                    user={user}
+                    quiz={quiz}
+                    onRetry={handleRetry}
+                    courseCompleted={!!result.courseCompleted}
+                    nextExamId={result.nextExamId}
+                    certificateId={result.certificateId}
+                    certificateUniqueId={result.certificateUniqueId}
+                />
+            </RoleGuard>
         );
     }
 
@@ -98,186 +101,187 @@ export default function QuizPage() {
     const answeredCount = Object.keys(answers).length;
 
     return (
-        <div className="min-h-screen flex flex-col font-sans bg-slate-50">
-            {/* Header */}
-            <header className="h-16 border-b border-slate-200 bg-white flex items-center justify-between px-6 sticky top-0 z-30 shadow-sm">
-                <div className="flex items-center gap-4">
-                    <div className="flex items-center justify-center size-8 rounded-lg bg-blue-50 text-blue-900">
-                        <span className="material-symbols-outlined text-xl">medical_services</span>
+        <RoleGuard allowedRoles={['STUDENT']}>
+            <div className="min-h-screen flex flex-col font-sans bg-slate-50">
+                <header className="h-16 border-b border-slate-200 bg-white flex items-center justify-between px-6 sticky top-0 z-30 shadow-sm">
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center justify-center size-8 rounded-lg bg-blue-50 text-blue-900">
+                            <span className="material-symbols-outlined text-xl">medical_services</span>
+                        </div>
+                        <div>
+                            <h1 className="font-bold text-lg leading-tight text-slate-900">{quiz.title}</h1>
+                            <p className="text-xs text-slate-500">{quiz.moduleId ? 'Module Quiz' : 'Final Examination'} • Question {currentQuestionIdx + 1}</p>
+                        </div>
                     </div>
-                    <div>
-                        <h1 className="font-bold text-lg leading-tight text-slate-900">{quiz.title}</h1>
-                        <p className="text-xs text-slate-500">{quiz.moduleId ? 'Module Quiz' : 'Final Examination'} • Question {currentQuestionIdx + 1}</p>
+                    <div className="flex items-center gap-4">
+                        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-md border border-slate-200">
+                            <span className="material-symbols-outlined text-slate-500 text-sm">timer</span>
+                            <span className="text-sm font-semibold font-mono text-slate-700">{formatTime(timeLeft)}</span>
+                        </div>
+                        <button
+                            onClick={handleSubmit}
+                            disabled={submitting}
+                            className="flex items-center justify-center px-4 py-2 text-sm font-bold text-white bg-blue-900 rounded-lg hover:bg-blue-800 transition-all shadow-lg shadow-blue-900/20"
+                        >
+                            {submitting ? 'Submitting...' : 'Submit Quiz'}
+                        </button>
                     </div>
-                </div>
-                <div className="flex items-center gap-4">
-                    <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-md border border-slate-200">
-                        <span className="material-symbols-outlined text-slate-500 text-sm">timer</span>
-                        <span className="text-sm font-semibold font-mono text-slate-700">{formatTime(timeLeft)}</span>
-                    </div>
-                    <button
-                        onClick={handleSubmit}
-                        disabled={submitting}
-                        className="flex items-center justify-center px-4 py-2 text-sm font-bold text-white bg-blue-900 rounded-lg hover:bg-blue-800 transition-all shadow-lg shadow-blue-900/20"
-                    >
-                        {submitting ? 'Submitting...' : 'Submit Quiz'}
-                    </button>
-                </div>
-            </header>
+                </header>
 
-            <div className="flex flex-1 overflow-hidden">
-                {/* Sidebar (Question Map) */}
-                <aside className={`w-72 bg-white border-r border-slate-200 flex flex-col hidden lg:flex z-20`}>
-                    <div className="p-5 border-b border-slate-100">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">Question Map</h2>
-                            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">{answeredCount}/{quiz.questions.length} Answered</span>
-                        </div>
-                        <div className="flex gap-4 text-xs text-slate-500 mb-2">
-                            <div className="flex items-center gap-1.5">
-                                <div className="w-2.5 h-2.5 rounded-full bg-blue-900"></div>
-                                <span>Current</span>
+                <div className="flex flex-1 overflow-hidden">
+                    {/* Sidebar (Question Map) */}
+                    <aside className={`w-72 bg-white border-r border-slate-200 flex flex-col hidden lg:flex z-20`}>
+                        <div className="p-5 border-b border-slate-100">
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">Question Map</h2>
+                                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">{answeredCount}/{quiz.questions.length} Answered</span>
                             </div>
-                            <div className="flex items-center gap-1.5">
-                                <div className="w-2.5 h-2.5 rounded-full bg-blue-100 border border-blue-200"></div>
-                                <span>Answered</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="flex-1 overflow-y-auto p-5 custom-scrollbar">
-                        <div className="grid grid-cols-5 gap-3">
-                            {quiz.questions.map((q, i) => {
-                                const isCurrent = i === currentQuestionIdx;
-                                const isAnswered = answers[q.id] !== undefined;
-                                return (
-                                    <button
-                                        key={q.id}
-                                        onClick={() => setCurrentQuestionIdx(i)}
-                                        className={`aspect-square flex items-center justify-center rounded-lg text-sm font-medium transition-all relative ${isCurrent
-                                            ? 'bg-blue-900 text-white shadow-md ring-2 ring-blue-600 ring-offset-2 scale-105 z-10'
-                                            : isAnswered
-                                                ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                                                : 'bg-slate-50 text-slate-600 border border-slate-200 hover:border-blue-300'
-                                            }`}
-                                    >
-                                        {i + 1}
-                                        {isAnswered && !isCurrent && (
-                                            <div className="absolute -top-1 -right-1">
-                                                <span className="material-symbols-outlined text-[10px] bg-white rounded-full text-green-600">check_circle</span>
-                                            </div>
-                                        )}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-                    <div className="p-4 border-t border-slate-100 bg-slate-50/50">
-                        <div className="flex items-center gap-3">
-                            <div className="size-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-500">
-                                <span className="material-symbols-outlined text-lg">person</span>
-                            </div>
-                            <div className="flex flex-col">
-                                <span className="text-xs font-bold text-slate-700">{user?.name}</span>
-                                <span className="text-[10px] text-slate-500">Student ID: #{user?.id.slice(0, 8)}</span>
-                            </div>
-                        </div>
-                    </div>
-                </aside>
-
-                {/* Main Quiz Area */}
-                <main className="flex-1 flex flex-col items-center overflow-y-auto bg-slate-50 relative">
-                    <div className="w-full max-w-3xl px-6 py-8 md:py-12 flex flex-col gap-8">
-                        {/* Progress */}
-                        <div className="flex flex-col gap-4">
-                            <div className="flex justify-between items-end">
-                                <div>
-                                    <span className="text-xs font-semibold tracking-wider text-blue-900 uppercase mb-1 block">Question Section</span>
-                                    <h2 className="text-2xl font-bold text-slate-900">Question {currentQuestionIdx + 1}</h2>
+                            <div className="flex gap-4 text-xs text-slate-500 mb-2">
+                                <div className="flex items-center gap-1.5">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-blue-900"></div>
+                                    <span>Current</span>
                                 </div>
-                                <span className="text-sm font-medium text-slate-500 hidden md:block">Step {currentQuestionIdx + 1} of {quiz.questions.length}</span>
-                            </div>
-                            <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
-                                <div
-                                    className="bg-blue-900 h-full rounded-full transition-all duration-300"
-                                    style={{ width: `${((currentQuestionIdx + 1) / quiz.questions.length) * 100}%` }}
-                                ></div>
+                                <div className="flex items-center gap-1.5">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-blue-100 border border-blue-200"></div>
+                                    <span>Answered</span>
+                                </div>
                             </div>
                         </div>
-
-                        {/* Question Card */}
-                        <div className="bg-white rounded-2xl p-6 md:p-10 shadow-sm border border-slate-200">
-                            <p className="text-lg md:text-xl font-medium text-slate-800 leading-relaxed mb-8">
-                                {currentQuestion.text}
-                            </p>
-                            <div className="grid grid-cols-1 gap-4">
-                                {currentQuestion.options.map((option, oi) => {
-                                    const isSelected = answers[currentQuestion.id] === oi;
-                                    const label = String.fromCharCode(65 + oi);
+                        <div className="flex-1 overflow-y-auto p-5 custom-scrollbar">
+                            <div className="grid grid-cols-5 gap-3">
+                                {quiz.questions.map((q, i) => {
+                                    const isCurrent = i === currentQuestionIdx;
+                                    const isAnswered = answers[q.id] !== undefined;
                                     return (
-                                        <label
-                                            key={oi}
-                                            className={`group relative flex items-center p-4 md:p-5 rounded-xl border-2 cursor-pointer transition-all duration-200 shadow-sm ${isSelected
-                                                ? 'border-blue-900 bg-blue-50 ring-1 ring-blue-200'
-                                                : 'border-slate-100 hover:border-blue-200 hover:bg-slate-50'
+                                        <button
+                                            key={q.id}
+                                            onClick={() => setCurrentQuestionIdx(i)}
+                                            className={`aspect-square flex items-center justify-center rounded-lg text-sm font-medium transition-all relative ${isCurrent
+                                                ? 'bg-blue-900 text-white shadow-md ring-2 ring-blue-600 ring-offset-2 scale-105 z-10'
+                                                : isAnswered
+                                                    ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                                    : 'bg-slate-50 text-slate-600 border border-slate-200 hover:border-blue-300'
                                                 }`}
                                         >
-                                            <input
-                                                type="radio"
-                                                name={currentQuestion.id}
-                                                className="sr-only"
-                                                checked={isSelected}
-                                                onChange={() => handleAnswer(currentQuestion.id, oi)}
-                                            />
-                                            <div className={`flex items-center justify-center size-8 rounded-full text-sm font-bold mr-4 shrink-0 transition-transform group-hover:scale-110 ${isSelected ? 'bg-blue-900 text-white' : 'bg-slate-100 text-slate-500'
-                                                }`}>
-                                                {label}
-                                            </div>
-                                            <span className={`text-base md:text-lg font-medium flex-1 ${isSelected ? 'text-blue-900' : 'text-slate-700'}`}>
-                                                {option}
-                                            </span>
-                                            {isSelected && (
-                                                <div className="absolute right-5 text-blue-900">
-                                                    <span className="material-symbols-outlined">check_circle</span>
+                                            {i + 1}
+                                            {isAnswered && !isCurrent && (
+                                                <div className="absolute -top-1 -right-1">
+                                                    <span className="material-symbols-outlined text-[10px] bg-white rounded-full text-green-600">check_circle</span>
                                                 </div>
                                             )}
-                                        </label>
+                                        </button>
                                     );
                                 })}
                             </div>
                         </div>
-
-                        {/* Navigation */}
-                        <div className="flex items-center justify-between pt-4 border-t border-slate-200 mt-auto">
-                            <button
-                                onClick={() => setCurrentQuestionIdx(idx => Math.max(0, idx - 1))}
-                                disabled={currentQuestionIdx === 0}
-                                className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 disabled:opacity-50 transition-all"
-                            >
-                                <span className="material-symbols-outlined text-lg">arrow_back</span>
-                                Previous
-                            </button>
-                            {currentQuestionIdx < quiz.questions.length - 1 ? (
-                                <button
-                                    onClick={() => setCurrentQuestionIdx(idx => idx + 1)}
-                                    className="flex items-center gap-2 px-8 py-3 rounded-xl text-sm font-bold text-white bg-blue-900 hover:bg-blue-800 shadow-lg shadow-blue-100 transition-all transform hover:-translate-y-0.5"
-                                >
-                                    Next Question
-                                    <span className="material-symbols-outlined text-lg">arrow_forward</span>
-                                </button>
-                            ) : (
-                                <button
-                                    onClick={handleSubmit}
-                                    className="flex items-center gap-2 px-8 py-3 rounded-xl text-sm font-bold text-white bg-green-600 hover:bg-green-700 shadow-lg shadow-green-100 transition-all transform hover:-translate-y-0.5"
-                                >
-                                    Finish & Submit
-                                    <span className="material-symbols-outlined text-lg">check_circle</span>
-                                </button>
-                            )}
+                        <div className="p-4 border-t border-slate-100 bg-slate-50/50">
+                            <div className="flex items-center gap-3">
+                                <div className="size-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-500">
+                                    <span className="material-symbols-outlined text-lg">person</span>
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-xs font-bold text-slate-700">{user?.name}</span>
+                                    <span className="text-[10px] text-slate-500">Student ID: #{user?.id.slice(0, 8)}</span>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </main>
+                    </aside>
+
+                    {/* Main Quiz Area */}
+                    <main className="flex-1 flex flex-col items-center overflow-y-auto bg-slate-50 relative">
+                        <div className="w-full max-w-3xl px-6 py-8 md:py-12 flex flex-col gap-8">
+                            {/* Progress */}
+                            <div className="flex flex-col gap-4">
+                                <div className="flex justify-between items-end">
+                                    <div>
+                                        <span className="text-xs font-semibold tracking-wider text-blue-900 uppercase mb-1 block">Question Section</span>
+                                        <h2 className="text-2xl font-bold text-slate-900">Question {currentQuestionIdx + 1}</h2>
+                                    </div>
+                                    <span className="text-sm font-medium text-slate-500 hidden md:block">Step {currentQuestionIdx + 1} of {quiz.questions.length}</span>
+                                </div>
+                                <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                                    <div
+                                        className="bg-blue-900 h-full rounded-full transition-all duration-300"
+                                        style={{ width: `${((currentQuestionIdx + 1) / quiz.questions.length) * 100}%` }}
+                                    ></div>
+                                </div>
+                            </div>
+
+                            {/* Question Card */}
+                            <div className="bg-white rounded-2xl p-6 md:p-10 shadow-sm border border-slate-200">
+                                <p className="text-lg md:text-xl font-medium text-slate-800 leading-relaxed mb-8">
+                                    {currentQuestion.text}
+                                </p>
+                                <div className="grid grid-cols-1 gap-4">
+                                    {currentQuestion.options.map((option, oi) => {
+                                        const isSelected = answers[currentQuestion.id] === oi;
+                                        const label = String.fromCharCode(65 + oi);
+                                        return (
+                                            <label
+                                                key={oi}
+                                                className={`group relative flex items-center p-4 md:p-5 rounded-xl border-2 cursor-pointer transition-all duration-200 shadow-sm ${isSelected
+                                                    ? 'border-blue-900 bg-blue-50 ring-1 ring-blue-200'
+                                                    : 'border-slate-100 hover:border-blue-200 hover:bg-slate-50'
+                                                    }`}
+                                            >
+                                                <input
+                                                    type="radio"
+                                                    name={currentQuestion.id}
+                                                    className="sr-only"
+                                                    checked={isSelected}
+                                                    onChange={() => handleAnswer(currentQuestion.id, oi)}
+                                                />
+                                                <div className={`flex items-center justify-center size-8 rounded-full text-sm font-bold mr-4 shrink-0 transition-transform group-hover:scale-110 ${isSelected ? 'bg-blue-900 text-white' : 'bg-slate-100 text-slate-500'
+                                                    }`}>
+                                                    {label}
+                                                </div>
+                                                <span className={`text-base md:text-lg font-medium flex-1 ${isSelected ? 'text-blue-900' : 'text-slate-700'}`}>
+                                                    {option}
+                                                </span>
+                                                {isSelected && (
+                                                    <div className="absolute right-5 text-blue-900">
+                                                        <span className="material-symbols-outlined">check_circle</span>
+                                                    </div>
+                                                )}
+                                            </label>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Navigation */}
+                            <div className="flex items-center justify-between pt-4 border-t border-slate-200 mt-auto">
+                                <button
+                                    onClick={() => setCurrentQuestionIdx(idx => Math.max(0, idx - 1))}
+                                    disabled={currentQuestionIdx === 0}
+                                    className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 disabled:opacity-50 transition-all"
+                                >
+                                    <span className="material-symbols-outlined text-lg">arrow_back</span>
+                                    Previous
+                                </button>
+                                {currentQuestionIdx < quiz.questions.length - 1 ? (
+                                    <button
+                                        onClick={() => setCurrentQuestionIdx(idx => idx + 1)}
+                                        className="flex items-center gap-2 px-8 py-3 rounded-xl text-sm font-bold text-white bg-blue-900 hover:bg-blue-800 shadow-lg shadow-blue-100 transition-all transform hover:-translate-y-0.5"
+                                    >
+                                        Next Question
+                                        <span className="material-symbols-outlined text-lg">arrow_forward</span>
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={handleSubmit}
+                                        className="flex items-center gap-2 px-8 py-3 rounded-xl text-sm font-bold text-white bg-green-600 hover:bg-green-700 shadow-lg shadow-green-100 transition-all transform hover:-translate-y-0.5"
+                                    >
+                                        Finish & Submit
+                                        <span className="material-symbols-outlined text-lg">check_circle</span>
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </main>
+                </div>
             </div>
-        </div>
+        </RoleGuard>
     );
 }
 

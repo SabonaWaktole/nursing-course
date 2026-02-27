@@ -20,11 +20,12 @@ const router = Router();
 
 // Public
 router.get('/', getAllCourses);
-router.get('/:id', getCourseById);
 
-// Student
-router.post('/:courseId/enroll', authenticate, enrollInCourse);
+// Student (must be before /:id to prevent "my" matching as courseId)
 router.get('/my/enrollments', authenticate, getMyEnrollments);
+
+router.get('/:id', getCourseById);
+router.post('/:courseId/enroll', authenticate, enrollInCourse);
 router.put('/:courseId/progress', authenticate, updateProgress);
 
 // Admin - Courses

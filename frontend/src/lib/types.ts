@@ -10,6 +10,7 @@ export interface Course {
     title: string;
     description: string;
     thumbnail: string | null;
+    category?: string | null;
     price: number | null;
     instructorId: string;
     instructor: { id: string; name: string };

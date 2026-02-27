@@ -159,7 +159,7 @@ export const submitQuiz = async (req: Request, res: Response) => {
             try {
                 await prisma.enrollment.updateMany({
                     where: { userId, courseId: quiz.courseId },
-                    data: { progress: 100 },
+                    data: { progress: 100, completed: true },
                 });
             } catch { }
         }
