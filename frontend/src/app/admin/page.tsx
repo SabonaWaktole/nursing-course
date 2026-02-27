@@ -56,14 +56,31 @@ export default function AdminDashboard() {
 
     const loadData = async () => {
         try {
-            const [statsRes, coursesRes] = await Promise.all([
+            const [statsRes, coursesRes, usersRes, resultsRes] = await Promise.all([
                 api.get('/admin/dashboard'),
                 api.get('/courses'),
+                api.get('/admin/users'),
+                api.get('/quizzes/results/all')
             ]);
             setStats(statsRes.data);
             setCourses(coursesRes.data);
+            setUsers(usersRes.data);
+            setResults(resultsRes.data);
             setLoading(false);
-        } catch { setLoading(false); }
+        } catch (error) {
+            console.error('Failed to load admin data', error);
+            setLoading(false);
+        }
+    };
+
+    const handleDeleteUser = async (userId: string) => {
+        if (!confirm('Are you sure you want to delete this user? This will also delete their enrollments and certificates permanently.')) return;
+        try {
+            await api.delete(`/admin/users/${userId}`);
+            loadData();
+        } catch (error: any) {
+            alert(error.response?.data?.message || 'Error deleting user');
+        }
     };
 
     const loadCourseDetail = async (courseId: string) => {
@@ -476,315 +493,323 @@ export default function AdminDashboard() {
                                         </div>
 
                                         {/* Add Module Form */}
-                                        { showModuleForm === course.id && (
-                                        <div className="mx-4 mb-4 rounded-lg border border-blue-200 bg-blue-50 p-3 space-y-2">
-                                            <p className="text-sm font-bold text-blue-700">Add Module</p>
-                                            <input value={moduleTitle} onChange={(e) => setModuleTitle(e.target.value)} placeholder="Module title (e.g. Introduction to Patient Care)" className="w-full rounded border border-slate-300 px-3 py-1.5 text-sm" />
-                                            <div className="flex gap-2">
-                                                <button onClick={() => handleAddModule(course.id)} className="rounded bg-blue-900 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-800">Add Module</button>
-                                                <button onClick={() => { setShowModuleForm(null); setModuleTitle(''); }} className="rounded border border-slate-300 px-3 py-1.5 text-xs text-slate-600">Cancel</button>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                {/* Expanded: show modules and lessons */}
-                                {expandedCourse === course.id && courseDetails && (
-                                    <div className="border-t border-slate-100 px-4 pb-4">
-                                        {courseDetails.modules?.length === 0 && (
-                                            <p className="py-4 text-sm text-slate-400 text-center">No modules yet. Add one above.</p>
-                                        )}
-                                        {courseDetails.modules?.map((mod: any, mi: number) => (
-                                            <div key={mod.id} className="mt-3 rounded-lg border border-slate-200 bg-slate-50">
-                                                {/* Module header */}
-                                                <div className="flex items-center justify-between px-3 py-2">
-                                                    <div>
-                                                        <span className="text-xs font-semibold text-blue-900 uppercase">Module {mi + 1}</span>
-                                                        <span className="ml-2 text-sm font-medium text-slate-800">{mod.title}</span>
-                                                        <span className="ml-2 text-xs text-slate-400">({mod.lessons?.length || 0} lessons)</span>
-                                                    </div>
-                                                    <div className="flex gap-1">
-                                                        <button
-                                                            onClick={() => setShowLessonForm(showLessonForm === mod.id ? null : mod.id)}
-                                                            className="rounded p-1 text-slate-400 hover:bg-white hover:text-blue-900 transition"
-                                                            title="Add Lesson"
-                                                        >
-                                                            <Plus className="h-3.5 w-3.5" />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => setShowQuizForm(showQuizForm?.id === mod.id ? null : { id: mod.id, type: 'module' })}
-                                                            className="rounded p-1 text-slate-400 hover:bg-white hover:text-emerald-600 transition"
-                                                            title="Add Quiz"
-                                                        >
-                                                            <ClipboardList className="h-3.5 w-3.5" />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDeleteModule(mod.id, course.id)}
-                                                            className="rounded p-1 text-slate-400 hover:bg-white hover:text-red-600 transition"
-                                                            title="Delete Module"
-                                                        >
-                                                            <Trash2 className="h-3.5 w-3.5" />
-                                                        </button>
-                                                    </div>
+                                        {showModuleForm === course.id && (
+                                            <div className="mx-4 mb-4 rounded-lg border border-blue-200 bg-blue-50 p-3 space-y-2">
+                                                <p className="text-sm font-bold text-blue-700">Add Module</p>
+                                                <input value={moduleTitle} onChange={(e) => setModuleTitle(e.target.value)} placeholder="Module title (e.g. Introduction to Patient Care)" className="w-full rounded border border-slate-300 px-3 py-1.5 text-sm" />
+                                                <div className="flex gap-2">
+                                                    <button onClick={() => handleAddModule(course.id)} className="rounded bg-blue-900 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-800">Add Module</button>
+                                                    <button onClick={() => { setShowModuleForm(null); setModuleTitle(''); }} className="rounded border border-slate-300 px-3 py-1.5 text-xs text-slate-600">Cancel</button>
                                                 </div>
-
-                                                {/* Lessons list */}
-                                                {mod.lessons?.map((lesson: any, li: number) => (
-                                                    <div key={lesson.id} className="flex items-center justify-between px-3 py-1.5 pl-8 text-sm border-t border-slate-100">
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-xs text-slate-400 font-mono">{mi + 1}.{li + 1}</span>
-                                                            <span className="text-slate-700">{lesson.title}</span>
-                                                            {lesson.videoUrl && <span className="text-[10px] bg-blue-100 text-blue-900 px-1.5 py-0.5 rounded font-medium">Video</span>}
-                                                            {lesson.materialUrl && <span className="text-[10px] bg-green-100 text-green-600 px-1.5 py-0.5 rounded font-medium">Material</span>}
-                                                        </div>
-                                                        <button
-                                                            onClick={() => handleDeleteLesson(lesson.id)}
-                                                            className="rounded p-1 text-slate-300 hover:text-red-500 transition"
-                                                        >
-                                                            <Trash2 className="h-3 w-3" />
-                                                        </button>
-                                                    </div>
-                                                ))}
-
-                                                {/* Module Quizzes list */}
-                                                {mod.quizzes?.map((quiz: any) => (
-                                                    <div key={quiz.id} className="flex items-center justify-between px-3 py-1.5 pl-8 text-sm border-t border-emerald-50 bg-emerald-50/30">
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-xs font-bold text-emerald-600 uppercase">Quiz</span>
-                                                            <span className="text-slate-700">{quiz.title}</span>
-                                                        </div>
-                                                        <div className="flex gap-1">
-                                                            <button
-                                                                onClick={() => openQuizEdit(quiz, 'module')}
-                                                                className="rounded p-1 text-slate-300 hover:text-blue-900 transition"
-                                                                title="Edit Quiz"
-                                                            >
-                                                                <FileText className="h-3 w-3" />
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleDeleteQuiz(quiz.id)}
-                                                                className="rounded p-1 text-slate-300 hover:text-red-500 transition"
-                                                                title="Delete Quiz"
-                                                            >
-                                                                <Trash2 className="h-3 w-3" />
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                ))}
-
-                                                {/* Add Lesson Form (under specific module) */}
-                                                {showLessonForm === mod.id && (
-                                                    <div className="border-t border-slate-200 p-3 bg-white rounded-b-lg space-y-2">
-                                                        <p className="text-xs font-bold text-blue-700">Add Lesson to {mod.title}</p>
-                                                        <input value={lessonForm.title} onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })} placeholder="Lesson title" className="w-full rounded border border-slate-300 px-3 py-1.5 text-sm" />
-                                                        <input value={lessonForm.description} onChange={(e) => setLessonForm({ ...lessonForm, description: e.target.value })} placeholder="Description" className="w-full rounded border border-slate-300 px-3 py-1.5 text-sm" />
-
-                                                        {/* Video */}
-                                                        <div>
-                                                            <label className="text-xs font-medium text-slate-600 mb-1 block">Video</label>
-                                                            <div className="flex gap-2">
-                                                                <input value={lessonForm.videoUrl} onChange={(e) => setLessonForm({ ...lessonForm, videoUrl: e.target.value })} placeholder="Paste video URL" className="flex-1 rounded border border-slate-300 px-3 py-1.5 text-sm" />
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => handleLessonUpload('video')}
-                                                                    disabled={uploading.video}
-                                                                    className="flex items-center gap-1 rounded bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-200 disabled:opacity-50 transition shrink-0"
-                                                                >
-                                                                    <Upload className="h-3 w-3" />
-                                                                    {uploading.video ? 'Uploading...' : 'Upload'}
-                                                                </button>
-                                                            </div>
-                                                        </div>
-
-                                                        {/* Material */}
-                                                        <div>
-                                                            <label className="text-xs font-medium text-slate-600 mb-1 block">Material</label>
-                                                            <div className="flex gap-2">
-                                                                <input value={lessonForm.materialUrl} onChange={(e) => setLessonForm({ ...lessonForm, materialUrl: e.target.value })} placeholder="Paste material URL" className="flex-1 rounded border border-slate-300 px-3 py-1.5 text-sm" />
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => handleLessonUpload('material')}
-                                                                    disabled={uploading.material}
-                                                                    className="flex items-center gap-1 rounded bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-200 disabled:opacity-50 transition shrink-0"
-                                                                >
-                                                                    <Upload className="h-3 w-3" />
-                                                                    {uploading.material ? 'Uploading...' : 'Upload'}
-                                                                </button>
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="flex gap-2">
-                                                            <button onClick={() => handleAddLesson(mod.id)} className="rounded bg-blue-900 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-800">Add Lesson</button>
-                                                            <button onClick={() => setShowLessonForm(null)} className="rounded border border-slate-300 px-3 py-1.5 text-xs text-slate-600">Cancel</button>
-                                                        </div>
-                                                    </div>
-                                                )}
                                             </div>
-                                        ))}
+                                        )}
 
-                                        {/* Final Exams List */}
-                                        {courseDetails.quizzes?.length > 0 && (
-                                            <div className="mt-6">
-                                                <h4 className="px-1 text-sm font-bold text-slate-900 mb-2">Final Examinations</h4>
-                                                {courseDetails.quizzes.map((quiz: any) => (
-                                                    <div key={quiz.id} className="mb-2 rounded-lg border border-emerald-200 bg-emerald-50">
+                                        {/* Expanded: show modules and lessons */}
+                                        {expandedCourse === course.id && courseDetails && (
+                                            <div className="border-t border-slate-100 px-4 pb-4">
+                                                {courseDetails.modules?.length === 0 && (
+                                                    <p className="py-4 text-sm text-slate-400 text-center">No modules yet. Add one above.</p>
+                                                )}
+                                                {courseDetails.modules?.map((mod: any, mi: number) => (
+                                                    <div key={mod.id} className="mt-3 rounded-lg border border-slate-200 bg-slate-50">
+                                                        {/* Module header */}
                                                         <div className="flex items-center justify-between px-3 py-2">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="text-xs font-bold text-emerald-700 uppercase">Exam</span>
-                                                                <span className="text-sm font-medium text-slate-800">{quiz.title}</span>
-                                                                <span className="text-xs text-slate-400">({quiz._count?.questions || 0} questions)</span>
+                                                            <div>
+                                                                <span className="text-xs font-semibold text-blue-900 uppercase">Module {mi + 1}</span>
+                                                                <span className="ml-2 text-sm font-medium text-slate-800">{mod.title}</span>
+                                                                <span className="ml-2 text-xs text-slate-400">({mod.lessons?.length || 0} lessons)</span>
                                                             </div>
                                                             <div className="flex gap-1">
                                                                 <button
-                                                                    onClick={() => openQuizEdit(quiz, 'course')}
+                                                                    onClick={() => setShowLessonForm(showLessonForm === mod.id ? null : mod.id)}
                                                                     className="rounded p-1 text-slate-400 hover:bg-white hover:text-blue-900 transition"
-                                                                    title="Edit Exam"
+                                                                    title="Add Lesson"
                                                                 >
-                                                                    <FileText className="h-4 w-4" />
+                                                                    <Plus className="h-3.5 w-3.5" />
                                                                 </button>
                                                                 <button
-                                                                    onClick={() => handleDeleteQuiz(quiz.id)}
-                                                                    className="rounded p-1 text-slate-400 hover:bg-white hover:text-red-600 transition"
-                                                                    title="Delete Exam"
+                                                                    onClick={() => setShowQuizForm(showQuizForm?.id === mod.id ? null : { id: mod.id, type: 'module' })}
+                                                                    className="rounded p-1 text-slate-400 hover:bg-white hover:text-emerald-600 transition"
+                                                                    title="Add Quiz"
                                                                 >
-                                                                    <Trash2 className="h-4 w-4" />
+                                                                    <ClipboardList className="h-3.5 w-3.5" />
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleDeleteModule(mod.id, course.id)}
+                                                                    className="rounded p-1 text-slate-400 hover:bg-white hover:text-red-600 transition"
+                                                                    title="Delete Module"
+                                                                >
+                                                                    <Trash2 className="h-3.5 w-3.5" />
                                                                 </button>
                                                             </div>
                                                         </div>
+
+                                                        {/* Lessons list */}
+                                                        {mod.lessons?.map((lesson: any, li: number) => (
+                                                            <div key={lesson.id} className="flex items-center justify-between px-3 py-1.5 pl-8 text-sm border-t border-slate-100">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-xs text-slate-400 font-mono">{mi + 1}.{li + 1}</span>
+                                                                    <span className="text-slate-700">{lesson.title}</span>
+                                                                    {lesson.videoUrl && <span className="text-[10px] bg-blue-100 text-blue-900 px-1.5 py-0.5 rounded font-medium">Video</span>}
+                                                                    {lesson.materialUrl && <span className="text-[10px] bg-green-100 text-green-600 px-1.5 py-0.5 rounded font-medium">Material</span>}
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => handleDeleteLesson(lesson.id)}
+                                                                    className="rounded p-1 text-slate-300 hover:text-red-500 transition"
+                                                                >
+                                                                    <Trash2 className="h-3 w-3" />
+                                                                </button>
+                                                            </div>
+                                                        ))}
+
+                                                        {/* Module Quizzes list */}
+                                                        {mod.quizzes?.map((quiz: any) => (
+                                                            <div key={quiz.id} className="flex items-center justify-between px-3 py-1.5 pl-8 text-sm border-t border-emerald-50 bg-emerald-50/30">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-xs font-bold text-emerald-600 uppercase">Quiz</span>
+                                                                    <span className="text-slate-700">{quiz.title}</span>
+                                                                </div>
+                                                                <div className="flex gap-1">
+                                                                    <button
+                                                                        onClick={() => openQuizEdit(quiz, 'module')}
+                                                                        className="rounded p-1 text-slate-300 hover:text-blue-900 transition"
+                                                                        title="Edit Quiz"
+                                                                    >
+                                                                        <FileText className="h-3 w-3" />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleDeleteQuiz(quiz.id)}
+                                                                        className="rounded p-1 text-slate-300 hover:text-red-500 transition"
+                                                                        title="Delete Quiz"
+                                                                    >
+                                                                        <Trash2 className="h-3 w-3" />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+
+                                                        {/* Add Lesson Form (under specific module) */}
+                                                        {showLessonForm === mod.id && (
+                                                            <div className="border-t border-slate-200 p-3 bg-white rounded-b-lg space-y-2">
+                                                                <p className="text-xs font-bold text-blue-700">Add Lesson to {mod.title}</p>
+                                                                <input value={lessonForm.title} onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })} placeholder="Lesson title" className="w-full rounded border border-slate-300 px-3 py-1.5 text-sm" />
+                                                                <input value={lessonForm.description} onChange={(e) => setLessonForm({ ...lessonForm, description: e.target.value })} placeholder="Description" className="w-full rounded border border-slate-300 px-3 py-1.5 text-sm" />
+
+                                                                {/* Video */}
+                                                                <div>
+                                                                    <label className="text-xs font-medium text-slate-600 mb-1 block">Video</label>
+                                                                    <div className="flex gap-2">
+                                                                        <input value={lessonForm.videoUrl} onChange={(e) => setLessonForm({ ...lessonForm, videoUrl: e.target.value })} placeholder="Paste video URL" className="flex-1 rounded border border-slate-300 px-3 py-1.5 text-sm" />
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => handleLessonUpload('video')}
+                                                                            disabled={uploading.video}
+                                                                            className="flex items-center gap-1 rounded bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-200 disabled:opacity-50 transition shrink-0"
+                                                                        >
+                                                                            <Upload className="h-3 w-3" />
+                                                                            {uploading.video ? 'Uploading...' : 'Upload'}
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Material */}
+                                                                <div>
+                                                                    <label className="text-xs font-medium text-slate-600 mb-1 block">Material</label>
+                                                                    <div className="flex gap-2">
+                                                                        <input value={lessonForm.materialUrl} onChange={(e) => setLessonForm({ ...lessonForm, materialUrl: e.target.value })} placeholder="Paste material URL" className="flex-1 rounded border border-slate-300 px-3 py-1.5 text-sm" />
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => handleLessonUpload('material')}
+                                                                            disabled={uploading.material}
+                                                                            className="flex items-center gap-1 rounded bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-200 disabled:opacity-50 transition shrink-0"
+                                                                        >
+                                                                            <Upload className="h-3 w-3" />
+                                                                            {uploading.material ? 'Uploading...' : 'Upload'}
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="flex gap-2">
+                                                                    <button onClick={() => handleAddLesson(mod.id)} className="rounded bg-blue-900 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-800">Add Lesson</button>
+                                                                    <button onClick={() => setShowLessonForm(null)} className="rounded border border-slate-300 px-3 py-1.5 text-xs text-slate-600">Cancel</button>
+                                                                </div>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 ))}
+
+                                                {/* Final Exams List */}
+                                                {courseDetails.quizzes?.length > 0 && (
+                                                    <div className="mt-6">
+                                                        <h4 className="px-1 text-sm font-bold text-slate-900 mb-2">Final Examinations</h4>
+                                                        {courseDetails.quizzes.map((quiz: any) => (
+                                                            <div key={quiz.id} className="mb-2 rounded-lg border border-emerald-200 bg-emerald-50">
+                                                                <div className="flex items-center justify-between px-3 py-2">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="text-xs font-bold text-emerald-700 uppercase">Exam</span>
+                                                                        <span className="text-sm font-medium text-slate-800">{quiz.title}</span>
+                                                                        <span className="text-xs text-slate-400">({quiz._count?.questions || 0} questions)</span>
+                                                                    </div>
+                                                                    <div className="flex gap-1">
+                                                                        <button
+                                                                            onClick={() => openQuizEdit(quiz, 'course')}
+                                                                            className="rounded p-1 text-slate-400 hover:bg-white hover:text-blue-900 transition"
+                                                                            title="Edit Exam"
+                                                                        >
+                                                                            <FileText className="h-4 w-4" />
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => handleDeleteQuiz(quiz.id)}
+                                                                            className="rounded p-1 text-slate-400 hover:bg-white hover:text-red-600 transition"
+                                                                            title="Delete Exam"
+                                                                        >
+                                                                            <Trash2 className="h-4 w-4" />
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* Quiz Creation Form (Unified for Course Exam or Module Quiz) */}
+                                        {showQuizForm?.id && (
+                                            <div className="mx-4 mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 space-y-3">
+                                                <p className="text-sm font-bold text-emerald-700 mb-2">
+                                                    {showQuizForm.mode === 'edit'
+                                                        ? (showQuizForm.type === 'course' ? 'Edit Final Exam' : 'Edit Module Quiz')
+                                                        : (showQuizForm.type === 'course' ? 'Create Final Exam' : 'Create Module Quiz')}
+                                                </p>
+                                                <input value={quizForm.title} onChange={(e) => setQuizForm({ ...quizForm, title: e.target.value })} placeholder={showQuizForm.type === 'course' ? "Exam title" : "Quiz title"} className="w-full rounded border border-slate-300 px-3 py-1.5 text-sm" />
+                                                <div className="flex items-center gap-3">
+                                                    <label className="text-xs font-medium text-slate-600">Passing Score %</label>
+                                                    <input type="number" value={quizForm.passingScore} onChange={(e) => setQuizForm({ ...quizForm, passingScore: e.target.value })} className="w-20 rounded border border-slate-300 px-3 py-1.5 text-sm" />
+                                                </div>
+
+                                                {quizForm.questions.map((q, qi) => (
+                                                    <div key={qi} className="rounded border border-slate-200 bg-white p-3 space-y-2">
+                                                        <div className="flex justify-between items-center mb-1">
+                                                            <p className="text-xs font-bold text-slate-500">Question {qi + 1}</p>
+                                                            {quizForm.questions.length > 1 && (
+                                                                <button onClick={() => {
+                                                                    const qs = [...quizForm.questions];
+                                                                    qs.splice(qi, 1);
+                                                                    setQuizForm({ ...quizForm, questions: qs });
+                                                                }} className="text-red-400 hover:text-red-600">
+                                                                    <Trash2 className="h-3 w-3" />
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                        <input value={q.text} onChange={(e) => updateQuestion(qi, 'text', e.target.value)} placeholder="Question text" className="w-full rounded border border-slate-300 px-3 py-1.5 text-sm" />
+                                                        {q.options.map((opt, oi) => (
+                                                            <div key={oi} className="flex items-center gap-2">
+                                                                <input
+                                                                    type="radio"
+                                                                    checked={q.correctAnswer === oi}
+                                                                    onChange={() => updateQuestion(qi, 'correctAnswer', oi)}
+                                                                    className="h-3 w-3 text-blue-900"
+                                                                />
+                                                                <input
+                                                                    value={opt}
+                                                                    onChange={(e) => updateOption(qi, oi, e.target.value)}
+                                                                    placeholder={`Option ${oi + 1}`}
+                                                                    className="flex-1 rounded border border-slate-300 px-2 py-1 text-sm"
+                                                                />
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                ))}
+
+                                                <div className="flex gap-2">
+                                                    <button onClick={addQuestion} className="rounded border border-dashed border-slate-300 px-3 py-1.5 text-xs text-slate-500 hover:border-blue-400 hover:text-blue-900">+ Add Question</button>
+                                                    <button onClick={() => handleSaveQuiz(showQuizForm.id, showQuizForm.type)} className="rounded bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700">
+                                                        {showQuizForm.mode === 'edit' ? 'Save Changes' : (showQuizForm.type === 'course' ? 'Create Exam' : 'Create Quiz')}
+                                                    </button>
+                                                    <button onClick={() => setShowQuizForm(null)} className="rounded border border-slate-300 px-3 py-1.5 text-xs text-slate-600">Cancel</button>
+                                                </div>
                                             </div>
                                         )}
                                     </div>
-                                )}
-
-                                {/* Quiz Creation Form (Unified for Course Exam or Module Quiz) */}
-                                {showQuizForm?.id && (
-                                    <div className="mx-4 mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 space-y-3">
-                                        <p className="text-sm font-bold text-emerald-700 mb-2">
-                                            {showQuizForm.mode === 'edit'
-                                                ? (showQuizForm.type === 'course' ? 'Edit Final Exam' : 'Edit Module Quiz')
-                                                : (showQuizForm.type === 'course' ? 'Create Final Exam' : 'Create Module Quiz')}
-                                        </p>
-                                        <input value={quizForm.title} onChange={(e) => setQuizForm({ ...quizForm, title: e.target.value })} placeholder={showQuizForm.type === 'course' ? "Exam title" : "Quiz title"} className="w-full rounded border border-slate-300 px-3 py-1.5 text-sm" />
-                                        <div className="flex items-center gap-3">
-                                            <label className="text-xs font-medium text-slate-600">Passing Score %</label>
-                                            <input type="number" value={quizForm.passingScore} onChange={(e) => setQuizForm({ ...quizForm, passingScore: e.target.value })} className="w-20 rounded border border-slate-300 px-3 py-1.5 text-sm" />
-                                        </div>
-
-                                        {quizForm.questions.map((q, qi) => (
-                                            <div key={qi} className="rounded border border-slate-200 bg-white p-3 space-y-2">
-                                                <div className="flex justify-between items-center mb-1">
-                                                    <p className="text-xs font-bold text-slate-500">Question {qi + 1}</p>
-                                                    {quizForm.questions.length > 1 && (
-                                                        <button onClick={() => {
-                                                            const qs = [...quizForm.questions];
-                                                            qs.splice(qi, 1);
-                                                            setQuizForm({ ...quizForm, questions: qs });
-                                                        }} className="text-red-400 hover:text-red-600">
-                                                            <Trash2 className="h-3 w-3" />
-                                                        </button>
-                                                    )}
-                                                </div>
-                                                <input value={q.text} onChange={(e) => updateQuestion(qi, 'text', e.target.value)} placeholder="Question text" className="w-full rounded border border-slate-300 px-3 py-1.5 text-sm" />
-                                                {q.options.map((opt, oi) => (
-                                                    <div key={oi} className="flex items-center gap-2">
-                                                        <input
-                                                            type="radio"
-                                                            checked={q.correctAnswer === oi}
-                                                            onChange={() => updateQuestion(qi, 'correctAnswer', oi)}
-                                                            className="h-3 w-3 text-blue-900"
-                                                        />
-                                                        <input
-                                                            value={opt}
-                                                            onChange={(e) => updateOption(qi, oi, e.target.value)}
-                                                            placeholder={`Option ${oi + 1}`}
-                                                            className="flex-1 rounded border border-slate-300 px-2 py-1 text-sm"
-                                                        />
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        ))}
-
-                                        <div className="flex gap-2">
-                                            <button onClick={addQuestion} className="rounded border border-dashed border-slate-300 px-3 py-1.5 text-xs text-slate-500 hover:border-blue-400 hover:text-blue-900">+ Add Question</button>
-                                            <button onClick={() => handleSaveQuiz(showQuizForm.id, showQuizForm.type)} className="rounded bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700">
-                                                {showQuizForm.mode === 'edit' ? 'Save Changes' : (showQuizForm.type === 'course' ? 'Create Exam' : 'Create Quiz')}
-                                            </button>
-                                            <button onClick={() => setShowQuizForm(null)} className="rounded border border-slate-300 px-3 py-1.5 text-xs text-slate-600">Cancel</button>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
                                 ))}
-                        </div>
+                            </div>
                         </div>
                     )}
 
-                {/* Users Tab */}
-                {tab === 'users' && (
-                    <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-                        <table className="w-full text-sm">
-                            <thead className="bg-slate-50 border-b border-slate-200">
-                                <tr>
-                                    <th className="text-left px-4 py-3 font-medium text-slate-600">Name</th>
-                                    <th className="text-left px-4 py-3 font-medium text-slate-600">Email</th>
-                                    <th className="text-left px-4 py-3 font-medium text-slate-600">Role</th>
-                                    <th className="text-left px-4 py-3 font-medium text-slate-600">Enrolled</th>
-                                    <th className="text-left px-4 py-3 font-medium text-slate-600">Certs</th>
-                                    <th className="text-left px-4 py-3 font-medium text-slate-600">Joined</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                                {users.map((u: any) => (
-                                    <tr key={u.id} className="hover:bg-slate-50">
-                                        <td className="px-4 py-3 font-medium text-slate-900">{u.name || '—'}</td>
-                                        <td className="px-4 py-3 text-slate-600">{u.email}</td>
-                                        <td className="px-4 py-3">
-                                            <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${u.role === 'ADMIN' ? 'bg-blue-100 text-blue-900' : 'bg-slate-100 text-slate-600'}`}>{u.role}</span>
-                                        </td>
-                                        <td className="px-4 py-3 text-slate-600">{u._count?.enrollments || 0}</td>
-                                        <td className="px-4 py-3 text-slate-600">{u._count?.certificates || 0}</td>
-                                        <td className="px-4 py-3 text-slate-400 text-xs">{new Date(u.createdAt).toLocaleDateString()}</td>
+                    {/* Users Tab */}
+                    {tab === 'users' && (
+                        <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+                            <table className="w-full text-sm">
+                                <thead className="bg-slate-50 border-b border-slate-200">
+                                    <tr>
+                                        <th className="text-left px-4 py-3 font-medium text-slate-600">Name</th>
+                                        <th className="text-left px-4 py-3 font-medium text-slate-600">Email</th>
+                                        <th className="text-left px-4 py-3 font-medium text-slate-600">Role</th>
+                                        <th className="text-left px-4 py-3 font-medium text-slate-600">Enrolled</th>
+                                        <th className="text-left px-4 py-3 font-medium text-slate-600">Certs</th>
+                                        <th className="text-left px-4 py-3 font-medium text-slate-600">Joined</th>
+                                        <th className="text-left px-4 py-3 font-medium text-slate-600">Actions</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {users.map((u: any) => (
+                                        <tr key={u.id} className="hover:bg-slate-50">
+                                            <td className="px-4 py-3 font-medium text-slate-900">{u.name || '—'}</td>
+                                            <td className="px-4 py-3 text-slate-600">{u.email}</td>
+                                            <td className="px-4 py-3">
+                                                <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${u.role === 'ADMIN' ? 'bg-blue-100 text-blue-900' : 'bg-slate-100 text-slate-600'}`}>{u.role}</span>
+                                            </td>
+                                            <td className="px-4 py-3 text-slate-600">{u._count?.enrollments || 0}</td>
+                                            <td className="px-4 py-3 text-slate-600">{u._count?.certificates || 0}</td>
+                                            <td className="px-4 py-3 text-slate-400 text-xs">{new Date(u.createdAt).toLocaleDateString()}</td>
+                                            <td className="px-4 py-3">
+                                                {user?.id !== u.id && (
+                                                    <button onClick={() => handleDeleteUser(u.id)} className="text-red-400 hover:text-red-600 transition" title="Delete User">
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
 
-                {/* Results Tab */}
-                {tab === 'results' && (
-                    <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-                        <table className="w-full text-sm">
-                            <thead className="bg-slate-50 border-b border-slate-200">
-                                <tr>
-                                    <th className="text-left px-4 py-3 font-medium text-slate-600">Student</th>
-                                    <th className="text-left px-4 py-3 font-medium text-slate-600">Quiz</th>
-                                    <th className="text-left px-4 py-3 font-medium text-slate-600">Course</th>
-                                    <th className="text-left px-4 py-3 font-medium text-slate-600">Score</th>
-                                    <th className="text-left px-4 py-3 font-medium text-slate-600">Status</th>
-                                    <th className="text-left px-4 py-3 font-medium text-slate-600">Date</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                                {results.map((r: any) => (
-                                    <tr key={r.id} className="hover:bg-slate-50">
-                                        <td className="px-4 py-3 font-medium text-slate-900">{r.user?.name || '—'}</td>
-                                        <td className="px-4 py-3 text-slate-600">{r.quiz?.title}</td>
-                                        <td className="px-4 py-3 text-slate-600">{r.quiz?.course?.title}</td>
-                                        <td className="px-4 py-3 font-bold text-slate-900">{r.score}%</td>
-                                        <td className="px-4 py-3">
-                                            <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${r.passed ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>{r.passed ? 'Passed' : 'Failed'}</span>
-                                        </td>
-                                        <td className="px-4 py-3 text-slate-400 text-xs">{new Date(r.createdAt).toLocaleDateString()}</td>
+                    {/* Results Tab */}
+                    {tab === 'results' && (
+                        <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+                            <table className="w-full text-sm">
+                                <thead className="bg-slate-50 border-b border-slate-200">
+                                    <tr>
+                                        <th className="text-left px-4 py-3 font-medium text-slate-600">Student</th>
+                                        <th className="text-left px-4 py-3 font-medium text-slate-600">Quiz</th>
+                                        <th className="text-left px-4 py-3 font-medium text-slate-600">Course</th>
+                                        <th className="text-left px-4 py-3 font-medium text-slate-600">Score</th>
+                                        <th className="text-left px-4 py-3 font-medium text-slate-600">Status</th>
+                                        <th className="text-left px-4 py-3 font-medium text-slate-600">Date</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {results.map((r: any) => (
+                                        <tr key={r.id} className="hover:bg-slate-50">
+                                            <td className="px-4 py-3 font-medium text-slate-900">{r.user?.name || '—'}</td>
+                                            <td className="px-4 py-3 text-slate-600">{r.quiz?.title}</td>
+                                            <td className="px-4 py-3 text-slate-600">{r.quiz?.course?.title}</td>
+                                            <td className="px-4 py-3 font-bold text-slate-900">{r.score}%</td>
+                                            <td className="px-4 py-3">
+                                                <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${r.passed ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>{r.passed ? 'Passed' : 'Failed'}</span>
+                                            </td>
+                                            <td className="px-4 py-3 text-slate-400 text-xs">{new Date(r.createdAt).toLocaleDateString()}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
             </div>
-        </div>
         </RoleGuard >
     );
 }

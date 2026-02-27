@@ -61,3 +61,29 @@ export const getAllCertificates = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Error fetching certificates' });
     }
 };
+
+export const deleteUser = async (req: Request, res: Response) => {
+    try {
+        const id = req.params.id as string;
+
+        // Prevent admin from deleting themselves
+        if ((req as any).user?.userId === id) {
+            return res.status(400).json({ message: 'You cannot delete your own account' });
+        }
+
+        // Manually delete related records to avoid foreign key constraints
+        // since onDelete: Cascade isn't set for User relations
+        await prisma.$transaction([
+            prisma.result.deleteMany({ where: { userId: id } }),
+            prisma.enrollment.deleteMany({ where: { userId: id } }),
+            prisma.certificate.deleteMany({ where: { userId: id } }),
+            // Delete the user
+            prisma.user.delete({ where: { id } }),
+        ]);
+
+        res.json({ message: 'User deleted successfully' });
+    } catch (error: any) {
+        console.error('deleteUser error:', error);
+        res.status(500).json({ message: 'Error deleting user' });
+    }
+};

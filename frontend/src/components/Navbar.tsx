@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { useState } from 'react';
-import { Menu, X, GraduationCap, LogOut, LayoutDashboard, BookOpen, Award } from 'lucide-react';
+import { Menu, X, GraduationCap, LogOut, LayoutDashboard, BookOpen, Award, Settings } from 'lucide-react';
 
 export default function Navbar() {
     const { user, logout } = useAuth();
@@ -52,6 +52,9 @@ export default function Navbar() {
                             <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-xs font-bold text-blue-300 uppercase">
                                 {user.role}
                             </span>
+                            <Link href="/settings" className="flex items-center gap-1 text-sm font-medium text-slate-400 hover:text-white transition">
+                                <Settings className="h-4 w-4" /> Settings
+                            </Link>
                             <button
                                 onClick={logout}
                                 className="flex items-center gap-1 text-sm font-medium text-slate-400 hover:text-red-400 transition"
@@ -111,9 +114,14 @@ export default function Navbar() {
                             </Link>
                         )}
                         {user ? (
-                            <button onClick={() => { logout(); setMobileOpen(false); }} className="flex items-center gap-2 text-sm font-medium text-red-400">
-                                <LogOut className="h-4 w-4" /> Logout
-                            </button>
+                            <>
+                                <Link href="/settings" className="flex items-center gap-2 text-sm font-medium text-slate-300" onClick={() => setMobileOpen(false)}>
+                                    <Settings className="h-4 w-4" /> Settings
+                                </Link>
+                                <button onClick={() => { logout(); setMobileOpen(false); }} className="flex items-center gap-2 text-sm font-medium text-red-400">
+                                    <LogOut className="h-4 w-4" /> Logout
+                                </button>
+                            </>
                         ) : (
                             <>
                                 <Link href="/login" className="text-sm font-medium text-slate-300" onClick={() => setMobileOpen(false)}>Log In</Link>
