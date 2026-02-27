@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import PDFDocument from 'pdfkit';
 import path from 'path';
+import QRCode from 'qrcode';
 import prisma from '../utils/prisma';
 
 // Generate certificate when student passes
@@ -207,25 +208,19 @@ export const downloadCertificate = async (req: Request, res: Response) => {
             });
 
         // --- Seal (center) ---
-        // Matches the SVG seal with dashed/solid circles
+        // Generate QR code for verification
+        const verifyUrl = `${process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3000'}/certificate/verify/${certificate.uniqueId}`;
+        const qrCodeDataUrl = await QRCode.toDataURL(verifyUrl, { margin: 1, width: 90, color: { dark: navy, light: '#ffffff' } });
+
         const cx = W / 2;
-        const cy = bottomY + 12;
-        doc.save();
-        doc.opacity(0.2);
-        doc.circle(cx, cy, 38).lineWidth(2).dash(4, { space: 2 }).stroke(navy);
-        doc.undash();
-        doc.circle(cx, cy, 30).lineWidth(1).stroke(navy);
-        doc.restore();
-        // Cross mark in center
-        doc.save();
-        doc.opacity(0.2);
-        doc.moveTo(cx, cy - 12).lineTo(cx, cy + 18).lineWidth(2).lineCap('round').stroke(navy);
-        doc.moveTo(cx - 10, cy - 2).lineTo(cx + 10, cy - 2).stroke(navy);
-        doc.restore();
-        // "Registry Verified" text
-        doc.font('Helvetica-Bold').fontSize(6).fillColor(navy)
-            .text('REGISTRY', cx - 30, cy + 22, { width: 60, align: 'center', characterSpacing: 1 });
-        doc.text('VERIFIED', cx - 30, cy + 30, { width: 60, align: 'center', characterSpacing: 1 });
+        const cy = bottomY; // Place QR code above text
+
+        // Add QR code image
+        doc.image(qrCodeDataUrl, cx - 45, cy - 20, { width: 90 });
+        
+        // "Registry Verified" text below QR code
+        doc.font('Helvetica-Bold').fontSize(8).fillColor(navy)
+            .text('SCAN TO VERIFY', cx - 50, cy + 75, { width: 100, align: 'center', characterSpacing: 1 });
 
         // --- Signature (right) ---
         // Matches Great Vibes cursive: style={{ fontFamily: "'Great Vibes'" }} text-4xl text-slate-800 -rotate-2

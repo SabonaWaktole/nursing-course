@@ -20,7 +20,19 @@ export default function LoginPage() {
         setError('');
         setLoading(true);
         try {
-            await login(email, password);
+            const formData = { email, password };
+            // login function sets token and user internally
+            await login(formData.email, formData.password);
+
+            // Get user from local storage immediately as context might not have updated yet
+            const userStr = localStorage.getItem('user');
+            if (userStr) {
+                const userObj = JSON.parse(userStr);
+                if (userObj.role === 'ADMIN') {
+                    router.push('/admin');
+                    return;
+                }
+            }
             router.push('/courses');
         } catch (err: any) {
             setError(err.response?.data?.message || 'Login failed');

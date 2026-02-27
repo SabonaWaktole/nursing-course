@@ -9,7 +9,10 @@ import { Search, Star, BookOpen, Users } from 'lucide-react';
 export default function CoursesPage() {
     const [courses, setCourses] = useState<Course[]>([]);
     const [search, setSearch] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('All');
     const [loading, setLoading] = useState(true);
+
+    const categories = ['All', 'Nursing', 'CNA Prep', 'Clinical Skills', 'Certification', 'Other'];
 
     useEffect(() => {
         api.get('/courses').then((res) => {
@@ -18,10 +21,12 @@ export default function CoursesPage() {
         }).catch(() => setLoading(false));
     }, []);
 
-    const filtered = courses.filter((c) =>
-        c.title.toLowerCase().includes(search.toLowerCase()) ||
-        c.description.toLowerCase().includes(search.toLowerCase())
-    );
+    const filtered = courses.filter((c) => {
+        const matchesSearch = c.title.toLowerCase().includes(search.toLowerCase()) ||
+            c.description.toLowerCase().includes(search.toLowerCase());
+        const matchesCategory = selectedCategory === 'All' || c.category === selectedCategory;
+        return matchesSearch && matchesCategory;
+    });
 
     return (
         <div className="py-12">
@@ -34,16 +39,29 @@ export default function CoursesPage() {
                     </div>
                 </div>
 
-                {/* Search */}
-                <div className="mb-8 relative max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <input
-                        type="text"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Search courses..."
-                        className="w-full rounded-lg border border-slate-300 pl-10 pr-4 py-2.5 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition"
-                    />
+                {/* Search & Filter */}
+                <div className="mb-8 flex flex-col sm:flex-row gap-4">
+                    <div className="relative flex-1 max-w-md">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                        <input
+                            type="text"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Search courses..."
+                            className="w-full rounded-lg border border-slate-300 pl-10 pr-4 py-2.5 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition"
+                        />
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {categories.map(cat => (
+                            <button
+                                key={cat}
+                                onClick={() => setSelectedCategory(cat)}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition ${selectedCategory === cat ? 'bg-blue-900 text-white shadow-md' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}
+                            >
+                                {cat}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 {loading ? (
@@ -78,8 +96,15 @@ export default function CoursesPage() {
                                             <span className="text-5xl font-black text-white/20">{course.title.charAt(0)}</span>
                                         </div>
                                     )}
-                                    <div className="absolute right-3 top-3 rounded bg-white/90 px-2 py-1 text-xs font-bold text-slate-900 backdrop-blur-sm">
-                                        {course._count?.modules || 0} modules
+                                    <div className="absolute right-3 top-3 flex gap-2">
+                                        {course.category && (
+                                            <div className="rounded bg-emerald-500/90 px-2 py-1 text-xs font-bold text-white backdrop-blur-sm shadow-sm">
+                                                {course.category}
+                                            </div>
+                                        )}
+                                        <div className="rounded bg-white/90 px-2 py-1 text-xs font-bold text-slate-900 backdrop-blur-sm shadow-sm">
+                                            {course._count?.modules || 0} modules
+                                        </div>
                                     </div>
                                 </div>
 
