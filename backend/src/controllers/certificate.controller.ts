@@ -209,7 +209,11 @@ export const downloadCertificate = async (req: Request, res: Response) => {
 
         // --- Seal (center) ---
         // Generate QR code for verification
-        const verifyUrl = `${process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3000'}/certificate/verify/${certificate.uniqueId}`;
+        const baseUrl = process.env.NODE_ENV === 'production'
+            ? (process.env.FRONTEND_URL || 'https://nursing-course.onrender.com')
+            : 'http://localhost:3000';
+
+        const verifyUrl = `${baseUrl}/certificate/verify/${certificate.uniqueId}`;
         const qrCodeDataUrl = await QRCode.toDataURL(verifyUrl, { margin: 1, width: 90, color: { dark: navy, light: '#ffffff' } });
 
         const cx = W / 2;
@@ -217,7 +221,7 @@ export const downloadCertificate = async (req: Request, res: Response) => {
 
         // Add QR code image
         doc.image(qrCodeDataUrl, cx - 45, cy - 20, { width: 90 });
-        
+
         // "Registry Verified" text below QR code
         doc.font('Helvetica-Bold').fontSize(8).fillColor(navy)
             .text('SCAN TO VERIFY', cx - 50, cy + 75, { width: 100, align: 'center', characterSpacing: 1 });
