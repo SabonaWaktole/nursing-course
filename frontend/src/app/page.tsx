@@ -15,192 +15,203 @@ export default function LandingPage() {
 
   return (
     <div className="flex flex-col">
+      {/* Secondary Banner CTA */}
+      <section className="relative overflow-hidden bg-slate-900 py-20 lg:py-28">
+        {/* Background Image with Overlay */}
+        <div className="absolute inset-0 z-0 opacity-40 mix-blend-overlay">
+          <img
+            src="https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80"
+            alt="Medical background"
+            className="w-full h-full object-cover object-center"
+          />
+        </div>
+
+        <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl">
+            <h3 className="text-amber-500 font-bold text-lg md:text-xl tracking-wide uppercase mb-4">
+              Welcome To Excel Community Living Inc.
+            </h3>
+
+            <h2 className="text-3xl md:text-5xl lg:text-5xl font-extrabold text-white leading-tight mb-6">
+              (Waiting To Be Approved)<br />
+              Continuing Education for Adult<br />
+              residential facility administrators<br />
+              (ARF)
+            </h2>
+
+            <p className="text-slate-200 text-lg md:text-xl max-w-3xl mb-10">
+              Welcome to the online 24 hour resource designed to help you get the required continuing education classes needed to renew your certification.
+            </p>
+
+            <Link
+              href="/courses"
+              className="inline-flex h-14 items-center justify-center rounded bg-pink-500 px-10 text-base font-bold text-white transition hover:bg-pink-600 shadow-lg hover:shadow-pink-500/25 uppercase tracking-wider"
+            >
+              Find courses
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* Hero */}
-      <section className="relative overflow-hidden pt-16 pb-12 lg:pt-24 lg:pb-20">
+      <section className="relative pt-12 pb-16 lg:pt-20 lg:pb-24 overflow-hidden bg-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-12 lg:grid-cols-2 lg:gap-8 items-center">
+
+            {/* Left Content */}
             <div className="flex flex-col items-start gap-6">
-              <div className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-900">
-                <span className="mr-2 flex h-2 w-2 relative">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-900"></span>
-                </span>
-                Next Cohort Starting Soon
-              </div>
-              <h1 className="text-4xl font-black leading-tight tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
-                Start Your Career in Healthcare with{' '}
-                <span className="text-blue-900">Certified Nursing Assistant</span> Courses
+              <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-slate-800 sm:text-5xl lg:text-5xl">
+                Your <span className="text-teal-500">One-Stop</span> Continuing Education
               </h1>
-              <p className="max-w-xl text-lg text-slate-600">
-                Join thousands of compassionate caregivers. Get certified, gain practical skills, and secure a job in hospitals or nursing homes in just 4 weeks.
-              </p>
-              <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-                <Link
-                  href="/courses"
-                  className="flex h-12 items-center justify-center rounded-lg bg-blue-900 px-8 text-base font-bold text-white transition hover:bg-blue-800 hover:shadow-lg hover:shadow-blue-500/25"
-                >
-                  Start Learning
-                </Link>
-                <Link
-                  href="/login"
-                  className="flex h-12 items-center justify-center rounded-lg bg-white border border-blue-200 px-8 text-base font-bold text-blue-900 transition hover:bg-blue-50"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  href="/courses"
-                  className="flex h-12 items-center justify-center rounded-lg bg-white border border-slate-200 px-8 text-base font-bold text-slate-700 transition hover:bg-slate-50 hover:text-blue-900"
-                >
-                  View Syllabus
-                </Link>
-              </div>
-              <div className="mt-4 flex items-center gap-4 text-sm font-medium text-slate-500">
-                <div className="flex -space-x-2">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-emerald-500 ring-2 ring-white text-xs font-bold text-white">
-                      {String.fromCharCode(64 + i)}
-                    </div>
-                  ))}
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 ring-2 ring-white">
-                    <span className="text-xs">+5k</span>
-                  </div>
-                </div>
-                <p>Certified graduates working in healthcare</p>
-              </div>
+
+              <h2 className="text-2xl font-bold text-teal-500 mt-2">
+                Courses We Offer
+              </h2>
+
+              <ul className="space-y-3 mt-4 text-slate-500 font-medium">
+                <li className="flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400 mt-2 shrink-0"></span>
+                  Preventing Falls
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400 mt-2 shrink-0"></span>
+                  How to Plan for Workplace Emergencies
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400 mt-2 shrink-0"></span>
+                  Drug Facts
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400 mt-2 shrink-0"></span>
+                  Autism Spectrum Disorder
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400 mt-2 shrink-0"></span>
+                  Identifying and Treating Attention Deficit Hyperactivity Disorder
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400 mt-2 shrink-0"></span>
+                  Drugs, Brains and Behavior The Science of Addiction
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400 mt-2 shrink-0"></span>
+                  Workplace violence and response
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400 mt-2 shrink-0"></span>
+                  Marijuana: Facts for Teens
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400 mt-2 shrink-0"></span>
+                  Active Shooter Planning and Response in a Healthcare Setting
+                </li>
+              </ul>
             </div>
-            <div className="relative lg:ml-auto">
-              <div className="aspect-[4/3] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 to-emerald-600 shadow-2xl flex items-center justify-center">
-                <div className="text-center text-white p-8">
-                  <Sparkles className="h-16 w-16 mx-auto mb-4 opacity-80" />
-                  <p className="text-2xl font-bold">Learn. Certify. Heal.</p>
-                  <p className="mt-2 text-blue-100">Your healthcare journey starts here</p>
-                </div>
-              </div>
-              <div className="absolute -bottom-6 -left-6 hidden rounded-xl bg-white p-4 shadow-xl md:block max-w-[240px]">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-900">
-                    <ShieldCheck className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="font-bold text-slate-900">State Approved</p>
-                    <p className="text-xs text-slate-500">Accredited CNA Program</p>
-                  </div>
-                </div>
+
+            {/* Right Image */}
+            <div className="relative lg:ml-auto w-full">
+              <div className="aspect-[4/3] w-full overflow-hidden rounded-xl shadow-sm bg-slate-100 relative">
+                <img
+                  src="https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
+                  alt="Nurse taking blood pressure of a patient"
+                  className="w-full h-full object-cover object-center"
+                />
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Stats */}
-      <section className="border-y border-slate-200 bg-white py-12">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 gap-8 text-center md:grid-cols-4">
-            {[
-              { value: '5k+', label: 'Certified CNAs' },
-              { value: '98%', label: 'Exam Pass Rate' },
-              { value: '200+', label: 'Hospital Partners' },
-              { value: '4.9', label: 'Student Rating' },
-            ].map((stat) => (
-              <div key={stat.label} className="flex flex-col gap-1">
-                <p className="text-3xl font-black text-slate-900">{stat.value}</p>
-                <p className="text-sm font-medium text-slate-500">{stat.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Featured Courses / Academic Programs */}
+      <section className="py-20 sm:py-28 bg-slate-50 relative" id="courses">
+        {/* Subtle dot pattern background */}
+        <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:24px_24px] opacity-40 mix-blend-multiply pointer-events-none"></div>
 
-      {/* Featured Courses */}
-      {courses.length > 0 && (
-        <section className="py-16 sm:py-24" id="courses">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="mb-10 flex flex-col items-start justify-between gap-4 md:flex-row md:items-end">
-              <div>
-                <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Core Curriculum</h2>
-                <p className="mt-2 text-lg text-slate-600">Essential training modules for your Nursing Assistant certification.</p>
-              </div>
-              <Link href="/courses" className="inline-flex items-center gap-2 text-sm font-bold text-blue-900 hover:text-blue-700 hover:underline">
-                View All Modules <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-              {courses.map((course) => (
-                <Link
-                  key={course.id}
-                  href={`/courses/${course.id}`}
-                  className="group flex flex-col overflow-hidden rounded-xl bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg border border-slate-100"
-                >
-                  <div className="relative aspect-video w-full overflow-hidden bg-gradient-to-br from-blue-400 to-emerald-500 flex items-center justify-center">
-                    <span className="text-4xl font-black text-white/20">{course.title.charAt(0)}</span>
-                  </div>
-                  <div className="flex flex-1 flex-col p-5">
-                    <div className="flex items-center gap-1 text-yellow-400">
-                      {[1, 2, 3, 4, 5].map((s) => (
-                        <Star key={s} className="h-4 w-4 fill-current" />
-                      ))}
-                      <span className="ml-1 text-xs font-medium text-slate-500">(5.0)</span>
-                    </div>
-                    <h3 className="mt-2 text-xl font-bold text-slate-900">{course.title}</h3>
-                    <p className="mt-2 flex-1 text-sm text-slate-600 line-clamp-2">{course.description}</p>
-                    <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
-                      <span className="text-sm font-medium text-slate-700">
-                        {course.instructor?.name || 'Instructor'}
-                      </span>
-                      <span className="text-sm font-bold text-blue-900">
-                        {course._count?.lessons || 0} lessons
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-center mb-12">
+            <h3 className="text-sm font-bold tracking-widest text-slate-500 uppercase mb-3">Popular Courses</h3>
+            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
+              Academic Programs
+            </h2>
+          </div>
+
+          {/* Filter / Sort Dropdown (Visual Only) */}
+          <div className="flex justify-end mb-8">
+            <div className="inline-flex items-center gap-2 border border-slate-200 bg-white px-4 py-2 rounded text-sm text-slate-700 shadow-sm cursor-pointer hover:bg-slate-50 transition">
+              Release Date (newest first)
+              <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
             </div>
           </div>
-        </section>
-      )}
 
-      {/* Why Choose Us */}
-      <section className="bg-white py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-12 text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Why Train With Us</h2>
-            <p className="mt-4 text-lg text-slate-600">We provide the most comprehensive path to your CNA certification.</p>
-          </div>
+          {/* Course Grid */}
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {[
-              { icon: Hospital, title: 'Clinical Placements', desc: 'Guaranteed clinical hours at top local hospitals and nursing facilities to gain real experience.' },
-              { icon: Pill, title: 'State Board Prep', desc: 'Intensive review sessions and mock exams to ensure you pass your state certification on the first try.' },
-              { icon: Briefcase, title: 'Job Assistance', desc: 'Direct connections to healthcare employers who are actively hiring our graduates.' },
-            ].map((feature) => (
-              <div key={feature.title} className="flex flex-col items-start rounded-xl border border-slate-100 bg-slate-50 p-8 transition hover:shadow-md">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 text-blue-900">
-                  <feature.icon className="h-6 w-6" />
+            {courses.length > 0 ? courses.map((course, idx) => (
+              <Link
+                key={course.id}
+                href={`/courses/${course.id}`}
+                className="group flex flex-col overflow-hidden bg-white hover:shadow-xl transition-all duration-300 border border-slate-100"
+              >
+                <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
+                  {/* Dynamic placeholer image based on index to show variety */}
+                  <img
+                    src={
+                      idx === 0 ? "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" :
+                        idx === 1 ? "https://images.unsplash.com/photo-1584515933487-779824d29309?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" :
+                          "https://images.unsplash.com/photo-1527613426441-4da17471b66d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                    }
+                    alt={course.title}
+                    className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                  />
+                  {/* Bookmark Icon */}
+                  <button className="absolute top-4 right-4 h-10 w-10 bg-white/10 hover:bg-white/30 backdrop-blur-md rounded-full flex items-center justify-center transition border border-white/20">
+                    <svg className="w-5 h-5 text-blue-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                    </svg>
+                  </button>
                 </div>
-                <h3 className="mt-6 text-xl font-bold text-slate-900">{feature.title}</h3>
-                <p className="mt-2 text-slate-600">{feature.desc}</p>
+
+                <div className="flex flex-1 flex-col p-6 pt-5 bg-white border-t-0">
+                  <h3 className="text-xl font-bold text-slate-800 line-clamp-2 leading-snug group-hover:text-teal-600 transition-colors">
+                    {course.title}
+                  </h3>
+                  <p className="mt-3 flex-1 text-sm text-slate-500 line-clamp-3 leading-relaxed">
+                    {course.description || "Learn essential skills required for maintaining a healthy and safe residential environment in compliance with state regulations."}
+                  </p>
+
+                  <div className="mt-5 pt-5 border-t border-slate-100 flex items-center justify-between">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-teal-600 bg-teal-50 px-3 py-1 mr-2 rounded">
+                      ARF Credits
+                    </span>
+                    <span className="text-sm font-bold text-slate-700">
+                      View Details
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            )) : (
+              // Empty State
+              <div className="col-span-full py-12 text-center text-slate-500 bg-white border border-slate-200 rounded animate-pulse">
+                Loading curriculum...
               </div>
-            ))}
+            )}
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="bg-white py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="relative overflow-hidden rounded-2xl bg-blue-900 px-6 py-12 text-center shadow-xl sm:px-12 sm:py-16">
-            <div className="relative z-10 mx-auto max-w-2xl">
-              <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Ready to Join the Healthcare Workforce?</h2>
-              <p className="mx-auto mt-4 max-w-xl text-lg text-blue-100">Enroll today and start making a difference in patients&apos; lives in as little as 4 weeks.</p>
-              <div className="mt-8 flex justify-center gap-4">
-                <Link href="/register" className="rounded-lg bg-white px-8 py-3 text-base font-bold text-blue-900 transition hover:bg-blue-50">Apply Now</Link>
-                <Link href="/courses" className="rounded-lg bg-blue-700 px-8 py-3 text-base font-bold text-white transition hover:bg-blue-800 border border-blue-500">Browse Courses</Link>
-              </div>
-            </div>
-            <div className="absolute -left-12 -top-12 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
-            <div className="absolute -right-12 -bottom-12 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
-          </div>
-        </div>
-      </section>
+      {/* Scroll to Top Button */}
+      <div className="fixed bottom-6 right-6 z-40">
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded shadow-lg transition"
+          aria-label="Scroll to top"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" />
+          </svg>
+        </button>
+      </div>
     </div>
   );
 }

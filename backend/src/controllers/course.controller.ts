@@ -54,7 +54,7 @@ export const getCourseById = async (req: Request, res: Response) => {
 
 export const createCourse = async (req: Request, res: Response) => {
     try {
-        const { title, description, price, thumbnail, category } = req.body;
+        const { title, description, price, thumbnail, category, tags } = req.body;
         const instructorId = (req as any).user.userId;
 
         const course = await prisma.course.create({
@@ -64,6 +64,7 @@ export const createCourse = async (req: Request, res: Response) => {
                 price: parseFloat(price) || 0,
                 thumbnail,
                 category,
+                tags: Array.isArray(tags) ? tags : [],
                 instructorId,
             },
         });
@@ -77,11 +78,11 @@ export const createCourse = async (req: Request, res: Response) => {
 export const updateCourse = async (req: Request, res: Response) => {
     try {
         const id = req.params.id as string;
-        const { title, description, price, thumbnail, category } = req.body;
+        const { title, description, price, thumbnail, category, tags } = req.body;
 
         const course = await prisma.course.update({
             where: { id },
-            data: { title, description, price: price ? parseFloat(price) : undefined, thumbnail, category },
+            data: { title, description, price: price ? parseFloat(price) : undefined, thumbnail, category, tags: Array.isArray(tags) ? tags : undefined },
         });
         res.json(course);
     } catch (error: any) {

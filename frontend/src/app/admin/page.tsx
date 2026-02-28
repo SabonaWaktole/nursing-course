@@ -22,7 +22,7 @@ export default function AdminDashboard() {
 
     // Course form
     const [showCourseForm, setShowCourseForm] = useState(false);
-    const [courseForm, setCourseForm] = useState({ title: '', description: '', price: '0', category: 'Nursing' });
+    const [courseForm, setCourseForm] = useState({ title: '', description: '', price: '0', category: 'Nursing', thumbnail: '', tags: [] as string[] });
     const [editingCourse, setEditingCourse] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
 
@@ -110,7 +110,7 @@ export default function AdminDashboard() {
             } else {
                 await api.post('/courses', courseForm);
             }
-            setCourseForm({ title: '', description: '', price: '0', category: 'Nursing' });
+            setCourseForm({ title: '', description: '', price: '0', category: 'Nursing', thumbnail: '', tags: [] });
             setShowCourseForm(false);
             loadData();
         } catch (err: any) {
@@ -125,7 +125,9 @@ export default function AdminDashboard() {
             title: course.title,
             description: course.description,
             price: (course.price || 0).toString(),
-            category: course.category || 'Nursing'
+            category: course.category || 'Nursing',
+            thumbnail: course.thumbnail || '',
+            tags: course.tags || []
         });
         setEditingCourse(course.id);
         setShowCourseForm(true);
@@ -413,7 +415,7 @@ export default function AdminDashboard() {
                                 <button
                                     onClick={() => {
                                         setEditingCourse(null);
-                                        setCourseForm({ title: '', description: '', price: '0', category: 'Nursing' });
+                                        setCourseForm({ title: '', description: '', price: '0', category: 'Nursing', thumbnail: '', tags: [] });
                                         setShowCourseForm(!showCourseForm);
                                     }}
                                     className="flex items-center gap-1 rounded-lg bg-blue-900 px-4 py-2 text-sm font-bold text-white hover:bg-blue-800 transition"
@@ -438,9 +440,87 @@ export default function AdminDashboard() {
                                         </select>
                                         <input type="number" value={courseForm.price} onChange={(e) => setCourseForm({ ...courseForm, price: e.target.value })} placeholder="Price ($)" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
                                     </div>
-                                    <div className="flex gap-2">
-                                        <button onClick={handleCreateCourse} disabled={saving} className="rounded-lg bg-blue-900 px-4 py-2 text-sm font-bold text-white hover:bg-blue-800 disabled:opacity-50">{saving ? 'Saving...' : (editingCourse ? 'Save Changes' : 'Create Course')}</button>
-                                        <button onClick={() => { setShowCourseForm(false); setEditingCourse(null); }} className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-600">Cancel</button>
+                                    {/* Tags multi-select */}
+                                    <div>
+                                        <label className="text-xs font-medium text-slate-600 mb-1.5 block">Tags (select multiple)</label>
+                                        <div className="flex flex-wrap gap-2">
+                                            {['Nursing', 'CNAprep', 'Clinical', 'other', 'etc'].map((t) => (
+                                                <button
+                                                    key={t}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setCourseForm(prev => ({
+                                                            ...prev,
+                                                            tags: prev.tags.includes(t)
+                                                                ? prev.tags.filter(tag => tag !== t)
+                                                                : [...prev.tags, t]
+                                                        }));
+                                                    }}
+                                                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition border ${courseForm.tags.includes(t)
+                                                            ? 'bg-blue-900 text-white border-blue-900 shadow-sm'
+                                                            : 'bg-white text-slate-600 border-slate-300 hover:border-blue-400 hover:text-blue-900'
+                                                        }`}
+                                                >
+                                                    {t}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <textarea value={courseForm.description} onChange={(e) => setCourseForm({ ...courseForm, description: e.target.value })} placeholder="Course description" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" rows={2} />
+
+                                    {/* Thumbnail Upload Area */}
+                                    <div className="flex border border-slate-300 rounded-lg overflow-hidden bg-white">
+                                        {courseForm.thumbnail ? (
+                                            <div className="h-16 w-24 shrink-0 bg-slate-100 flex items-center justify-center border-r border-slate-300">
+                                                <img src={courseForm.thumbnail} alt="Preview" className="h-full w-full object-cover" />
+                                            </div>
+                                        ) : (
+                                            <div className="h-16 w-24 shrink-0 bg-slate-100 flex items-center justify-center text-xs text-slate-400 border-r border-slate-300">
+                                                No Image
+                                            </div>
+                                        )}
+                                        <div className="flex-1 flex items-center p-3 justify-between">
+                                            <div className="text-sm border-0 focus:ring-0 text-slate-600 truncate mr-2">
+                                                {courseForm.thumbnail || 'Optional course thumbnail'}
+                                            </div>
+                                            <button
+                                                onClick={() => {
+                                                    const input = document.createElement('input');
+                                                    input.type = 'file';
+                                                    input.accept = '.jpg,.jpeg,.png,.webp,.gif';
+                                                    input.onchange = async (e: any) => {
+                                                        const file = e.target.files[0];
+                                                        if (!file) return;
+                                                        setSaving(true);
+                                                        const formData = new FormData();
+                                                        formData.append('thumbnail', file);
+                                                        try {
+                                                            const res = await api.post('/upload/thumbnail', formData, {
+                                                                headers: { 'Content-Type': 'multipart/form-data' },
+                                                            });
+                                                            setCourseForm(prev => ({ ...prev, thumbnail: res.data.url }));
+                                                        } catch {
+                                                            alert('Thumbnail upload failed.');
+                                                        } finally {
+                                                            setSaving(false);
+                                                        }
+                                                    };
+                                                    input.click();
+                                                }}
+                                                className="shrink-0 flex items-center gap-1 rounded bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700 hover:bg-slate-200 transition border border-slate-300"
+                                                disabled={saving}
+                                            >
+                                                <Upload className="h-3 w-3" />
+                                                {courseForm.thumbnail ? 'Change' : 'Upload Image'}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex justify-end gap-2 pt-2">
+                                        <button onClick={() => { setShowCourseForm(false); setEditingCourse(null); }} className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-white transition">Cancel</button>
+                                        <button onClick={handleCreateCourse} disabled={saving} className="rounded-lg bg-blue-900 px-4 py-2 text-sm font-bold text-white hover:bg-blue-800 transition disabled:opacity-50">
+                                            {saving ? 'Saving...' : (editingCourse ? 'Save Changes' : 'Create Course')}
+                                        </button>
                                     </div>
                                 </div>
                             )}
@@ -449,6 +529,11 @@ export default function AdminDashboard() {
                                 {courses.map((course) => (
                                     <div key={course.id} className="rounded-xl border border-slate-200 bg-white">
                                         {/* Course header */}
+                                        {course.thumbnail && (
+                                            <div className="h-32 w-full border-b border-slate-100 overflow-hidden bg-slate-100 rounded-t-xl group">
+                                                <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                                            </div>
+                                        )}
                                         <div className="p-4">
                                             <div className="flex items-start justify-between">
                                                 <div className="flex-1">
@@ -458,6 +543,9 @@ export default function AdminDashboard() {
                                                         <span>{course._count?.modules || 0} modules</span>
                                                         <span>{course._count?.quizzes || 0} quizzes</span>
                                                         <span>{course._count?.enrollments || 0} enrolled</span>
+                                                        {(course as any).tags?.length > 0 && (course as any).tags.map((t: string) => (
+                                                            <span key={t} className="rounded bg-blue-100 text-blue-800 px-1.5 py-0.5 font-semibold">{t}</span>
+                                                        ))}
                                                     </div>
                                                 </div>
                                                 <div className="flex gap-1 shrink-0">

@@ -4,15 +4,15 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { Course } from '@/lib/types';
-import { Search, Star, BookOpen, Users } from 'lucide-react';
+import { Search, Star, BookOpen } from 'lucide-react';
 
 export default function CoursesPage() {
     const [courses, setCourses] = useState<Course[]>([]);
     const [search, setSearch] = useState('');
-    const [selectedCategory, setSelectedCategory] = useState('All');
+    const [selectedTag, setSelectedTag] = useState('All');
     const [loading, setLoading] = useState(true);
 
-    const categories = ['All', 'Nursing', 'CNA Prep', 'Clinical Skills', 'Certification', 'Other'];
+    const tags = ['All', 'Nursing', 'CNAprep', 'Clinical', 'other', 'etc'];
 
     useEffect(() => {
         api.get('/courses').then((res) => {
@@ -24,8 +24,8 @@ export default function CoursesPage() {
     const filtered = courses.filter((c) => {
         const matchesSearch = c.title.toLowerCase().includes(search.toLowerCase()) ||
             c.description.toLowerCase().includes(search.toLowerCase());
-        const matchesCategory = selectedCategory === 'All' || c.category === selectedCategory;
-        return matchesSearch && matchesCategory;
+        const matchesTag = selectedTag === 'All' || (c.tags && c.tags.includes(selectedTag));
+        return matchesSearch && matchesTag;
     });
 
     return (
@@ -52,13 +52,13 @@ export default function CoursesPage() {
                         />
                     </div>
                     <div className="flex flex-wrap gap-2">
-                        {categories.map(cat => (
+                        {tags.map(t => (
                             <button
-                                key={cat}
-                                onClick={() => setSelectedCategory(cat)}
-                                className={`px-4 py-2 rounded-lg text-sm font-medium transition ${selectedCategory === cat ? 'bg-blue-900 text-white shadow-md' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}
+                                key={t}
+                                onClick={() => setSelectedTag(t)}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition ${selectedTag === t ? 'bg-blue-900 text-white shadow-md' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}
                             >
-                                {cat}
+                                {t}
                             </button>
                         ))}
                     </div>
@@ -96,7 +96,12 @@ export default function CoursesPage() {
                                             <span className="text-5xl font-black text-white/20">{course.title.charAt(0)}</span>
                                         </div>
                                     )}
-                                    <div className="absolute right-3 top-3 flex gap-2">
+                                    <div className="absolute right-3 top-3 flex flex-wrap gap-1.5 max-w-[70%] justify-end">
+                                        {course.tags && course.tags.length > 0 && course.tags.map(t => (
+                                            <div key={t} className="rounded bg-blue-600/90 px-2 py-1 text-xs font-bold text-white backdrop-blur-sm shadow-sm">
+                                                {t}
+                                            </div>
+                                        ))}
                                         {course.category && (
                                             <div className="rounded bg-emerald-500/90 px-2 py-1 text-xs font-bold text-white backdrop-blur-sm shadow-sm">
                                                 {course.category}
