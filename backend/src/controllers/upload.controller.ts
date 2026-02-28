@@ -18,6 +18,14 @@ export const upload = multer({
             } else {
                 cb(new Error('Invalid video format'));
             }
+        } else if (file.fieldname === 'thumbnail') {
+            const allowed = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+            const ext = path.extname(file.originalname).toLowerCase();
+            if (allowed.includes(ext)) {
+                cb(null, true);
+            } else {
+                cb(new Error('Invalid image format'));
+            }
         } else {
             const allowed = ['.pdf', '.doc', '.docx', '.zip', '.ppt', '.pptx'];
             const ext = path.extname(file.originalname).toLowerCase();
@@ -30,7 +38,7 @@ export const upload = multer({
     },
 });
 
-const uploadToSupabase = async (file: Express.Multer.File, folder: 'videos' | 'materials'): Promise<string> => {
+const uploadToSupabase = async (file: Express.Multer.File, folder: 'videos' | 'materials' | 'thumbnails'): Promise<string> => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     const filename = `${uniqueSuffix}${path.extname(file.originalname)}`;
     const filePath = `${folder}/${filename}`;
@@ -76,5 +84,18 @@ export const uploadMaterial = async (req: Request, res: Response) => {
     } catch (error: any) {
         console.error('Supabase upload error:', error);
         res.status(500).json({ message: 'Error uploading material to storage', error: error.message });
+    }
+};
+
+export const uploadThumbnail = async (req: Request, res: Response) => {
+    try {
+        if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+
+        const publicUrl = await uploadToSupabase(req.file, 'thumbnails');
+
+        res.json({ url: publicUrl, filename: req.file.originalname });
+    } catch (error: any) {
+        console.error('Supabase upload error:', error);
+        res.status(500).json({ message: 'Error uploading thumbnail to storage', error: error.message });
     }
 };

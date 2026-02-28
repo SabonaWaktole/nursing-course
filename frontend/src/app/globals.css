@@ -1,9 +1,13 @@
 @import "tailwindcss";
 
+/* Use class-based dark mode (toggle via .dark on <html>) instead of prefers-color-scheme */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
-  --color-primary: #4F46E5;
-  --color-background-light: #f6f6f8;
-  --color-background-dark: #101622;
+  --color-primary: #0db9f2;
+  --color-primary-glow: rgba(13, 185, 242, 0.3);
+  --color-background-light: #f5f8f8;
+  --color-background-dark: #101e22;
   --font-display: "Inter", sans-serif;
   --font-sans: "Inter", sans-serif;
 }
@@ -12,4 +16,21 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Material Symbols icon font settings */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* Hero gradient overlay for landing page */
+.hero-gradient {
+  background: radial-gradient(circle at top right, rgba(13, 185, 242, 0.15), transparent),
+    radial-gradient(circle at bottom left, rgba(13, 185, 242, 0.05), transparent);
+}
+
+/* Prose dark mode overrides */
+.dark .prose-invert {
+  --tw-prose-body: #94a3b8;
+  --tw-prose-headings: #f1f5f9;
 }

@@ -85,3 +85,63 @@ export const getMe = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 };
+
+export const updateProfile = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user?.userId;
+        const { name, email } = req.body;
+
+        if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+        // Optional: Ensure email is not already taken by someone else
+        if (email) {
+            const existing = await prisma.user.findUnique({ where: { email } });
+            if (existing && existing.id !== userId) {
+                return res.status(400).json({ message: 'Email is already in use' });
+            }
+        }
+
+        const user = await prisma.user.update({
+            where: { id: userId },
+            data: { name, email },
+            select: { id: true, email: true, name: true, role: true, createdAt: true },
+        });
+
+        res.json({ user });
+    } catch (error: any) {
+        console.error('updateProfile error:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const updatePassword = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user?.userId;
+        const { currentPassword, newPassword } = req.body;
+
+        if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({ message: 'Current and new password are required' });
+        }
+
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        const isMatch = await comparePassword(currentPassword, user.password);
+        if (!isMatch) {
+            return res.status(401).json({ message: 'Incorrect current password' });
+        }
+
+        const hashedPassword = await hashPassword(newPassword);
+
+        await prisma.user.update({
+            where: { id: userId },
+            data: { password: hashedPassword },
+        });
+
+        res.json({ message: 'Password updated successfully' });
+    } catch (error: any) {
+        console.error('updatePassword error:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};

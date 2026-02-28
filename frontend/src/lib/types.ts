@@ -11,6 +11,8 @@ export interface Course {
     description: string;
     thumbnail: string | null;
     category?: string | null;
+    tag?: string | null;
+    tags?: string[];
     price: number | null;
     instructorId: string;
     instructor: { id: string; name: string };
