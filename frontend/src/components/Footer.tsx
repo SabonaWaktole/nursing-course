@@ -1,51 +1,78 @@
-import { GraduationCap } from 'lucide-react';
 import Link from 'next/link';
 
 export default function Footer() {
     return (
-        <footer className="border-t border-slate-800 bg-slate-900 pt-16 pb-8">
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                <div className="grid grid-cols-2 gap-8 md:grid-cols-4 lg:grid-cols-5">
-                    <div className="col-span-2 lg:col-span-2">
-                        <Link href="/" className="flex items-center gap-2 text-blue-400">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/20">
-                                <GraduationCap className="h-5 w-5 text-blue-400" />
-                            </div>
-                            <span className="text-xl font-bold tracking-tight text-white">CNA Pro</span>
+        <footer className="bg-slate-900 text-slate-400 py-16">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-12 mb-12">
+                    {/* Brand */}
+                    <div className="col-span-2">
+                        <Link href="/" className="flex items-center gap-2 text-white mb-6">
+                            <span className="material-symbols-outlined text-primary text-3xl">medical_services</span>
+                            <span className="text-xl font-bold tracking-tight">CNA Pro</span>
                         </Link>
-                        <p className="mt-4 max-w-xs text-sm text-slate-400">
-                            Empowering the next generation of healthcare heroes with quality education and support.
+                        <p className="text-sm leading-relaxed mb-6">
+                            Providing top-tier professional development and certification training for the next generation of healthcare heroes. Empowering care everywhere.
                         </p>
+                        <div className="flex gap-4">
+                            <a href="#" className="hover:text-primary transition-colors"><span className="material-symbols-outlined">public</span></a>
+                            <a href="#" className="hover:text-primary transition-colors"><span className="material-symbols-outlined">alternate_email</span></a>
+                            <a href="#" className="hover:text-primary transition-colors"><span className="material-symbols-outlined">share</span></a>
+                        </div>
                     </div>
+
+                    {/* Learning */}
                     <div>
-                        <h3 className="text-sm font-semibold text-white">Programs</h3>
-                        <ul className="mt-4 space-y-3 text-sm text-slate-400">
-                            <li><Link href="/courses" className="hover:text-blue-400">CNA Certification</Link></li>
-                            <li><Link href="/courses" className="hover:text-blue-400">Home Health Aide</Link></li>
-                            <li><Link href="/courses" className="hover:text-blue-400">CPR & First Aid</Link></li>
-                            <li><Link href="/courses" className="hover:text-blue-400">Continuing Ed</Link></li>
+                        <h6 className="text-white font-bold mb-6">Learning</h6>
+                        <ul className="space-y-4 text-sm">
+                            <li><Link href="/courses" className="hover:text-white transition-colors">Course Library</Link></li>
+                            <li><Link href="/certificates" className="hover:text-white transition-colors">Certifications</Link></li>
+                            <li><Link href="/courses" className="hover:text-white transition-colors">Study Guides</Link></li>
+                            <li><Link href="/courses" className="hover:text-white transition-colors">CE Requirements</Link></li>
                         </ul>
                     </div>
+
+                    {/* Company */}
                     <div>
-                        <h3 className="text-sm font-semibold text-white">Institution</h3>
-                        <ul className="mt-4 space-y-3 text-sm text-slate-400">
-                            <li><Link href="/" className="hover:text-blue-400">About Us</Link></li>
-                            <li><Link href="/" className="hover:text-blue-400">Accreditation</Link></li>
-                            <li><Link href="/" className="hover:text-blue-400">Instructors</Link></li>
-                            <li><Link href="/" className="hover:text-blue-400">Contact</Link></li>
+                        <h6 className="text-white font-bold mb-6">Company</h6>
+                        <ul className="space-y-4 text-sm">
+                            <li><Link href="/" className="hover:text-white transition-colors">About Us</Link></li>
+                            <li><Link href="/" className="hover:text-white transition-colors">Careers</Link></li>
+                            <li><Link href="/" className="hover:text-white transition-colors">Success Stories</Link></li>
+                            <li><Link href="/" className="hover:text-white transition-colors">Contact</Link></li>
                         </ul>
                     </div>
+
+                    {/* Legal */}
                     <div>
-                        <h3 className="text-sm font-semibold text-white">Resources</h3>
-                        <ul className="mt-4 space-y-3 text-sm text-slate-400">
-                            <li><Link href="/my-courses" className="hover:text-blue-400">Student Portal</Link></li>
-                            <li><Link href="/courses" className="hover:text-blue-400">Course Catalog</Link></li>
-                            <li><Link href="/certificates" className="hover:text-blue-400">Certificates</Link></li>
+                        <h6 className="text-white font-bold mb-6">Legal</h6>
+                        <ul className="space-y-4 text-sm">
+                            <li><Link href="/" className="hover:text-white transition-colors">Privacy Policy</Link></li>
+                            <li><Link href="/" className="hover:text-white transition-colors">Terms of Service</Link></li>
+                            <li><Link href="/" className="hover:text-white transition-colors">Cookie Policy</Link></li>
+                            <li><Link href="/" className="hover:text-white transition-colors">Security</Link></li>
+                        </ul>
+                    </div>
+
+                    {/* Support */}
+                    <div>
+                        <h6 className="text-white font-bold mb-6">Support</h6>
+                        <ul className="space-y-4 text-sm">
+                            <li><Link href="/" className="hover:text-white transition-colors">Help Center</Link></li>
+                            <li><Link href="/" className="hover:text-white transition-colors">Community</Link></li>
+                            <li><Link href="/" className="hover:text-white transition-colors">Webinars</Link></li>
+                            <li><Link href="/" className="hover:text-white transition-colors">API Docs</Link></li>
                         </ul>
                     </div>
                 </div>
-                <div className="mt-12 border-t border-slate-800 pt-8">
-                    <p className="text-center text-sm text-slate-500">© {new Date().getFullYear()} CNA Pro. All rights reserved.</p>
+
+                {/* Bottom bar */}
+                <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 text-xs">
+                    <p>© {new Date().getFullYear()} CNA Pro. All rights reserved. A CareAcademy Company.</p>
+                    <div className="flex gap-6">
+                        <span className="flex items-center gap-1"><span className="material-symbols-outlined text-[12px]">check_circle</span> State Approved</span>
+                        <span className="flex items-center gap-1"><span className="material-symbols-outlined text-[12px]">lock</span> SSL Secured</span>
+                    </div>
                 </div>
             </div>
         </footer>
