@@ -23,7 +23,7 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // Health check
 app.get('/', (req, res) => {
-  res.json({ status: 'ok', message: 'CNA Pro API is running' });
+  res.json({ status: 'ok', message: 'Excelcommunity Living Inc API is running' });
 });
 
 // API Routes

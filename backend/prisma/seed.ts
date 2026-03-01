@@ -23,10 +23,10 @@ async function main() {
 
     // Create Admin
     const admin = await prisma.user.upsert({
-        where: { email: 'admin@cnapro.com' },
+        where: { email: 'admin@excelcommunity.com' },
         update: {},
         create: {
-            email: 'admin@cnapro.com',
+            email: 'admin@excelcommunity.com',
             password: hashedPassword,
             name: 'Admin User',
             role: 'ADMIN',

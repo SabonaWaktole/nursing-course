@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { Enrollment } from '@/lib/types';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
 import RoleGuard from '@/components/RoleGuard';
 
@@ -43,7 +44,12 @@ export default function MyCoursesPage() {
 
     return (
         <RoleGuard allowedRoles={['STUDENT']}>
-            <div className="min-h-screen bg-background-light dark:bg-background-dark">
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="min-h-screen bg-background-light dark:bg-background-dark overflow-x-hidden"
+            >
                 <div className="flex flex-1">
                     {/* Sidebar */}
                     <aside className="hidden lg:flex w-64 flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 gap-8 min-h-screen sticky top-16">
@@ -116,30 +122,42 @@ export default function MyCoursesPage() {
                                     {/* Continue Learning Hero + Stats */}
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                         {activeEnrollment && (
-                                            <Link href={`/courses/${activeEnrollment.course.id}`} className="lg:col-span-2 relative overflow-hidden rounded-3xl bg-slate-900 p-8 text-white min-h-[220px] flex flex-col justify-end group">
-                                                <div className="absolute inset-0 opacity-40 bg-center bg-cover" style={{
-                                                    backgroundImage: `url('${activeEnrollment.course.thumbnail
-                                                        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}${activeEnrollment.course.thumbnail}`
-                                                        : HERO_BG
-                                                        }')`
-                                                }}></div>
-                                                <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent"></div>
-                                                <div className="relative z-10 flex flex-col gap-3">
-                                                    <span className="bg-primary/20 backdrop-blur-md text-primary px-3 py-1 rounded-full text-xs font-bold self-start border border-primary/30">CURRENTLY ACTIVE</span>
-                                                    <h2 className="text-2xl font-bold">{activeEnrollment.course.title}</h2>
-                                                    <p className="text-slate-300 text-sm max-w-md line-clamp-2">{activeEnrollment.course.description}</p>
-                                                    <div className="flex items-center gap-4 mt-2">
-                                                        <span className="bg-primary hover:bg-primary/90 text-white font-bold px-6 py-2.5 rounded-xl flex items-center gap-2">
-                                                            Continue Learning <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                                                        </span>
-                                                        <span className="text-sm font-medium text-slate-300">{activeEnrollment.progress}% complete</span>
+                                            <motion.div
+                                                initial={{ opacity: 0, x: -20 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                transition={{ delay: 0.3 }}
+                                                className="lg:col-span-2"
+                                            >
+                                                <Link href={`/courses/${activeEnrollment.course.id}`} className="relative overflow-hidden rounded-3xl bg-slate-900 p-8 text-white min-h-[220px] flex flex-col justify-end group block">
+                                                    <div className="absolute inset-0 opacity-40 bg-center bg-cover" style={{
+                                                        backgroundImage: `url('${activeEnrollment.course.thumbnail
+                                                            ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}${activeEnrollment.course.thumbnail}`
+                                                            : HERO_BG
+                                                            }')`
+                                                    }}></div>
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent"></div>
+                                                    <div className="relative z-10 flex flex-col gap-3">
+                                                        <span className="bg-primary/20 backdrop-blur-md text-primary px-3 py-1 rounded-full text-xs font-bold self-start border border-primary/30">CURRENTLY ACTIVE</span>
+                                                        <h2 className="text-2xl font-bold">{activeEnrollment.course.title}</h2>
+                                                        <p className="text-slate-300 text-sm max-w-md line-clamp-2">{activeEnrollment.course.description}</p>
+                                                        <div className="flex items-center gap-4 mt-2">
+                                                            <motion.span whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="bg-primary hover:bg-primary/90 text-white font-bold px-6 py-2.5 rounded-xl flex items-center gap-2">
+                                                                Continue Learning <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                                                            </motion.span>
+                                                            <span className="text-sm font-medium text-slate-300">{activeEnrollment.progress}% complete</span>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </Link>
+                                                </Link>
+                                            </motion.div>
                                         )}
 
                                         {/* Weekly Activity Card */}
-                                        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 flex flex-col gap-6">
+                                        <motion.div
+                                            initial={{ opacity: 0, x: 20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: 0.4 }}
+                                            className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 flex flex-col gap-6"
+                                        >
                                             <h3 className="font-bold text-lg text-slate-900 dark:text-white">Weekly Activity</h3>
                                             <div className="flex items-end justify-between h-24 px-2">
                                                 {[40, 60, 30, 90, 70, 85, 45].map((h, i) => (
@@ -156,7 +174,7 @@ export default function MyCoursesPage() {
                                                 </div>
                                                 <span className="material-symbols-outlined text-orange-500 text-3xl">local_fire_department</span>
                                             </div>
-                                        </div>
+                                        </motion.div>
                                     </div>
 
                                     {/* Active Courses Grid */}
@@ -169,55 +187,62 @@ export default function MyCoursesPage() {
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                                             {enrollments.map((enrollment, idx) => (
-                                                <Link
+                                                <motion.div
                                                     key={enrollment.id}
-                                                    href={`/courses/${enrollment.course.id}`}
-                                                    className="bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 group shadow-sm hover:shadow-md transition-shadow"
+                                                    initial={{ opacity: 0, y: 20 }}
+                                                    whileInView={{ opacity: 1, y: 0 }}
+                                                    viewport={{ once: true }}
+                                                    transition={{ delay: idx * 0.1 }}
                                                 >
-                                                    <div className="relative h-40 overflow-hidden">
-                                                        <div
-                                                            className="absolute inset-0 bg-center bg-cover group-hover:scale-105 transition-transform duration-500"
-                                                            style={{
-                                                                backgroundImage: `url('${enrollment.course.thumbnail
-                                                                    ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}${enrollment.course.thumbnail}`
-                                                                    : COURSE_IMAGES[idx % COURSE_IMAGES.length]
-                                                                    }')`
-                                                            }}
-                                                        ></div>
-                                                        <div className="absolute top-4 left-4">
-                                                            <span className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm text-xs font-bold px-3 py-1 rounded-full text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700">
-                                                                {enrollment.course.tags?.[0] || enrollment.course.category || 'COURSE'}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="p-5 flex flex-col gap-4">
-                                                        <div>
-                                                            <h3 className="font-bold text-lg leading-tight mb-1 text-slate-900 dark:text-white">{enrollment.course.title}</h3>
-                                                            <p className="text-xs text-slate-500">{enrollment.course.instructor?.name ? `Instructor: ${enrollment.course.instructor.name}` : ''}</p>
-                                                        </div>
-                                                        <div className="flex flex-col gap-2">
-                                                            <div className="flex justify-between text-xs font-bold">
-                                                                <span className="text-slate-400">PROGRESS</span>
-                                                                <span className="text-primary">{enrollment.progress}%</span>
-                                                            </div>
-                                                            <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                                                                <div className="bg-primary h-full rounded-full transition-all" style={{ width: `${enrollment.progress}%` }}></div>
-                                                            </div>
-                                                            <div className="flex justify-between items-center text-xs text-slate-500 mt-1">
-                                                                <span>{enrollment.course._count?.modules || 0} Modules</span>
-                                                                {enrollment.completed ? (
-                                                                    <span className="flex items-center gap-1 text-emerald-500 font-medium">
-                                                                        <span className="material-symbols-outlined text-[14px]">check_circle</span> Completed
-                                                                    </span>
-                                                                ) : (
-                                                                    <span className="flex items-center gap-1">
-                                                                        <span className="material-symbols-outlined text-[14px]">timer</span> In Progress
-                                                                    </span>
-                                                                )}
+                                                    <Link
+                                                        href={`/courses/${enrollment.course.id}`}
+                                                        className="bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 group shadow-sm hover:shadow-md transition-shadow block h-full"
+                                                    >
+                                                        <div className="relative h-40 overflow-hidden">
+                                                            <div
+                                                                className="absolute inset-0 bg-center bg-cover group-hover:scale-105 transition-transform duration-500"
+                                                                style={{
+                                                                    backgroundImage: `url('${enrollment.course.thumbnail
+                                                                        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}${enrollment.course.thumbnail}`
+                                                                        : COURSE_IMAGES[idx % COURSE_IMAGES.length]
+                                                                        }')`
+                                                                }}
+                                                            ></div>
+                                                            <div className="absolute top-4 left-4">
+                                                                <span className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm text-xs font-bold px-3 py-1 rounded-full text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700">
+                                                                    {enrollment.course.tags?.[0] || enrollment.course.category || 'COURSE'}
+                                                                </span>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                </Link>
+                                                        <div className="p-5 flex flex-col gap-4">
+                                                            <div>
+                                                                <h3 className="font-bold text-lg leading-tight mb-1 text-slate-900 dark:text-white">{enrollment.course.title}</h3>
+                                                                <p className="text-xs text-slate-500">{enrollment.course.instructor?.name ? `Instructor: ${enrollment.course.instructor.name}` : ''}</p>
+                                                            </div>
+                                                            <div className="flex flex-col gap-2">
+                                                                <div className="flex justify-between text-xs font-bold">
+                                                                    <span className="text-slate-400">PROGRESS</span>
+                                                                    <span className="text-primary">{enrollment.progress}%</span>
+                                                                </div>
+                                                                <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                                                                    <div className="bg-primary h-full rounded-full transition-all" style={{ width: `${enrollment.progress}%` }}></div>
+                                                                </div>
+                                                                <div className="flex justify-between items-center text-xs text-slate-500 mt-1">
+                                                                    <span>{enrollment.course._count?.modules || 0} Modules</span>
+                                                                    {enrollment.completed ? (
+                                                                        <span className="flex items-center gap-1 text-emerald-500 font-medium">
+                                                                            <span className="material-symbols-outlined text-[14px]">check_circle</span> Completed
+                                                                        </span>
+                                                                    ) : (
+                                                                        <span className="flex items-center gap-1">
+                                                                            <span className="material-symbols-outlined text-[14px]">timer</span> In Progress
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </Link>
+                                                </motion.div>
                                             ))}
                                         </div>
                                     </div>
@@ -252,7 +277,7 @@ export default function MyCoursesPage() {
                         </div>
                     </main>
                 </div>
-            </div>
+            </motion.div>
         </RoleGuard>
     );
 }

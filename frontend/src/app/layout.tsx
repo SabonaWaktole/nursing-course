@@ -6,7 +6,7 @@ import ClientProviders from "@/components/ClientProviders";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "CNA Pro - Nursing Assistant Training",
+  title: "Excelcommunity Living Inc - Nursing Assistant Training",
   description: "Start your career in healthcare with Certified Nursing Assistant courses. Get certified, gain practical skills, and secure a job in healthcare.",
 };
 

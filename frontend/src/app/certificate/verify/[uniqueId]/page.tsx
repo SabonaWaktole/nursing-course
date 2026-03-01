@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import api from '@/lib/api';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 
 export default function VerifyCertificatePage() {
     const { uniqueId } = useParams();
@@ -51,7 +52,11 @@ export default function VerifyCertificatePage() {
     const cert = result.certificate;
 
     return (
-        <div className="min-h-screen bg-slate-50 font-sans text-slate-900 flex flex-col">
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="min-h-screen bg-slate-50 font-sans text-slate-900 flex flex-col"
+        >
             {/* Header - Hide on print */}
             <header className="no-print sticky top-0 z-50 bg-white border-b border-slate-200 px-10 py-3 shadow-sm flex items-center justify-between whitespace-nowrap">
                 <div className="flex items-center gap-4">
@@ -94,7 +99,12 @@ export default function VerifyCertificatePage() {
                 </div>
 
                 {/* The Certificate Wrapper */}
-                <div className="w-full max-w-5xl flex justify-center mb-12">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2, duration: 0.6 }}
+                    className="w-full max-w-5xl flex justify-center mb-12"
+                >
                     <div
                         id="certificate-container"
                         className="relative bg-white text-slate-900 w-full max-w-[900px] aspect-[1.414/1] shadow-2xl rounded-sm overflow-hidden flex flex-col"
@@ -179,7 +189,7 @@ export default function VerifyCertificatePage() {
                             </div>
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
                 {/* Status Section - Hide on print */}
                 <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-6 no-print">
@@ -249,6 +259,6 @@ export default function VerifyCertificatePage() {
                     }
                 }
             `}</style>
-        </div>
+        </motion.div>
     );
 }

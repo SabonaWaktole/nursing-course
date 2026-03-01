@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/auth-context';
 import { Certificate } from '@/lib/types';
 import Link from 'next/link';
 import RoleGuard from '@/components/RoleGuard';
+import { motion } from 'framer-motion';
 
 export default function CertificatesPage() {
     const { user } = useAuth();
@@ -30,7 +31,12 @@ export default function CertificatesPage() {
 
     return (
         <RoleGuard allowedRoles={['STUDENT']}>
-            <div className="min-h-screen bg-slate-50 py-12">
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="min-h-screen bg-slate-50 py-12"
+            >
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
                         <div>
@@ -52,9 +58,13 @@ export default function CertificatesPage() {
                         </div>
                     ) : (
                         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-                            {certificates.map((cert) => (
-                                <div
+                            {certificates.map((cert, idx) => (
+                                <motion.div
                                     key={cert.id}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: idx * 0.1 }}
                                     className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-7 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
                                 >
                                     <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-600 to-blue-400"></div>
@@ -104,12 +114,12 @@ export default function CertificatesPage() {
                                             <span className="material-symbols-outlined">download</span>
                                         </button>
                                     </div>
-                                </div>
+                                </motion.div>
                             ))}
                         </div>
                     )}
                 </div>
-            </div>
+            </motion.div>
         </RoleGuard>
     );
 }

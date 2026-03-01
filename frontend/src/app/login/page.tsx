@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { GraduationCap, Eye, EyeOff } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export default function LoginPage() {
     const { login } = useAuth();
@@ -42,7 +43,12 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="flex min-h-[80vh] items-center justify-center px-4 py-12">
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="flex min-h-[80vh] items-center justify-center px-4 py-12"
+        >
             <div className="w-full max-w-md">
                 <div className="text-center mb-8">
                     <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100">
@@ -88,13 +94,15 @@ export default function LoginPage() {
                         </div>
                     </div>
 
-                    <button
+                    <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
                         type="submit"
                         disabled={loading}
                         className="w-full rounded-lg bg-blue-900 py-2.5 text-sm font-bold text-white transition hover:bg-blue-800 disabled:opacity-50"
                     >
                         {loading ? 'Signing in...' : 'Sign In'}
-                    </button>
+                    </motion.button>
 
                     <p className="text-center text-sm text-slate-500">
                         Don&apos;t have an account?{' '}
@@ -104,6 +112,6 @@ export default function LoginPage() {
                     </p>
                 </form>
             </div>
-        </div>
+        </motion.div>
     );
 }
