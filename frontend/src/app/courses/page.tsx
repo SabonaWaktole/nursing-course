@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { Course } from '@/lib/types';
+import { motion } from 'framer-motion';
 
 const PLACEHOLDER_IMAGES = [
     "https://lh3.googleusercontent.com/aida-public/AB6AXuCx8O0XAYxQEfXeLfRH-6FfKX-9Z25q3IW2LEzqB3vq2Gjsi19mvFXdUV6eATG3m2EWGewTGxSWwZzZXOXhFNxiJGchZ1X7Ngn3ziO1W125d4PgRVqSLp30uM7ytxTK6mtU312iAhNc30w8kysWGRCCo23qNaFSvHITxKvRUlzopPkUReQMbvlGci6rk0oe9mu3vr9DRmMtZA_iAIhN1kR6zQSUXKhDrjd-2_Dc271nGTlZfm3brlEaniNbZg1m-EsYIoN4rqNGht0",
@@ -43,8 +44,13 @@ export default function CoursesPage() {
     });
 
     return (
-        <div className="min-h-screen bg-background-light dark:bg-background-dark">
-            <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+        <div className="min-h-screen bg-background-light dark:bg-background-dark overflow-x-hidden">
+            <motion.main
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8"
+            >
                 {/* Hero Header */}
                 <div className="mb-10">
                     <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -83,16 +89,18 @@ export default function CoursesPage() {
                         </div>
                         <div className="flex items-center gap-2 overflow-x-auto pb-2 lg:pb-0">
                             {tags.map(t => (
-                                <button
+                                <motion.button
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
                                     key={t}
                                     onClick={() => setSelectedTag(t)}
                                     className={`px-5 py-2.5 rounded-xl font-semibold text-sm whitespace-nowrap transition-all ${selectedTag === t
-                                            ? 'bg-primary text-white shadow-lg shadow-primary/25'
-                                            : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-primary'
+                                        ? 'bg-primary text-white shadow-lg shadow-primary/25'
+                                        : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-primary'
                                         }`}
                                 >
                                     {t}
-                                </button>
+                                </motion.button>
                             ))}
                         </div>
                     </div>
@@ -123,8 +131,8 @@ export default function CoursesPage() {
                             className="absolute inset-0 w-full h-full bg-center bg-cover"
                             style={{
                                 backgroundImage: `url('${filtered[0].thumbnail
-                                        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}${filtered[0].thumbnail}`
-                                        : FEATURED_IMAGE
+                                    ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}${filtered[0].thumbnail}`
+                                    : FEATURED_IMAGE
                                     }')`
                             }}
                         ></div>
@@ -152,50 +160,71 @@ export default function CoursesPage() {
                         <p className="text-sm text-slate-400">Try adjusting your search or check back later.</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <motion.div
+                        initial="hidden"
+                        whileInView="show"
+                        viewport={{ once: true, margin: "-50px" }}
+                        variants={{
+                            hidden: { opacity: 0 },
+                            show: {
+                                opacity: 1,
+                                transition: { staggerChildren: 0.1 }
+                            }
+                        }}
+                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                    >
                         {filtered.map((course, idx) => (
-                            <Link
+                            <motion.div
                                 key={course.id}
-                                href={`/courses/${course.id}`}
-                                className="group bg-white dark:bg-slate-800 rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col"
+                                variants={{
+                                    hidden: { opacity: 0, y: 30 },
+                                    show: { opacity: 1, y: 0 }
+                                }}
+                                whileHover={{ y: -10 }}
+                                transition={{ duration: 0.3 }}
                             >
-                                <div className="relative h-48 overflow-hidden">
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10"></div>
-                                    {/* Category tag */}
-                                    <div className="absolute top-4 left-4 z-20 bg-white/90 dark:bg-slate-900/90 backdrop-blur px-2 py-1 rounded-lg text-[10px] font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                                        {course.tags && course.tags.length > 0 ? course.tags[0] : (course.category || 'Course')}
+                                <Link
+                                    href={`/courses/${course.id}`}
+                                    className="group bg-white dark:bg-slate-800 rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col h-full"
+                                >
+                                    <div className="relative h-48 overflow-hidden">
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10"></div>
+                                        {/* Category tag */}
+                                        <div className="absolute top-4 left-4 z-20 bg-white/90 dark:bg-slate-900/90 backdrop-blur px-2 py-1 rounded-lg text-[10px] font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                                            {course.tags && course.tags.length > 0 ? course.tags[0] : (course.category || 'Course')}
+                                        </div>
+                                        <img
+                                            alt={course.title}
+                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                            src={course.thumbnail ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}${course.thumbnail}` : PLACEHOLDER_IMAGES[idx % PLACEHOLDER_IMAGES.length]}
+                                        />
                                     </div>
-                                    <img
-                                        alt={course.title}
-                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                        src={course.thumbnail ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}${course.thumbnail}` : PLACEHOLDER_IMAGES[idx % PLACEHOLDER_IMAGES.length]}
-                                    />
-                                </div>
-                                <div className="p-6 flex flex-col flex-1">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <span className="flex items-center gap-1 text-amber-500 font-bold text-sm">
-                                            <span className="material-symbols-outlined text-[18px]">star</span>
-                                            4.{8 + (idx % 2)}
-                                        </span>
-                                        <span className="text-slate-400 text-xs font-medium flex items-center gap-1">
-                                            <span className="material-symbols-outlined text-[16px]">schedule</span>
-                                            {course._count?.modules || 1} Modules
-                                        </span>
+                                    <div className="p-6 flex flex-col flex-1">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="flex items-center gap-1 text-amber-500 font-bold text-sm">
+                                                <span className="material-symbols-outlined text-[18px]">star</span>
+                                                4.{8 + (idx % 2)}
+                                            </span>
+                                            <span className="text-slate-400 text-xs font-medium flex items-center gap-1">
+                                                <span className="material-symbols-outlined text-[16px]">schedule</span>
+                                                {course._count?.modules || 1} Modules
+                                            </span>
+                                        </div>
+                                        <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-2 leading-snug">{course.title}</h4>
+                                        <p className="text-slate-500 dark:text-slate-400 text-sm mb-6 flex-1 line-clamp-2">{course.description}</p>
+                                        <div className="flex items-center justify-between pt-4 border-t border-slate-50 dark:border-slate-700/50">
+                                            <span className="text-lg font-black text-slate-900 dark:text-white">
+                                                {course.price && course.price > 0 ? `$${course.price}` : 'Free'}
+                                            </span>
+                                            <span className="bg-primary/10 hover:bg-primary text-primary hover:text-white font-bold py-2 px-5 rounded-lg transition-colors text-sm">
+                                                Enroll Now
+                                            </span>
+                                        </div>
                                     </div>
-                                    <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-2 leading-snug">{course.title}</h4>
-                                    <p className="text-slate-500 dark:text-slate-400 text-sm mb-6 flex-1 line-clamp-2">{course.description}</p>
-                                    <div className="flex items-center justify-between pt-4 border-t border-slate-50 dark:border-slate-700/50">
-                                        <span className="text-lg font-black text-slate-900 dark:text-white">
-                                            {course.price && course.price > 0 ? `$${course.price}` : 'Free'}
-                                        </span>
-                                        <span className="bg-primary/10 hover:bg-primary text-primary hover:text-white font-bold py-2 px-5 rounded-lg transition-colors text-sm">
-                                            Enroll Now
-                                        </span>
-                                    </div>
-                                </div>
-                            </Link>
+                                </Link>
+                            </motion.div>
                         ))}
-                    </div>
+                    </motion.div>
                 )}
 
                 {/* Newsletter Section */}
@@ -207,11 +236,17 @@ export default function CoursesPage() {
                         </div>
                         <div className="flex flex-col sm:flex-row gap-3">
                             <input className="flex-1 px-4 py-4 rounded-xl bg-slate-100 dark:bg-slate-800 border-transparent focus:ring-2 focus:ring-primary text-slate-900 dark:text-white" placeholder="Enter your email address" type="email" />
-                            <button className="bg-primary hover:bg-primary/90 text-white font-bold py-4 px-8 rounded-xl transition-all shadow-lg shadow-primary/20">Subscribe Now</button>
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                className="bg-primary hover:bg-primary/90 text-white font-bold py-4 px-8 rounded-xl transition-all shadow-lg shadow-primary/20"
+                            >
+                                Subscribe Now
+                            </motion.button>
                         </div>
                     </div>
                 </div>
-            </main>
+            </motion.main>
         </div>
     );
 }

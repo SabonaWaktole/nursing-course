@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/auth-context';
 import { Quiz, QuizResult, Course } from '@/lib/types';
 import Link from 'next/link';
 import RoleGuard from '@/components/RoleGuard';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function QuizPage() {
     const { quizId } = useParams();
@@ -102,7 +103,11 @@ export default function QuizPage() {
 
     return (
         <RoleGuard allowedRoles={['STUDENT']}>
-            <div className="min-h-screen flex flex-col font-sans bg-slate-50">
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="min-h-screen flex flex-col font-sans bg-slate-50"
+            >
                 <header className="h-16 border-b border-slate-200 bg-white flex items-center justify-between px-6 sticky top-0 z-30 shadow-sm">
                     <div className="flex items-center gap-4">
                         <div className="flex items-center justify-center size-8 rounded-lg bg-blue-50 text-blue-900">
@@ -189,7 +194,12 @@ export default function QuizPage() {
 
                     {/* Main Quiz Area */}
                     <main className="flex-1 flex flex-col items-center overflow-y-auto bg-slate-50 relative">
-                        <div className="w-full max-w-3xl px-6 py-8 md:py-12 flex flex-col gap-8">
+                        <motion.div
+                            key={currentQuestionIdx}
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="w-full max-w-3xl px-6 py-8 md:py-12 flex flex-col gap-8"
+                        >
                             {/* Progress */}
                             <div className="flex flex-col gap-4">
                                 <div className="flex justify-between items-end">
@@ -277,10 +287,10 @@ export default function QuizPage() {
                                     </button>
                                 )}
                             </div>
-                        </div>
+                        </motion.div>
                     </main>
                 </div>
-            </div>
+            </motion.div>
         </RoleGuard>
     );
 }

@@ -8,6 +8,8 @@
   --color-primary-glow: rgba(13, 185, 242, 0.3);
   --color-background-light: #f5f8f8;
   --color-background-dark: #101e22;
+  --color-surface: #1e1e1e;
+  --color-border-muted: #2d2d2d;
   --font-display: "Inter", sans-serif;
   --font-sans: "Inter", sans-serif;
 }

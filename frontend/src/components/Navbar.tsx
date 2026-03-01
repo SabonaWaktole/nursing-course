@@ -27,7 +27,7 @@ export default function Navbar() {
                     {/* Logo */}
                     <Link href="/" className="flex items-center gap-2">
                         <span className="material-symbols-outlined text-primary text-3xl">medical_services</span>
-                        <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">CNA Pro</span>
+                        <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Excelcommunity Living Inc</span>
                     </Link>
 
                     {/* Desktop Navigation */}

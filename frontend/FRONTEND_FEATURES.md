@@ -1,4 +1,4 @@
-# CNA Pro — Frontend Functionality Overview
+# Excelcommunity Living Inc — Frontend Functionality Overview
 
 **Framework:** Next.js (App Router) · **Port:** `http://localhost:3000`
 

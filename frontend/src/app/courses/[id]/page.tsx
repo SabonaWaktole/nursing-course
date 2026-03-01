@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/auth-context';
 import { CourseDetail, Module, Lesson } from '@/lib/types';
 import Link from 'next/link';
 import { getFileUrl } from '@/lib/url-utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function CourseDetailPage() {
     const { id } = useParams();
@@ -143,10 +144,19 @@ export default function CourseDetailPage() {
     );
 
     return (
-        <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100">
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100"
+        >
             <div className="flex flex-1 flex-col lg:flex-row">
                 {/* Left Sidebar: Course Navigation */}
-                <aside className="w-full lg:w-80 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark flex flex-col shrink-0">
+                <motion.aside
+                    initial={{ x: -20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ duration: 0.5 }}
+                    className="w-full lg:w-80 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark flex flex-col shrink-0"
+                >
                     {/* Progress */}
                     <div className="p-6 border-b border-slate-100 dark:border-slate-800">
                         <div className="flex items-center justify-between mb-2">
@@ -183,8 +193,8 @@ export default function CourseDetailPage() {
                                                     key={lesson.id}
                                                     onClick={() => setActiveLesson(lesson.id)}
                                                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${isActive
-                                                            ? 'bg-primary/10 text-primary font-semibold'
-                                                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                                                        ? 'bg-primary/10 text-primary font-semibold'
+                                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
                                                         }`}
                                                 >
                                                     <span className={`material-symbols-outlined text-lg ${isCompleted ? 'text-green-500' : isActive ? 'text-primary' : 'text-slate-300 dark:text-slate-600'
@@ -248,195 +258,205 @@ export default function CourseDetailPage() {
                             </button>
                         </div>
                     )}
-                </aside>
+                </motion.aside>
 
                 {/* Main Content Area */}
                 <main className="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark">
-                    {!enrolled && user ? (
-                        <div className="flex flex-col items-center justify-center min-h-[60vh] p-8">
-                            <div className="max-w-md text-center">
-                                <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-primary/20">
-                                    <span className="material-symbols-outlined text-primary text-4xl">play_circle</span>
-                                </div>
-                                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{course.title}</h2>
-                                <p className="mt-3 text-slate-600 dark:text-slate-400">{course.description}</p>
-                                <p className="mt-2 text-sm text-slate-500">
-                                    {course.modules?.length || 0} modules · {totalLessons} lessons · {course.quizzes?.length || 0} quizzes
-                                </p>
-                                <button
-                                    onClick={handleEnroll}
-                                    disabled={enrolling}
-                                    className="mt-6 inline-flex h-12 items-center justify-center rounded-xl bg-primary px-8 text-base font-bold text-white transition hover:bg-primary/90 shadow-lg shadow-primary/25 disabled:opacity-50"
-                                >
-                                    {enrolling ? 'Enrolling...' : 'Enroll in this Course'}
-                                </button>
-                            </div>
-                        </div>
-                    ) : !user ? (
-                        <div className="flex flex-col items-center justify-center min-h-[60vh] p-8">
-                            <div className="max-w-md text-center">
-                                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{course.title}</h2>
-                                <p className="mt-3 text-slate-600 dark:text-slate-400">{course.description}</p>
-                                <Link
-                                    href="/login"
-                                    className="mt-6 inline-flex h-12 items-center justify-center rounded-xl bg-primary px-8 text-base font-bold text-white transition hover:bg-primary/90 shadow-lg shadow-primary/25"
-                                >
-                                    Sign in to Enroll
-                                </Link>
-                            </div>
-                        </div>
-                    ) : currentLesson ? (
-                        <div className="max-w-4xl mx-auto p-6 md:p-10">
-                            {/* Breadcrumbs */}
-                            <nav className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-6">
-                                <Link href="/courses" className="hover:text-primary transition-colors">All Courses</Link>
-                                <span className="material-symbols-outlined text-sm">chevron_right</span>
-                                <span className="text-slate-900 dark:text-slate-100 font-medium truncate">{currentLesson.title}</span>
-                            </nav>
-
-                            {/* Lesson Header */}
-                            <div className="mb-8">
-                                <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-slate-100 mb-4 tracking-tight">{currentLesson.title}</h1>
-                                <div className="flex flex-wrap items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
-                                    {currentLesson.videoUrl && (
-                                        <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
-                                            <span className="material-symbols-outlined text-lg text-primary">video_library</span>
-                                            <span>Video Lesson</span>
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={activeLesson || 'enrollment'}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            {!enrolled && user ? (
+                                <div className="flex flex-col items-center justify-center min-h-[60vh] p-8">
+                                    <div className="max-w-md text-center">
+                                        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-primary/20">
+                                            <span className="material-symbols-outlined text-primary text-4xl">play_circle</span>
                                         </div>
-                                    )}
-                                    {currentLesson.materialUrl && (
-                                        <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
-                                            <span className="material-symbols-outlined text-lg text-primary">assignment</span>
-                                            <span>Materials</span>
-                                        </div>
-                                    )}
-                                    <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
-                                        <span className="material-symbols-outlined text-lg text-primary">schedule</span>
-                                        <span>{findModuleForLesson(currentLesson.id)?.title || 'Module'}</span>
+                                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{course.title}</h2>
+                                        <p className="mt-3 text-slate-600 dark:text-slate-400">{course.description}</p>
+                                        <p className="mt-2 text-sm text-slate-500">
+                                            {course.modules?.length || 0} modules · {totalLessons} lessons · {course.quizzes?.length || 0} quizzes
+                                        </p>
+                                        <button
+                                            onClick={handleEnroll}
+                                            disabled={enrolling}
+                                            className="mt-6 inline-flex h-12 items-center justify-center rounded-xl bg-primary px-8 text-base font-bold text-white transition hover:bg-primary/90 shadow-lg shadow-primary/25 disabled:opacity-50"
+                                        >
+                                            {enrolling ? 'Enrolling...' : 'Enroll in this Course'}
+                                        </button>
                                     </div>
                                 </div>
-                            </div>
-
-                            {/* Video/PDF Player */}
-                            {currentLesson.videoUrl ? (
-                                <div className="relative w-full aspect-video rounded-xl overflow-hidden shadow-2xl bg-black group mb-10">
-                                    <video
-                                        key={currentLesson.id}
-                                        controls
-                                        className="h-full w-full object-contain"
-                                        src={getFileUrl(currentLesson.videoUrl)}
-                                    />
+                            ) : !user ? (
+                                <div className="flex flex-col items-center justify-center min-h-[60vh] p-8">
+                                    <div className="max-w-md text-center">
+                                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{course.title}</h2>
+                                        <p className="mt-3 text-slate-600 dark:text-slate-400">{course.description}</p>
+                                        <Link
+                                            href="/login"
+                                            className="mt-6 inline-flex h-12 items-center justify-center rounded-xl bg-primary px-8 text-base font-bold text-white transition hover:bg-primary/90 shadow-lg shadow-primary/25"
+                                        >
+                                            Sign in to Enroll
+                                        </Link>
+                                    </div>
                                 </div>
-                            ) : currentLesson.materialUrl && currentLesson.materialUrl.toLowerCase().endsWith('.pdf') ? (
-                                <div className="relative w-full rounded-xl overflow-hidden shadow-2xl bg-slate-200 dark:bg-slate-800 mb-10" style={{ height: '65vh' }}>
-                                    <iframe
-                                        key={currentLesson.id}
-                                        src={getFileUrl(currentLesson.materialUrl)}
-                                        className="w-full h-full border-none"
-                                        title={currentLesson.title}
-                                    />
+                            ) : currentLesson ? (
+                                <div className="max-w-4xl mx-auto p-6 md:p-10">
+                                    {/* Breadcrumbs */}
+                                    <nav className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-6">
+                                        <Link href="/courses" className="hover:text-primary transition-colors">All Courses</Link>
+                                        <span className="material-symbols-outlined text-sm">chevron_right</span>
+                                        <span className="text-slate-900 dark:text-slate-100 font-medium truncate">{currentLesson.title}</span>
+                                    </nav>
+
+                                    {/* Lesson Header */}
+                                    <div className="mb-8">
+                                        <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-slate-100 mb-4 tracking-tight">{currentLesson.title}</h1>
+                                        <div className="flex flex-wrap items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
+                                            {currentLesson.videoUrl && (
+                                                <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
+                                                    <span className="material-symbols-outlined text-lg text-primary">video_library</span>
+                                                    <span>Video Lesson</span>
+                                                </div>
+                                            )}
+                                            {currentLesson.materialUrl && (
+                                                <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
+                                                    <span className="material-symbols-outlined text-lg text-primary">assignment</span>
+                                                    <span>Materials</span>
+                                                </div>
+                                            )}
+                                            <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
+                                                <span className="material-symbols-outlined text-lg text-primary">schedule</span>
+                                                <span>{findModuleForLesson(currentLesson.id)?.title || 'Module'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Video/PDF Player */}
+                                    {currentLesson.videoUrl ? (
+                                        <div className="relative w-full aspect-video rounded-xl overflow-hidden shadow-2xl bg-black group mb-10">
+                                            <video
+                                                key={currentLesson.id}
+                                                controls
+                                                className="h-full w-full object-contain"
+                                                src={getFileUrl(currentLesson.videoUrl)}
+                                            />
+                                        </div>
+                                    ) : currentLesson.materialUrl && currentLesson.materialUrl.toLowerCase().endsWith('.pdf') ? (
+                                        <div className="relative w-full rounded-xl overflow-hidden shadow-2xl bg-slate-200 dark:bg-slate-800 mb-10" style={{ height: '65vh' }}>
+                                            <iframe
+                                                key={currentLesson.id}
+                                                src={getFileUrl(currentLesson.materialUrl)}
+                                                className="w-full h-full border-none"
+                                                title={currentLesson.title}
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center justify-center bg-slate-900 rounded-xl aspect-video mb-10" style={{ maxHeight: '40vh' }}>
+                                            <div className="text-center text-white">
+                                                <span className="material-symbols-outlined text-5xl opacity-50">description</span>
+                                                <p className="mt-3 text-lg font-medium">Text-based Lesson</p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Lesson Content */}
+                                    <article className="mb-10">
+                                        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">Lesson Summary</h2>
+                                        <p className="text-slate-600 dark:text-slate-400 leading-relaxed mb-6">
+                                            {currentLesson.description || "Complete this lesson to advance to the next module."}
+                                        </p>
+
+                                        <div className="grid md:grid-cols-2 gap-6 mb-10">
+                                            {/* Materials download card */}
+                                            {currentLesson.materialUrl && (
+                                                <div className="p-6 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+                                                    <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-3 flex items-center gap-2">
+                                                        <span className="material-symbols-outlined text-primary">file_present</span>
+                                                        Course Materials
+                                                    </h3>
+                                                    <a
+                                                        href={getFileUrl(currentLesson.materialUrl)}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="flex items-center gap-2 text-primary font-bold text-sm hover:underline"
+                                                    >
+                                                        <span className="material-symbols-outlined text-sm">download</span>
+                                                        Download Materials
+                                                    </a>
+                                                </div>
+                                            )}
+                                            {/* Best practice tip */}
+                                            <div className="p-6 bg-primary/5 rounded-xl border border-primary/20">
+                                                <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-3 flex items-center gap-2">
+                                                    <span className="material-symbols-outlined text-primary">lightbulb</span>
+                                                    Best Practice Tip
+                                                </h3>
+                                                <p className="text-sm text-slate-600 dark:text-slate-400">
+                                                    Review each lesson thoroughly before moving to the next. Take notes on key concepts for the module quiz.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </article>
+
+                                    {/* Navigation */}
+                                    <div className="flex items-center justify-between border-t border-slate-200 dark:border-slate-800 pt-6">
+                                        {currentLessonIndex > 0 ? (
+                                            <button
+                                                onClick={() => {
+                                                    const prev = allLessons[currentLessonIndex - 1];
+                                                    setActiveLesson(prev.id);
+                                                    const mod = findModuleForLesson(prev.id);
+                                                    if (mod) setExpandedModules(p => new Set([...p, mod.id]));
+                                                }}
+                                                className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary transition"
+                                            >
+                                                <span className="material-symbols-outlined text-lg">arrow_back</span>
+                                                Previous Lesson
+                                            </button>
+                                        ) : <div />}
+                                        <div>
+                                            {currentLessonIndex < allLessons.length - 1 ? (
+                                                <button
+                                                    onClick={handleNext}
+                                                    className="flex items-center gap-2 px-8 py-3 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 transition-all"
+                                                >
+                                                    Next Lesson
+                                                    <span className="material-symbols-outlined text-lg">arrow_forward</span>
+                                                </button>
+                                            ) : course.quizzes?.length > 0 ? (
+                                                <button
+                                                    onClick={handleNext}
+                                                    className="flex items-center gap-2 px-8 py-3 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-all"
+                                                >
+                                                    Take Quiz
+                                                    <span className="material-symbols-outlined text-lg">arrow_forward</span>
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    onClick={handleNext}
+                                                    disabled={completing}
+                                                    className="flex items-center gap-2 px-8 py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition-all disabled:opacity-50"
+                                                >
+                                                    <span className="material-symbols-outlined text-lg">workspace_premium</span>
+                                                    {completing ? 'Finishing...' : 'Finish Course'}
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
                             ) : (
-                                <div className="flex items-center justify-center bg-slate-900 rounded-xl aspect-video mb-10" style={{ maxHeight: '40vh' }}>
-                                    <div className="text-center text-white">
-                                        <span className="material-symbols-outlined text-5xl opacity-50">description</span>
-                                        <p className="mt-3 text-lg font-medium">Text-based Lesson</p>
-                                    </div>
+                                <div className="flex items-center justify-center min-h-[60vh] text-slate-400">
+                                    Select a lesson from the sidebar to begin
                                 </div>
                             )}
-
-                            {/* Lesson Content */}
-                            <article className="mb-10">
-                                <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">Lesson Summary</h2>
-                                <p className="text-slate-600 dark:text-slate-400 leading-relaxed mb-6">
-                                    {currentLesson.description || "Complete this lesson to advance to the next module."}
-                                </p>
-
-                                <div className="grid md:grid-cols-2 gap-6 mb-10">
-                                    {/* Materials download card */}
-                                    {currentLesson.materialUrl && (
-                                        <div className="p-6 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
-                                            <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-3 flex items-center gap-2">
-                                                <span className="material-symbols-outlined text-primary">file_present</span>
-                                                Course Materials
-                                            </h3>
-                                            <a
-                                                href={getFileUrl(currentLesson.materialUrl)}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="flex items-center gap-2 text-primary font-bold text-sm hover:underline"
-                                            >
-                                                <span className="material-symbols-outlined text-sm">download</span>
-                                                Download Materials
-                                            </a>
-                                        </div>
-                                    )}
-                                    {/* Best practice tip */}
-                                    <div className="p-6 bg-primary/5 rounded-xl border border-primary/20">
-                                        <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-3 flex items-center gap-2">
-                                            <span className="material-symbols-outlined text-primary">lightbulb</span>
-                                            Best Practice Tip
-                                        </h3>
-                                        <p className="text-sm text-slate-600 dark:text-slate-400">
-                                            Review each lesson thoroughly before moving to the next. Take notes on key concepts for the module quiz.
-                                        </p>
-                                    </div>
-                                </div>
-                            </article>
-
-                            {/* Navigation */}
-                            <div className="flex items-center justify-between border-t border-slate-200 dark:border-slate-800 pt-6">
-                                {currentLessonIndex > 0 ? (
-                                    <button
-                                        onClick={() => {
-                                            const prev = allLessons[currentLessonIndex - 1];
-                                            setActiveLesson(prev.id);
-                                            const mod = findModuleForLesson(prev.id);
-                                            if (mod) setExpandedModules(p => new Set([...p, mod.id]));
-                                        }}
-                                        className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary transition"
-                                    >
-                                        <span className="material-symbols-outlined text-lg">arrow_back</span>
-                                        Previous Lesson
-                                    </button>
-                                ) : <div />}
-                                <div>
-                                    {currentLessonIndex < allLessons.length - 1 ? (
-                                        <button
-                                            onClick={handleNext}
-                                            className="flex items-center gap-2 px-8 py-3 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 transition-all"
-                                        >
-                                            Next Lesson
-                                            <span className="material-symbols-outlined text-lg">arrow_forward</span>
-                                        </button>
-                                    ) : course.quizzes?.length > 0 ? (
-                                        <button
-                                            onClick={handleNext}
-                                            className="flex items-center gap-2 px-8 py-3 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-all"
-                                        >
-                                            Take Quiz
-                                            <span className="material-symbols-outlined text-lg">arrow_forward</span>
-                                        </button>
-                                    ) : (
-                                        <button
-                                            onClick={handleNext}
-                                            disabled={completing}
-                                            className="flex items-center gap-2 px-8 py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition-all disabled:opacity-50"
-                                        >
-                                            <span className="material-symbols-outlined text-lg">workspace_premium</span>
-                                            {completing ? 'Finishing...' : 'Finish Course'}
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="flex items-center justify-center min-h-[60vh] text-slate-400">
-                            Select a lesson from the sidebar to begin
-                        </div>
-                    )}
+                        </motion.div>
+                    </AnimatePresence>
                 </main>
             </div>
-        </div>
+        </motion.div>
     );
 }
