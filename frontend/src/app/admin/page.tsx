@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import Link from 'next/link';
 import RoleGuard from '@/components/RoleGuard';
+import AdminSidebar from '@/components/AdminSidebar';
 
 export default function AdminDashboard() {
     const { user } = useAuth();
@@ -112,7 +113,7 @@ export default function AdminDashboard() {
 
     const loadCertificates = async () => {
         try {
-            const res = await api.get('/certificates/all'); // Assuming api route, fallback empty if not created yet
+            const res = await api.get('/admin/certificates');
             setCertificates(res.data || []);
         } catch {
             setCertificates([]);
@@ -369,96 +370,17 @@ export default function AdminDashboard() {
                 className="flex h-screen overflow-hidden bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-sans antialiased transition-colors duration-200 relative"
             >
 
-                {/* Mobile Sidebar Overlay */}
-                {isMobileMenuOpen && (
-                    <div
-                        className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-30 lg:hidden transition-opacity"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                    />
-                )}
-
-                {/* Sidebar */}
-                <aside className={`
-                    ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-64'} 
-                    fixed inset-y-0 left-0 z-40 w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 
-                    transition-all duration-300 ease-in-out
-                    lg:static lg:translate-x-0
-                    ${isMobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}
-                `}>
-                    <div className="h-20 flex items-center justify-between px-6 shrink-0 border-b border-transparent">
-                        {/* Clicking logo/brand takes admin back to homepage */}
-                        <Link href="/" className="flex items-center gap-3 overflow-hidden">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-800 to-black border border-slate-700 flex items-center justify-center shadow-[0_0_15px_rgba(13,185,242,0.3)] shrink-0">
-                                <span className="material-symbols-outlined text-primary text-xl">medical_services</span>
-                            </div>
-                            {!isSidebarCollapsed && (
-                                <div className="animate-in fade-in slide-in-from-left-2 duration-300">
-                                    <h1 className="font-bold text-lg tracking-tight leading-none text-slate-900 dark:text-white">Excelcommunity Living Inc</h1>
-                                    <p className="text-xs text-slate-500 font-medium">Admin Console</p>
-                                </div>
-                            )}
-                        </Link>
-                        {/* Desktop Collapse Toggle */}
-                        <button
-                            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                            className="hidden lg:flex w-8 h-8 items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors"
-                        >
-                            <span className="material-symbols-outlined text-xl">
-                                {isSidebarCollapsed ? 'chevron_right' : 'menu_open'}
-                            </span>
-                        </button>
-                    </div>
-
-                    <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto custom-scrollbar">
-                        {[
-                            { id: 'overview', icon: 'grid_view', label: 'Overview', onClick: () => setTab('overview') },
-                            { id: 'courses', icon: 'menu_book', label: 'Courses', onClick: () => setTab('courses') },
-                            { id: 'users', icon: 'people_alt', label: 'Users', onClick: () => { setTab('users'); loadUsers(); } },
-                            { id: 'results', icon: 'analytics', label: 'Results', onClick: () => { setTab('results'); loadResults(); } },
-                            { id: 'certificates', icon: 'card_membership', label: 'Certificates', onClick: () => { setTab('certificates'); loadCertificates(); } },
-                        ].map((item) => (
-                            <button
-                                key={item.id}
-                                onClick={() => {
-                                    item.onClick();
-                                    if (window.innerWidth < 1024) setIsMobileMenuOpen(false);
-                                }}
-                                className={`
-                                    w-full group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200
-                                    ${tab === item.id
-                                        ? 'bg-primary/10 border border-primary/20 text-primary shadow-[0_0_10px_rgba(13,185,242,0.1)]'
-                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white border border-transparent'
-                                    }
-                                    ${isSidebarCollapsed ? 'justify-center px-0' : ''}
-                                `}
-                                title={isSidebarCollapsed ? item.label : ''}
-                            >
-                                <span className={`material-symbols-outlined text-xl transition-colors ${tab === item.id ? 'text-primary' : 'group-hover:text-primary'}`}>
-                                    {item.icon}
-                                </span>
-                                {!isSidebarCollapsed && (
-                                    <span className="font-medium text-sm animate-in fade-in slide-in-from-left-2 duration-300">{item.label}</span>
-                                )}
-                            </button>
-                        ))}
-                    </nav>
-
-                    <div className="p-4 border-t border-slate-200 dark:border-slate-800 shrink-0">
-                        <div
-                            className={`flex items-center gap-3 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors ${isSidebarCollapsed ? 'justify-center' : ''}`}
-                        >
-                            <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm shrink-0">
-                                {user?.name?.charAt(0) || 'A'}
-                            </div>
-                            {!isSidebarCollapsed && (
-                                <div className="flex-1 min-w-0 animate-in fade-in slide-in-from-left-2 duration-300">
-                                    <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{user?.name || 'Administrator'}</p>
-                                    <p className="text-xs text-slate-500 truncate">{user?.email || 'admin@excelcommunity.com'}</p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </aside>
+                <AdminSidebar
+                    tab={tab}
+                    setTab={setTab}
+                    isSidebarCollapsed={isSidebarCollapsed}
+                    setIsSidebarCollapsed={setIsSidebarCollapsed}
+                    isMobileMenuOpen={isMobileMenuOpen}
+                    setIsMobileMenuOpen={setIsMobileMenuOpen}
+                    loadUsers={loadUsers}
+                    loadResults={loadResults}
+                    loadCertificates={loadCertificates}
+                />
 
                 {/* Main Content Area */}
                 <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-background-light dark:bg-background-dark">
@@ -549,10 +471,10 @@ export default function AdminDashboard() {
                                         <div className="space-y-8">
                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                                 {[
-                                                    { title: 'Total Students', value: stats.stats.totalUsers, icon: 'groups', color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20', shadow: 'shadow-[0_0_8px_rgba(13,185,242,0.2)]', trend: '+12.5%', trendIcon: 'trending_up', trendColor: 'text-emerald-400' },
-                                                    { title: 'Active Courses', value: stats.stats.totalCourses, icon: 'menu_book', color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20', shadow: 'shadow-[0_0_8px_rgba(13,185,242,0.2)]', trend: '+2 units', trendIcon: 'trending_up', trendColor: 'text-emerald-400' },
-                                                    { title: 'Enrollments', value: stats.stats.totalEnrollments, icon: 'grade', color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20', shadow: 'shadow-[0_0_8px_rgba(13,185,242,0.2)]', trend: '+5.2%', trendIcon: 'trending_up', trendColor: 'text-emerald-400' },
-                                                    { title: 'Certificates', value: stats.stats.totalCertificates, icon: 'verified', color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20', shadow: 'shadow-[0_0_8px_rgba(13,185,242,0.2)]', trend: '12 urgent', trendIcon: 'hourglass_empty', trendColor: 'text-amber-400' },
+                                                    { title: 'Total Students', value: stats.stats.totalUsers, icon: 'groups', color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20', shadow: 'shadow-[0_0_8px_rgba(13,185,242,0.2)]', trend: `${stats.stats.trends.users >= 0 ? '+' : ''}${stats.stats.trends.users}%`, trendIcon: stats.stats.trends.users >= 0 ? 'trending_up' : 'trending_down', trendColor: stats.stats.trends.users >= 0 ? 'text-emerald-400' : 'text-rose-400' },
+                                                    { title: 'Active Courses', value: stats.stats.totalCourses, icon: 'menu_book', color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20', shadow: 'shadow-[0_0_8px_rgba(13,185,242,0.2)]', trend: `${stats.stats.trends.courses >= 0 ? '+' : ''}${stats.stats.trends.courses}%`, trendIcon: stats.stats.trends.courses >= 0 ? 'trending_up' : 'trending_down', trendColor: stats.stats.trends.courses >= 0 ? 'text-emerald-400' : 'text-rose-400' },
+                                                    { title: 'Enrollments', value: stats.stats.totalEnrollments, icon: 'grade', color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20', shadow: 'shadow-[0_0_8px_rgba(13,185,242,0.2)]', trend: `${stats.stats.trends.enrollments >= 0 ? '+' : ''}${stats.stats.trends.enrollments}%`, trendIcon: stats.stats.trends.enrollments >= 0 ? 'trending_up' : 'trending_down', trendColor: stats.stats.trends.enrollments >= 0 ? 'text-emerald-400' : 'text-rose-400' },
+                                                    { title: 'Certificates', value: stats.stats.totalCertificates, icon: 'verified', color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20', shadow: 'shadow-[0_0_8px_rgba(13,185,242,0.2)]', trend: `${stats.stats.trends.certificates >= 0 ? '+' : ''}${stats.stats.trends.certificates}%`, trendIcon: stats.stats.trends.certificates >= 0 ? 'trending_up' : 'trending_down', trendColor: stats.stats.trends.certificates >= 0 ? 'text-emerald-400' : 'text-rose-400' },
                                                 ].map((stat, i) => (
                                                     <div key={i} className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600 transition-colors shadow-sm dark:shadow-lg">
                                                         <div className="flex items-center justify-between mb-4">
@@ -612,7 +534,7 @@ export default function AdminDashboard() {
                                                         <span className="material-symbols-outlined text-primary">notifications_active</span> Recent Enrollments
                                                     </h3>
                                                     <div className="space-y-6">
-                                                        {stats.recentEnrollments.map((e, i) => {
+                                                        {stats?.recentEnrollments?.map((e, i) => {
                                                             const colors = [
                                                                 { bg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', icon: 'verified', blur: 'bg-emerald-500/20' },
                                                                 { bg: 'bg-blue-500/10 text-blue-400 border-blue-500/20', icon: 'person_add', blur: 'bg-blue-500/20' },
@@ -646,8 +568,8 @@ export default function AdminDashboard() {
                                                                 </div>
                                                             );
                                                         })}
-                                                        {stats.recentEnrollments.length === 0 && (
-                                                            <p className="text-sm text-slate-500">No recent enrollments to perform.</p>
+                                                        {(!stats || stats.recentEnrollments.length === 0) && (
+                                                            <p className="text-sm text-slate-500">No recent enrollments available.</p>
                                                         )}
                                                     </div>
                                                     <button className="w-full mt-8 py-3 border border-slate-200 dark:border-slate-800 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
@@ -867,7 +789,19 @@ export default function AdminDashboard() {
                                                                     </button>
                                                                     <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800/50 p-1 rounded-xl border border-slate-100 dark:border-slate-700">
                                                                         <button onClick={() => handleEditCourseInfo(course)} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-lg text-slate-500 dark:text-slate-400 hover:text-primary transition-colors" title="Edit Info"><span className="material-symbols-outlined text-lg">edit</span></button>
-                                                                        <button onClick={() => setShowModuleForm(showModuleForm === course.id ? null : course.id)} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-lg text-slate-500 dark:text-slate-400 hover:text-primary transition-colors" title="Add Module"><span className="material-symbols-outlined text-lg">create_new_folder</span></button>
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                if (expandedCourse !== course.id) {
+                                                                                    setExpandedCourse(course.id);
+                                                                                    loadCourseDetail(course.id);
+                                                                                }
+                                                                                setShowModuleForm(showModuleForm === course.id ? null : course.id);
+                                                                            }}
+                                                                            className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-lg text-slate-500 dark:text-slate-400 hover:text-primary transition-colors"
+                                                                            title="Add Module"
+                                                                        >
+                                                                            <span className="material-symbols-outlined text-lg">create_new_folder</span>
+                                                                        </button>
                                                                         <button onClick={() => setShowQuizForm({ id: course.id, type: 'course', mode: 'create' })} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-lg text-slate-500 dark:text-slate-400 hover:text-emerald-500 transition-colors" title="Add Final Exam"><span className="material-symbols-outlined text-lg">quiz</span></button>
                                                                         <button onClick={() => handleDeleteCourse(course.id)} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-lg text-slate-500 dark:text-slate-400 hover:text-red-500 transition-colors" title="Delete Course"><span className="material-symbols-outlined text-lg">delete</span></button>
                                                                     </div>
@@ -905,9 +839,18 @@ export default function AdminDashboard() {
                                                                                     </div>
                                                                                     <div className="p-3 space-y-2">
                                                                                         {mod.lessons?.map((lesson: any) => (
-                                                                                            <div key={lesson.id} className="flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-950/50 rounded-lg group/lesson">
-                                                                                                <div className="flex items-center gap-2"><span className="material-symbols-outlined text-slate-400 text-sm">play_circle</span><span className="text-xs font-medium">{lesson.title}</span></div>
-                                                                                                <button onClick={() => handleDeleteLesson(lesson.id)} className="opacity-0 group-hover/lesson:opacity-100 p-1 text-slate-400 hover:text-red-500"><span className="material-symbols-outlined text-sm">close</span></button>
+                                                                                            <div key={lesson.id} className="flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-950/50 rounded-lg group/lesson transition-all hover:bg-white dark:hover:bg-slate-900 shadow-sm border border-transparent hover:border-slate-200 dark:hover:border-slate-800">
+                                                                                                <div className="flex items-center gap-3">
+                                                                                                    <span className="material-symbols-outlined text-slate-400 text-sm">play_circle</span>
+                                                                                                    <div className="flex flex-col">
+                                                                                                        <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">{lesson.title}</span>
+                                                                                                        <div className="flex gap-2">
+                                                                                                            {lesson.videoUrl && <span className="text-[9px] font-black uppercase text-emerald-500 flex items-center gap-0.5"><span className="material-symbols-outlined text-[10px]">videocam</span> Video</span>}
+                                                                                                            {lesson.materialUrl && <span className="text-[9px] font-black uppercase text-sky-500 flex items-center gap-0.5"><span className="material-symbols-outlined text-[10px]">description</span> PDF</span>}
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                                <button onClick={() => handleDeleteLesson(lesson.id)} className="opacity-0 group-hover/lesson:opacity-100 p-1 text-slate-400 hover:text-red-500 transition-opacity"><span className="material-symbols-outlined text-sm">delete</span></button>
                                                                                             </div>
                                                                                         ))}
                                                                                         {mod.quizzes?.map((quiz: any) => (
@@ -917,11 +860,57 @@ export default function AdminDashboard() {
                                                                                             </div>
                                                                                         ))}
                                                                                         {showLessonForm === mod.id && (
-                                                                                            <div className="mt-2 p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3 animate-in slide-in-from-top-2">
-                                                                                                <input value={lessonForm.title} onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })} placeholder="Lesson Title" className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-xs" />
-                                                                                                <div className="flex gap-2">
-                                                                                                    <button onClick={() => handleAddLesson(mod.id)} className="flex-1 py-1.5 bg-slate-800 text-white rounded-lg text-[10px] font-bold">Add</button>
-                                                                                                    <button onClick={() => setShowLessonForm(null)} className="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 rounded-lg text-[10px] font-bold">Cancel</button>
+                                                                                            <div className="mt-2 p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4 animate-in slide-in-from-top-2">
+                                                                                                <div className="space-y-3">
+                                                                                                    <input
+                                                                                                        value={lessonForm.title}
+                                                                                                        onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })}
+                                                                                                        placeholder="Lesson Title"
+                                                                                                        className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-bold"
+                                                                                                    />
+                                                                                                    <textarea
+                                                                                                        value={lessonForm.description}
+                                                                                                        onChange={(e) => setLessonForm({ ...lessonForm, description: e.target.value })}
+                                                                                                        placeholder="Lesson Description (optional)"
+                                                                                                        rows={2}
+                                                                                                        className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-xs"
+                                                                                                    />
+
+                                                                                                    <div className="grid grid-cols-2 gap-3">
+                                                                                                        <div className="space-y-1">
+                                                                                                            <button
+                                                                                                                onClick={() => handleLessonUpload('video')}
+                                                                                                                className={`w-full flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${lessonForm.videoUrl ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 hover:border-primary hover:text-primary'}`}
+                                                                                                            >
+                                                                                                                <span className="material-symbols-outlined text-sm">{lessonForm.videoUrl ? 'check_circle' : 'videocam'}</span>
+                                                                                                                {uploading.video ? 'Uploading...' : (lessonForm.videoUrl ? 'Video Added' : 'Add Video')}
+                                                                                                            </button>
+                                                                                                        </div>
+                                                                                                        <div className="space-y-1">
+                                                                                                            <button
+                                                                                                                onClick={() => handleLessonUpload('material')}
+                                                                                                                className={`w-full flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${lessonForm.materialUrl ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 hover:border-primary hover:text-primary'}`}
+                                                                                                            >
+                                                                                                                <span className="material-symbols-outlined text-sm">{lessonForm.materialUrl ? 'check_circle' : 'description'}</span>
+                                                                                                                {uploading.material ? 'Uploading...' : (lessonForm.materialUrl ? 'PDF Added' : 'Add PDF')}
+                                                                                                            </button>
+                                                                                                        </div>
+                                                                                                    </div>
+
+                                                                                                    {uploadProgress !== null && (
+                                                                                                        <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1 overflow-hidden">
+                                                                                                            <motion.div
+                                                                                                                initial={{ width: 0 }}
+                                                                                                                animate={{ width: `${uploadProgress}%` }}
+                                                                                                                className="bg-primary h-full"
+                                                                                                            />
+                                                                                                        </div>
+                                                                                                    )}
+                                                                                                </div>
+
+                                                                                                <div className="flex gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                                                                                                    <button onClick={() => handleAddLesson(mod.id)} className="flex-1 py-2 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20">Create Lesson</button>
+                                                                                                    <button onClick={() => setShowLessonForm(null)} className="px-4 py-2 bg-slate-200 dark:bg-slate-800 rounded-xl text-[10px] font-black uppercase tracking-widest">Cancel</button>
                                                                                                 </div>
                                                                                             </div>
                                                                                         )}
@@ -1106,50 +1095,50 @@ export default function AdminDashboard() {
 
                                 {/* Results Tab */}
                                 {
-                                    tab === 'results' && (
+                                    tab === 'results' && stats && (
                                         <div className="flex-1 overflow-y-auto p-4 sm:p-8 scroll-smooth">
                                             {/* Analytics Cards */}
                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                                                 <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
                                                     <div className="flex justify-between items-start mb-2">
                                                         <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Avg. Pass Rate</p>
-                                                        <span className="text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded text-xs font-medium">+2.5%</span>
+                                                        <span className="text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded text-xs font-medium">Real-time</span>
                                                     </div>
-                                                    <h3 className="text-3xl font-bold text-slate-900 dark:text-white">88.4%</h3>
+                                                    <h3 className="text-3xl font-bold text-slate-900 dark:text-white">{stats.stats.analytics.passRate}%</h3>
                                                     <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 mt-4 overflow-hidden">
-                                                        <div className="bg-primary h-1.5 rounded-full" style={{ width: '88.4%' }}></div>
+                                                        <div className="bg-primary h-1.5 rounded-full" style={{ width: `${stats.stats.analytics.passRate}%` }}></div>
                                                     </div>
                                                 </div>
                                                 <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
                                                     <div className="flex justify-between items-start mb-2">
                                                         <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Exams Taken</p>
-                                                        <span className="text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded text-xs font-medium">+12%</span>
+                                                        <span className="text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded text-xs font-medium">Real-time</span>
                                                     </div>
-                                                    <h3 className="text-3xl font-bold text-slate-900 dark:text-white">{results.length}</h3>
+                                                    <h3 className="text-3xl font-bold text-slate-900 dark:text-white">{stats.stats.analytics.totalExams}</h3>
                                                     <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 mt-4 overflow-hidden">
-                                                        <div className="bg-blue-400 h-1.5 rounded-full" style={{ width: '65%' }}></div>
+                                                        <div className="bg-blue-400 h-1.5 rounded-full" style={{ width: '100%' }}></div>
                                                     </div>
                                                 </div>
                                                 <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
                                                     <div className="flex justify-between items-start mb-2">
                                                         <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Average Score</p>
-                                                        <span className="text-rose-500 bg-rose-500/10 px-2 py-0.5 rounded text-xs font-medium">-0.8%</span>
+                                                        <span className="text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded text-xs font-medium">Real-time</span>
                                                     </div>
                                                     <h3 className="text-3xl font-bold text-slate-900 dark:text-white">
-                                                        {results.length > 0 ? Math.round(results.reduce((acc: number, r: any) => acc + r.score, 0) / results.length) : 0}/100
+                                                        {stats.stats.analytics.avgScore}/100
                                                     </h3>
                                                     <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 mt-4 overflow-hidden">
-                                                        <div className="bg-purple-500 h-1.5 rounded-full" style={{ width: `${results.length > 0 ? Math.round(results.reduce((acc: number, r: any) => acc + r.score, 0) / results.length) : 0}%` }}></div>
+                                                        <div className="bg-purple-500 h-1.5 rounded-full" style={{ width: `${stats.stats.analytics.avgScore}%` }}></div>
                                                     </div>
                                                 </div>
                                                 <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
                                                     <div className="flex justify-between items-start mb-2">
                                                         <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Passed Exams</p>
-                                                        <span className="text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded text-xs font-medium">+5.2%</span>
+                                                        <span className="text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded text-xs font-medium">Real-time</span>
                                                     </div>
-                                                    <h3 className="text-3xl font-bold text-slate-900 dark:text-white">{results.filter((r: any) => r.passed).length}</h3>
+                                                    <h3 className="text-3xl font-bold text-slate-900 dark:text-white">{stats.stats.analytics.passedExams}</h3>
                                                     <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 mt-4 overflow-hidden">
-                                                        <div className="bg-amber-500 h-1.5 rounded-full" style={{ width: `${results.length > 0 ? (results.filter((r: any) => r.passed).length / results.length) * 100 : 0}%` }}></div>
+                                                        <div className="bg-amber-500 h-1.5 rounded-full" style={{ width: `${stats.stats.analytics.totalExams > 0 ? (stats.stats.analytics.passedExams / stats.stats.analytics.totalExams) * 100 : 0}%` }}></div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1159,7 +1148,7 @@ export default function AdminDashboard() {
 
                                 {/* Certificates Tab */}
                                 {
-                                    tab === 'certificates' && (
+                                    tab === 'certificates' && stats && (
                                         <div className="flex-1 overflow-y-auto p-4 sm:p-8 scroll-smooth">
                                             {/* Summary Cards & Verification */}
                                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
@@ -1182,9 +1171,9 @@ export default function AdminDashboard() {
                                                                 <div className="w-8 h-8 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center">
                                                                     <span className="material-symbols-outlined text-sm">school</span>
                                                                 </div>
-                                                                <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Active Students</span>
+                                                                <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Total Students</span>
                                                             </div>
-                                                            <span className="text-2xl font-bold text-slate-900 dark:text-white">{users.filter((u: any) => u.role === 'USER').length}</span>
+                                                            <span className="text-2xl font-bold text-slate-900 dark:text-white">{stats.stats.totalUsers}</span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1237,7 +1226,7 @@ export default function AdminDashboard() {
                                                                 return (
                                                                     <tr key={c.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
                                                                         <td className="px-6 py-4 font-mono text-xs text-slate-500 dark:text-slate-500">
-                                                                            CERT-{new Date(c.issueDate).getFullYear()}-{c.id.substring(0, 4).toUpperCase()}
+                                                                            CERT-{new Date(c.issuedAt).getFullYear()}-{c.id.substring(0, 4).toUpperCase()}
                                                                         </td>
                                                                         <td className="px-6 py-4 font-medium text-slate-900 dark:text-white flex items-center gap-3">
                                                                             <div className={`w-8 h-8 rounded-full ${colorClass} text-white flex items-center justify-center font-bold text-xs shrink-0`}>
@@ -1246,7 +1235,7 @@ export default function AdminDashboard() {
                                                                             <span className="truncate">{c.user?.name || '—'}</span>
                                                                         </td>
                                                                         <td className="px-6 py-4 truncate max-w-xs">{c.course?.title}</td>
-                                                                        <td className="px-6 py-4 whitespace-nowrap">{new Date(c.issueDate).toLocaleDateString()}</td>
+                                                                        <td className="px-6 py-4 whitespace-nowrap">{new Date(c.issuedAt).toLocaleDateString()}</td>
                                                                         <td className="px-6 py-4 text-right whitespace-nowrap">
                                                                             <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                                                 <button className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md text-slate-400 hover:text-primary transition-colors" title="View Details">
