@@ -5,9 +5,10 @@ import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { Enrollment } from '@/lib/types';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import RoleGuard from '@/components/RoleGuard';
+import StudentSidebar from '@/components/StudentSidebar';
 
 const COURSE_IMAGES = [
     "https://lh3.googleusercontent.com/aida-public/AB6AXuCu-zYmikqqgWp7XL195teqe8TOODyvoboA8HIQmeON3V97MwR-VD5-AxiKyfAPHRYrvXuAX694m8rSKhNDf6Z_e6V1vX809P1f4QmT-DCvV66SOC_ZlAphWkaice6oJ8b9QHPjclKgcJH8q66s9rAFnwymE5hWSi5zsHFnBr-emaAYkjl-6gSxwd6uT1kNx3pDvF1rbUfNE9xLspdMXfQ0AI7IlP1VVqS0aZayH1lszHnmXHDC2uqC0N03CL8FKph-CzKArx9A_-Q",
@@ -51,36 +52,7 @@ export default function MyCoursesPage() {
                 className="min-h-screen bg-background-light dark:bg-background-dark overflow-x-hidden"
             >
                 <div className="flex flex-1">
-                    {/* Sidebar */}
-                    <aside className="hidden lg:flex w-64 flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 gap-8 min-h-screen sticky top-16">
-                        <nav className="flex flex-col gap-2">
-                            <Link href="/my-courses" className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-primary/5 hover:text-primary transition-colors">
-                                <span className="material-symbols-outlined">dashboard</span>
-                                <span className="font-medium">Dashboard</span>
-                            </Link>
-                            <Link href="/my-courses" className="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary text-white shadow-lg shadow-primary/30">
-                                <span className="material-symbols-outlined">book</span>
-                                <span className="font-medium">My Courses</span>
-                            </Link>
-                            <Link href="/courses" className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-primary/5 hover:text-primary transition-colors">
-                                <span className="material-symbols-outlined">assignment_turned_in</span>
-                                <span className="font-medium">Practice Exams</span>
-                            </Link>
-                            <Link href="/certificates" className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-primary/5 hover:text-primary transition-colors">
-                                <span className="material-symbols-outlined">workspace_premium</span>
-                                <span className="font-medium">Certificates</span>
-                            </Link>
-                        </nav>
-                        {/* Premium CTA */}
-                        <div className="mt-auto bg-primary/10 rounded-2xl p-4 flex flex-col gap-3">
-                            <div className="flex items-center gap-2 text-primary">
-                                <span className="material-symbols-outlined text-sm">bolt</span>
-                                <span className="text-xs font-bold uppercase tracking-wider">Premium Plan</span>
-                            </div>
-                            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">Unlock advanced clinical simulations and mock state tests.</p>
-                            <button className="bg-primary text-white text-xs font-bold py-2 rounded-lg hover:bg-primary/90">Upgrade Now</button>
-                        </div>
-                    </aside>
+                    <StudentSidebar />
 
                     {/* Main Content */}
                     <main className="flex-1 overflow-y-auto p-6 lg:p-10">

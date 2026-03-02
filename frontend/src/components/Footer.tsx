@@ -7,8 +7,8 @@ export default function Footer() {
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-12 mb-12">
                     {/* Brand */}
                     <div className="col-span-2">
-                        <Link href="/" className="flex items-center gap-2 text-white mb-6">
-                            <span className="material-symbols-outlined text-primary text-3xl">medical_services</span>
+                        <Link href="/" className="flex items-center gap-2 text-white mb-6 font-display group">
+                            <span className="material-symbols-outlined text-primary text-3xl group-hover:scale-110 transition-transform">medical_services</span>
                             <span className="text-xl font-bold tracking-tight">Excelcommunity Living Inc</span>
                         </Link>
                         <p className="text-sm leading-relaxed mb-6">
@@ -68,7 +68,7 @@ export default function Footer() {
 
                 {/* Bottom bar */}
                 <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 text-xs">
-                    <p>© {new Date().getFullYear()} Excelcommunity Living Inc. All rights reserved. A CareAcademy Company.</p>
+                    <p>© {new Date().getFullYear()} Excelcommunity Living Inc. All rights reserved.</p>
                     <div className="flex gap-6">
                         <span className="flex items-center gap-1"><span className="material-symbols-outlined text-[12px]">check_circle</span> State Approved</span>
                         <span className="flex items-center gap-1"><span className="material-symbols-outlined text-[12px]">lock</span> SSL Secured</span>
