@@ -49,6 +49,12 @@ export default function AdminDashboard() {
 
     const [users, setUsers] = useState<any[]>([]);
     const [results, setResults] = useState<any[]>([]);
+    const [notifications, setNotifications] = useState<any[]>([]);
+    const [showNotifications, setShowNotifications] = useState(false);
+
+    // User management
+    const [showUserForm, setShowUserForm] = useState(false);
+    const [userForm, setUserForm] = useState({ name: '', email: '', password: '', role: 'STUDENT' });
 
     // Sidebar management
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -67,16 +73,18 @@ export default function AdminDashboard() {
 
     const loadData = async () => {
         try {
-            const [statsRes, coursesRes, usersRes, resultsRes] = await Promise.all([
+            const [statsRes, coursesRes, usersRes, resultsRes, notifsRes] = await Promise.all([
                 api.get('/admin/dashboard'),
                 api.get('/courses'),
                 api.get('/admin/users'),
-                api.get('/quizzes/results/all')
+                api.get('/quizzes/results/all'),
+                api.get('/admin/notifications')
             ]);
             setStats(statsRes.data);
             setCourses(coursesRes.data);
             setUsers(usersRes.data);
             setResults(resultsRes.data);
+            setNotifications(notifsRes.data);
             setLoading(false);
         } catch (error) {
             console.error('Failed to load admin data', error);
@@ -138,6 +146,40 @@ export default function AdminDashboard() {
         } finally {
             setSaving(false);
         }
+    };
+
+    const handleCreateUser = async () => {
+        if (!userForm.email || !userForm.password) return alert('Email and password required');
+        setSaving(true);
+        try {
+            await api.post('/admin/users', userForm);
+            setUserForm({ name: '', email: '', password: '', role: 'STUDENT' });
+            setShowUserForm(false);
+            loadUsers();
+        } catch (err: any) {
+            alert(err.response?.data?.message || 'Error creating user');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleApproveCertificate = async (certId: string, status: 'APPROVED' | 'REJECTED') => {
+        try {
+            await api.patch(`/admin/certificates/${certId}/status`, { status });
+            loadCertificates();
+            // Refresh notifications too
+            const notifsRes = await api.get('/admin/notifications');
+            setNotifications(notifsRes.data);
+        } catch (error: any) {
+            alert(error.response?.data?.message || 'Error updating certificate status');
+        }
+    };
+
+    const markRead = async (id: string) => {
+        try {
+            await api.patch(`/admin/notifications/${id}/read`);
+            setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+        } catch { }
     };
 
     const handleEditCourseInfo = (course: any) => {
@@ -418,10 +460,67 @@ export default function AdminDashboard() {
                                     className="pl-10 pr-4 py-2 w-64 bg-slate-100 dark:bg-slate-800 border-transparent focus:border-primary focus:bg-white dark:focus:bg-slate-900 focus:ring-0 rounded-lg text-sm transition-all"
                                 />
                             </div>
-                            <button className="relative p-2 text-slate-500 hover:text-primary transition-colors">
-                                <span className="material-symbols-outlined">notifications</span>
-                                <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-                            </button>
+                            <div className="relative">
+                                <button
+                                    onClick={() => setShowNotifications(!showNotifications)}
+                                    className="relative p-2 text-slate-500 hover:text-primary transition-colors"
+                                >
+                                    <span className="material-symbols-outlined">notifications</span>
+                                    {notifications.some(n => !n.read) && (
+                                        <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                                    )}
+                                </button>
+
+                                {showNotifications && (
+                                    <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                        <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                                            <h4 className="font-bold text-sm">Notifications</h4>
+                                            <span className="text-[10px] font-black uppercase text-primary px-2 py-0.5 bg-primary/10 rounded">
+                                                {notifications.filter(n => !n.read).length} New
+                                            </span>
+                                        </div>
+                                        <div className="max-h-96 overflow-y-auto">
+                                            {notifications.length > 0 ? (
+                                                notifications.map((n: any) => (
+                                                    <div
+                                                        key={n.id}
+                                                        onClick={() => { markRead(n.id); if (n.type === 'EXAM_COMPLETED') setTab('certificates'); setShowNotifications(false); }}
+                                                        className={`p-4 border-b border-slate-50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors ${!n.read ? 'bg-primary/5' : ''}`}
+                                                    >
+                                                        <div className="flex gap-3">
+                                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${n.type === 'EXAM_COMPLETED' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600' : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600'
+                                                                }`}>
+                                                                <span className="material-symbols-outlined text-lg">
+                                                                    {n.type === 'EXAM_COMPLETED' ? 'grade' : 'verified_user'}
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="text-sm font-bold truncate">{n.title}</p>
+                                                                <p className="text-xs text-slate-500 line-clamp-2 mt-0.5">{n.message}</p>
+                                                                <p className="text-[10px] text-slate-400 mt-2 flex items-center gap-1">
+                                                                    <span className="material-symbols-outlined text-[10px]">schedule</span>
+                                                                    {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                </p>
+                                                            </div>
+                                                            {!n.read && <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>}
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="p-12 text-center">
+                                                    <span className="material-symbols-outlined text-4xl text-slate-300 mb-2">notifications_off</span>
+                                                    <p className="text-xs text-slate-500">No notifications yet</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                        {notifications.length > 0 && (
+                                            <div className="p-3 bg-slate-50 dark:bg-slate-800/50 text-center">
+                                                <button className="text-[10px] font-black uppercase text-slate-400 hover:text-primary transition-colors">Clear All</button>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                             <button
                                 onClick={() => {
                                     const next = !document.documentElement.classList.contains('dark');
@@ -987,8 +1086,7 @@ export default function AdminDashboard() {
                                                         <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">filter_list</span>
                                                         <select className="pl-10 pr-8 py-2.5 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary rounded-lg text-sm text-slate-900 dark:text-slate-200 transition-all shadow-sm appearance-none">
                                                             <option value="">All Roles</option>
-                                                            <option value="USER">Student</option>
-                                                            <option value="TEACHER">Staff</option>
+                                                            <option value="STUDENT">Student</option>
                                                             <option value="ADMIN">Administrator</option>
                                                         </select>
                                                         <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-lg">expand_more</span>
@@ -999,12 +1097,78 @@ export default function AdminDashboard() {
                                                         <span className="material-symbols-outlined text-lg">file_download</span>
                                                         Export Data
                                                     </button>
-                                                    <button className="flex-1 sm:flex-none px-4 py-2.5 bg-primary hover:bg-primary/90 text-white rounded-lg text-sm font-medium transition-colors shadow-lg shadow-primary/20 flex items-center justify-center gap-2">
+                                                    <button
+                                                        onClick={() => setShowUserForm(true)}
+                                                        className="flex-1 sm:flex-none px-4 py-2.5 bg-primary hover:bg-primary/90 text-white rounded-lg text-sm font-medium transition-colors shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
+                                                    >
                                                         <span className="material-symbols-outlined text-lg">person_add</span>
-                                                        Invite User
+                                                        Add Member
                                                     </button>
                                                 </div>
                                             </div>
+
+                                            {/* Create User Form */}
+                                            {showUserForm && (
+                                                <div className="mb-8 p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl animate-in slide-in-from-top-4 duration-300">
+                                                    <div className="flex justify-between items-center mb-6">
+                                                        <h3 className="text-lg font-bold">Add New Team Member</h3>
+                                                        <button onClick={() => setShowUserForm(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+                                                            <span className="material-symbols-outlined">close</span>
+                                                        </button>
+                                                    </div>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                                        <div>
+                                                            <label className="text-[10px] font-black uppercase text-slate-400 mb-1 block tracking-wider">Full Name</label>
+                                                            <input
+                                                                value={userForm.name}
+                                                                onChange={(e) => setUserForm({ ...userForm, name: e.target.value })}
+                                                                placeholder="e.g. John Doe"
+                                                                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-[10px] font-black uppercase text-slate-400 mb-1 block tracking-wider">Email Address</label>
+                                                            <input
+                                                                value={userForm.email}
+                                                                onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
+                                                                placeholder="email@example.com"
+                                                                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-[10px] font-black uppercase text-slate-400 mb-1 block tracking-wider">Password</label>
+                                                            <input
+                                                                type="password"
+                                                                value={userForm.password}
+                                                                onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
+                                                                placeholder="••••••••"
+                                                                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-[10px] font-black uppercase text-slate-400 mb-1 block tracking-wider">System Role</label>
+                                                            <select
+                                                                value={userForm.role}
+                                                                onChange={(e) => setUserForm({ ...userForm, role: e.target.value })}
+                                                                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                                                            >
+                                                                <option value="STUDENT">Student</option>
+                                                                <option value="ADMIN">Administrator</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-slate-100 dark:border-slate-800">
+                                                        <button onClick={() => setShowUserForm(false)} className="px-6 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Cancel</button>
+                                                        <button
+                                                            onClick={handleCreateUser}
+                                                            disabled={saving}
+                                                            className="px-8 py-2.5 rounded-xl bg-primary text-white text-sm font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all disabled:opacity-50"
+                                                        >
+                                                            {saving ? 'Creating...' : 'Create Member'}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
 
                                             {/* Table */}
                                             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
@@ -1051,9 +1215,9 @@ export default function AdminDashboard() {
                                                                         <td className="px-6 py-4 whitespace-nowrap">
                                                                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${u.role === 'ADMIN'
                                                                                 ? 'bg-primary/10 text-primary border-primary/20'
-                                                                                : (u.role === 'TEACHER' ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800' : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700')
+                                                                                : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700'
                                                                                 }`}>
-                                                                                {u.role === 'USER' ? 'Student' : (u.role === 'TEACHER' ? 'Staff' : 'Administrator')}
+                                                                                {u.role === 'STUDENT' ? 'Student' : 'Administrator'}
                                                                             </span>
                                                                         </td>
                                                                         <td className="px-6 py-4 whitespace-nowrap">
@@ -1212,8 +1376,9 @@ export default function AdminDashboard() {
                                                             <tr>
                                                                 <th className="px-6 py-4 font-semibold shrink-0" scope="col">Certificate ID</th>
                                                                 <th className="px-6 py-4 font-semibold min-w-[200px]" scope="col">Student Name</th>
-                                                                <th className="px-6 py-4 font-semibold min-w-[200px]" scope="col">Course</th>
-                                                                <th className="px-6 py-4 font-semibold shrink-0" scope="col">Date Issued</th>
+                                                                <th className="px-0 py-4 font-semibold min-w-[200px]" scope="col">Course</th>
+                                                                <th className="px-6 py-4 font-semibold shrink-0" scope="col">Date Submitted</th>
+                                                                <th className="px-6 py-4 font-semibold shrink-0" scope="col">Status</th>
                                                                 <th className="px-6 py-4 font-semibold shrink-0 text-right" scope="col">Actions</th>
                                                             </tr>
                                                         </thead>
@@ -1234,16 +1399,43 @@ export default function AdminDashboard() {
                                                                             </div>
                                                                             <span className="truncate">{c.user?.name || '—'}</span>
                                                                         </td>
-                                                                        <td className="px-6 py-4 truncate max-w-xs">{c.course?.title}</td>
+                                                                        <td className="px-0 py-4 truncate max-w-xs">{c.course?.title}</td>
                                                                         <td className="px-6 py-4 whitespace-nowrap">{new Date(c.issuedAt).toLocaleDateString()}</td>
+                                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${c.status === 'APPROVED' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' :
+                                                                                c.status === 'REJECTED' ? 'bg-rose-500/10 text-rose-600 border-rose-500/20' :
+                                                                                    'bg-amber-500/10 text-amber-600 border-amber-500/20'
+                                                                                }`}>
+                                                                                {c.status || 'PENDING'}
+                                                                            </span>
+                                                                        </td>
                                                                         <td className="px-6 py-4 text-right whitespace-nowrap">
-                                                                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                                <button className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md text-slate-400 hover:text-primary transition-colors" title="View Details">
-                                                                                    <span className="material-symbols-outlined text-lg">visibility</span>
-                                                                                </button>
-                                                                                <button className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md text-slate-400 hover:text-primary transition-colors" title="Download PDF">
-                                                                                    <span className="material-symbols-outlined text-lg">download</span>
-                                                                                </button>
+                                                                            <div className="flex items-center justify-end gap-2">
+                                                                                {c.status === 'PENDING' ? (
+                                                                                    <>
+                                                                                        <button
+                                                                                            onClick={() => handleApproveCertificate(c.id, 'APPROVED')}
+                                                                                            className="px-3 py-1 bg-emerald-500 text-white text-[10px] font-bold rounded-lg hover:bg-emerald-600 transition-colors shadow-sm"
+                                                                                        >
+                                                                                            Approve
+                                                                                        </button>
+                                                                                        <button
+                                                                                            onClick={() => handleApproveCertificate(c.id, 'REJECTED')}
+                                                                                            className="px-3 py-1 bg-rose-500 text-white text-[10px] font-bold rounded-lg hover:bg-rose-600 transition-colors shadow-sm"
+                                                                                        >
+                                                                                            Reject
+                                                                                        </button>
+                                                                                    </>
+                                                                                ) : (
+                                                                                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                                        <button className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md text-slate-400 hover:text-primary transition-colors" title="View Details">
+                                                                                            <span className="material-symbols-outlined text-lg">visibility</span>
+                                                                                        </button>
+                                                                                        <button className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md text-slate-400 hover:text-primary transition-colors" title="Download PDF">
+                                                                                            <span className="material-symbols-outlined text-lg">download</span>
+                                                                                        </button>
+                                                                                    </div>
+                                                                                )}
                                                                             </div>
                                                                         </td>
                                                                     </tr>

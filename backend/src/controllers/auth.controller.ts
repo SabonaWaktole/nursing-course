@@ -23,7 +23,7 @@ export const register = async (req: Request, res: Response) => {
                 email,
                 password: hashedPassword,
                 name: name || email.split('@')[0],
-                role: role === 'ADMIN' ? 'ADMIN' : 'STUDENT',
+                role: 'STUDENT',
             },
         });
 
@@ -142,6 +142,26 @@ export const updatePassword = async (req: Request, res: Response) => {
         res.json({ message: 'Password updated successfully' });
     } catch (error: any) {
         console.error('updatePassword error:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const deleteAccount = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user?.userId;
+        if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+        // Manually delete related records
+        await prisma.$transaction([
+            prisma.result.deleteMany({ where: { userId } }),
+            prisma.enrollment.deleteMany({ where: { userId } }),
+            prisma.certificate.deleteMany({ where: { userId } }),
+            prisma.user.delete({ where: { id: userId } }),
+        ]);
+
+        res.json({ message: 'Account deleted successfully' });
+    } catch (error: any) {
+        console.error('deleteAccount error:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 };

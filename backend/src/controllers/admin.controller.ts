@@ -99,14 +99,82 @@ export const getAllCertificates = async (req: Request, res: Response) => {
     try {
         const certificates = await prisma.certificate.findMany({
             include: {
-                user: { select: { name: true, email: true } },
-                course: { select: { title: true } },
+                user: { select: { id: true, name: true, email: true } },
+                course: { select: { id: true, title: true } },
             },
             orderBy: { issuedAt: 'desc' },
         });
         res.json(certificates);
     } catch (error: any) {
         res.status(500).json({ message: 'Error fetching certificates' });
+    }
+};
+
+export const approveCertificate = async (req: Request, res: Response) => {
+    try {
+        const id = req.params.id as string;
+        const { status } = req.body; // 'APPROVED' or 'REJECTED'
+
+        const cert = await (prisma.certificate as any).update({
+            where: { id },
+            data: { status },
+            include: { user: true, course: true }
+        });
+
+        const courseTitle = cert.course?.title || 'your course';
+
+        // Notify user
+        await (prisma as any).notification.create({
+            data: {
+                userId: cert.userId,
+                title: status === 'APPROVED' ? 'Certificate Approved!' : 'Certificate Rejected',
+                message: status === 'APPROVED'
+                    ? `Congratulations! Your certificate for "${courseTitle}" has been approved.`
+                    : `We couldn't approve your certificate for "${courseTitle}". Please contact support for details.`,
+                type: status === 'APPROVED' ? 'CERT_APPROVED' : 'CERT_REJECTED'
+            }
+        });
+
+        res.json(cert);
+    } catch (error: any) {
+        console.error('approveCertificate error:', error);
+        res.status(500).json({ message: 'Error updating certificate status' });
+    }
+};
+
+export const getNotifications = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user?.userId;
+        const userRole = (req as any).user?.role;
+
+        // Admins see system-wide notifications (userId=null)
+        // Students only see notifications addressed to them
+        const whereClause = userRole === 'ADMIN'
+            ? { OR: [{ userId: null }, { userId }] }
+            : { userId };
+
+        const notifications = await (prisma as any).notification.findMany({
+            where: whereClause,
+            orderBy: { createdAt: 'desc' },
+            take: 20
+        });
+
+        res.json(notifications);
+    } catch (error: any) {
+        res.status(500).json({ message: 'Error fetching notifications' });
+    }
+};
+
+export const markNotificationRead = async (req: Request, res: Response) => {
+    try {
+        const id = req.params.id as string;
+        await (prisma as any).notification.update({
+            where: { id },
+            data: { read: true }
+        });
+        res.json({ success: true });
+    } catch (error: any) {
+        res.status(500).json({ message: 'Error marking notification as read' });
     }
 };
 
@@ -133,5 +201,38 @@ export const deleteUser = async (req: Request, res: Response) => {
     } catch (error: any) {
         console.error('deleteUser error:', error);
         res.status(500).json({ message: 'Error deleting user' });
+    }
+};
+
+export const createUser = async (req: Request, res: Response) => {
+    try {
+        const { email, password, name, role } = req.body;
+
+        if (!email || !password) {
+            return res.status(400).json({ message: 'Email and password are required' });
+        }
+
+        const existingUser = await prisma.user.findUnique({ where: { email } });
+        if (existingUser) {
+            return res.status(400).json({ message: 'User already exists' });
+        }
+
+        const { hashPassword } = await import('../utils/hash');
+        const hashedPassword = await hashPassword(password);
+
+        const user = await prisma.user.create({
+            data: {
+                email,
+                password: hashedPassword,
+                name: name || email.split('@')[0],
+                role: role === 'ADMIN' ? 'ADMIN' : 'STUDENT',
+            },
+            select: { id: true, email: true, name: true, role: true, createdAt: true },
+        });
+
+        res.status(201).json(user);
+    } catch (error: any) {
+        console.error('createUser error:', error);
+        res.status(500).json({ message: 'Error creating user' });
     }
 };
