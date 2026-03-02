@@ -106,13 +106,30 @@ model Result {
 }
 
 model Certificate {
-  id        String   @id @default(uuid())
-  uniqueId  String   @unique @default(cuid())
-  issuedAt  DateTime @default(now())
+  id        String            @id @default(uuid())
+  uniqueId  String            @unique @default(cuid())
+  issuedAt  DateTime          @default(now())
+  status    CertificateStatus @default(PENDING)
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   courseId  String
-  course    Course   @relation(fields: [courseId], references: [id])
+  course    Course            @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}
+
+enum CertificateStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  title     String
+  message   String
+  type      String   // 'EXAM_COMPLETED', 'CERT_APPROVED', etc.
+  read      Boolean  @default(false)
+  userId    String?  // Recipient (null for all admins)
+  createdAt DateTime @default(now())
 }
 
 model Enrollment {

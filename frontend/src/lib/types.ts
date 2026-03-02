@@ -107,6 +107,7 @@ export interface Certificate {
     id: string;
     uniqueId: string;
     issuedAt: string;
+    status?: 'PENDING' | 'APPROVED' | 'REJECTED';
     course: { id: string; title: string };
 }
 

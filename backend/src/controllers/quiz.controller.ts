@@ -148,9 +148,26 @@ export const submitQuiz = async (req: Request, res: Response) => {
                 certificateId = existingCert.id;
                 certificateUniqueId = existingCert.uniqueId;
             } else {
-                const newCert = await prisma.certificate.create({
-                    data: { userId, courseId: quiz.courseId },
+                const user = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+                const course = await prisma.course.findUnique({ where: { id: quiz.courseId }, select: { title: true } });
+
+                const newCert = await (prisma.certificate as any).create({
+                    data: {
+                        userId,
+                        courseId: quiz.courseId,
+                        status: 'PENDING'
+                    },
                 });
+
+                // Create notification for all admins
+                await (prisma as any).notification.create({
+                    data: {
+                        title: 'Certificate Approval Required',
+                        message: `${user?.name || 'A student'} has completed "${course?.title}" and is waiting for certificate approval.`,
+                        type: 'EXAM_COMPLETED',
+                    }
+                });
+
                 certificateId = newCert.id;
                 certificateUniqueId = newCert.uniqueId;
             }
