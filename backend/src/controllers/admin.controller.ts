@@ -142,6 +142,64 @@ export const approveCertificate = async (req: Request, res: Response) => {
     }
 };
 
+export const revokeCertificate = async (req: Request, res: Response) => {
+    try {
+        const id = req.params.id as string;
+
+        // Ensure Prisma client is typed as any to bypass mismatch issues
+        const p = prisma as any;
+
+        // Get the cert details before making changes
+        const cert = await p.certificate.findUnique({
+            where: { id },
+            include: { course: true }
+        });
+
+        if (!cert) {
+            return res.status(404).json({ message: 'Certificate not found' });
+        }
+
+        // Wrap inside a transaction for DB safety
+        const result = await p.$transaction(async (tx: any) => {
+            // 1. Mark certificate as REJECTED
+            const updatedCert = await tx.certificate.update({
+                where: { id },
+                data: { status: 'REJECTED' }
+            });
+
+            // 2. Reset the user's progress for this specific course to 0% and completed=false
+            await tx.enrollment.updateMany({
+                where: {
+                    userId: cert.userId,
+                    courseId: cert.courseId
+                },
+                data: {
+                    progress: 0,
+                    completed: false
+                }
+            });
+
+            // 3. Create a notification for the student
+            const courseTitle = cert.course?.title || 'a recent course';
+            await tx.notification.create({
+                data: {
+                    userId: cert.userId,
+                    title: 'Certificate Revoked',
+                    message: `Your certificate for "${courseTitle}" has been revoked by an administrator. Your course progress has been reset to 0% so you may retake it.`,
+                    type: 'CERT_REVOKED'
+                }
+            });
+
+            return updatedCert;
+        });
+
+        res.json(result);
+    } catch (error: any) {
+        console.error('revokeCertificate error:', error);
+        res.status(500).json({ message: 'Error revoking certificate', error: error.message });
+    }
+};
+
 export const getNotifications = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user?.userId;

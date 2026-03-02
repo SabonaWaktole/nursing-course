@@ -49,14 +49,6 @@ export default function CourseDetailPage() {
                 }
                 if (foundQuiz) return;
             }
-
-            if (data.modules?.length > 0) {
-                const firstMod = data.modules[0];
-                setExpandedModules(new Set([firstMod.id]));
-                if (firstMod.lessons?.length > 0) {
-                    setActiveLesson(firstMod.lessons[0].id);
-                }
-            }
         });
     }, [id, fromQuiz]);
 
@@ -67,10 +59,58 @@ export default function CourseDetailPage() {
                 if (found) {
                     setEnrolled(true);
                     setProgress(found.progress || 0);
+
+                    // If enrolled, calculate which lesson should be active based on progress
+                    const allLessons: Lesson[] = course.modules?.flatMap(m => m.lessons) || [];
+                    const totalLessons = allLessons.length;
+                    if (totalLessons > 0) {
+                        if (found.progress === 0) {
+                            // Reset to first
+                            setActiveLesson(allLessons[0].id);
+                            if (course.modules?.[0]) {
+                                setExpandedModules(new Set([course.modules[0].id]));
+                            }
+                        } else if (found.progress >= 100) {
+                            // Fully completed, stay on the last lesson or whatever they clicked
+                            if (!activeLesson) {
+                                setActiveLesson(allLessons[totalLessons - 1].id);
+                                const mod = findModuleForLesson(allLessons[totalLessons - 1].id);
+                                if (mod) setExpandedModules(new Set([mod.id]));
+                            }
+                        } else {
+                            // Calculate current lesson index based on progress percentage
+                            const currentIndex = Math.max(0, Math.floor((found.progress / 100) * totalLessons));
+                            const safeIndex = Math.min(currentIndex, totalLessons - 1);
+
+                            if (!activeLesson) {
+                                setActiveLesson(allLessons[safeIndex].id);
+                                const mod = course.modules?.find(m => m.lessons.some(l => l.id === allLessons[safeIndex].id));
+                                if (mod) setExpandedModules(new Set([mod.id]));
+                            }
+                        }
+                    }
+                } else {
+                    // Not enrolled, just show the first module for preview
+                    if (course.modules?.length > 0 && !fromQuiz && !activeLesson) {
+                        const firstMod = course.modules[0];
+                        setExpandedModules(new Set([firstMod.id]));
+                        if (firstMod.lessons?.length > 0) {
+                            setActiveLesson(firstMod.lessons[0].id);
+                        }
+                    }
                 }
             }).catch(() => { });
+        } else if (!user && course) {
+            // Not logged in, just show the first module for preview
+            if (course.modules?.length > 0 && !fromQuiz && !activeLesson) {
+                const firstMod = course.modules[0];
+                setExpandedModules(new Set([firstMod.id]));
+                if (firstMod.lessons?.length > 0) {
+                    setActiveLesson(firstMod.lessons[0].id);
+                }
+            }
         }
-    }, [user, course]);
+    }, [user, course, fromQuiz]);
 
     const handleEnroll = async () => {
         if (!user) return router.push('/login');
@@ -109,7 +149,7 @@ export default function CourseDetailPage() {
             99
         );
 
-        if (newProgress > progress) {
+        if (newProgress !== progress) {
             setProgress(newProgress);
             api.put(`/courses/${course.id}/progress`, { progress: newProgress }).catch(() => { });
         }
@@ -187,7 +227,9 @@ export default function CourseDetailPage() {
                                         {mod.lessons?.map((lesson) => {
                                             const isActive = activeLesson === lesson.id;
                                             const globalIdx = allLessons.findIndex(l => l.id === lesson.id);
-                                            const isCompleted = globalIdx < currentLessonIndex;
+                                            // Tie completion to the actual database progress percentage rather than what they clicked
+                                            const maxCompletedIdx = progress >= 100 ? totalLessons : Math.floor((progress / 100) * totalLessons);
+                                            const isCompleted = globalIdx < maxCompletedIdx;
                                             return (
                                                 <button
                                                     key={lesson.id}
