@@ -60,10 +60,10 @@ export default function VerifyCertificatePage() {
             {/* Header - Hide on print */}
             <header className="no-print sticky top-0 z-50 bg-white border-b border-slate-200 px-10 py-3 shadow-sm flex items-center justify-between whitespace-nowrap">
                 <div className="flex items-center gap-4">
-                    <div className="size-8 text-blue-900">
+                    <Link href="/" className="flex items-center gap-2 text-blue-900">
                         <span className="material-symbols-outlined text-3xl">medical_services</span>
-                    </div>
-                    <h2 className="text-slate-900 text-lg font-bold leading-tight tracking-tight">CareAcademy</h2>
+                        <span className="text-xl font-bold tracking-tight">Excelcommunity Living Inc</span>
+                    </Link>
                 </div>
                 <nav className="hidden md:flex items-center gap-9">
                     <Link href="/courses" className="text-slate-600 hover:text-blue-900 transition-colors text-sm font-medium">Courses</Link>
@@ -125,7 +125,7 @@ export default function VerifyCertificatePage() {
                             <div className="flex flex-col items-center gap-4">
                                 <div className="flex items-center gap-2 text-blue-900 mb-1">
                                     <span className="material-symbols-outlined text-4xl">medical_services</span>
-                                    <span className="text-xl font-bold tracking-tight text-slate-800">CareAcademy</span>
+                                    <span className="text-xl font-bold tracking-tight text-slate-800">Excelcommunity Living Inc</span>
                                 </div>
                                 <h2 className="text-3xl md:text-3xl font-serif font-bold text-slate-900 tracking-wide uppercase leading-tight">
                                     Certified Nursing Assistant<br />
@@ -185,7 +185,7 @@ export default function VerifyCertificatePage() {
                             </div>
 
                             <div className="absolute bottom-4 left-0 w-full text-center">
-                                <p className="font-mono text-[10px] text-slate-400">Credential ID: {cert.uniqueId} • Verify at careacademy.com/verify</p>
+                                <p className="font-mono text-[10px] text-slate-400">Credential ID: {cert.uniqueId} • Verify at excelcommunity.com/verify</p>
                             </div>
                         </div>
                     </div>

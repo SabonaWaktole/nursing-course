@@ -52,6 +52,12 @@ export default function AdminDashboard() {
     // Sidebar management
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isDark, setIsDark] = useState(false);
+
+    useEffect(() => {
+        // Initialize theme state
+        setIsDark(document.documentElement.classList.contains('dark'));
+    }, []);
 
     useEffect(() => {
         if (!user || user.role !== 'ADMIN') return;
@@ -497,6 +503,7 @@ export default function AdminDashboard() {
                             <button
                                 onClick={() => {
                                     const next = !document.documentElement.classList.contains('dark');
+                                    setIsDark(next);
                                     if (next) {
                                         document.documentElement.classList.add('dark');
                                         localStorage.setItem('theme', 'dark');
@@ -507,8 +514,9 @@ export default function AdminDashboard() {
                                 }}
                                 className="p-2 text-slate-500 hover:text-primary transition-colors"
                             >
-                                <span className="material-symbols-outlined dark:hidden">dark_mode</span>
-                                <span className="material-symbols-outlined hidden dark:block">light_mode</span>
+                                <span className="material-symbols-outlined">
+                                    {isDark ? 'light_mode' : 'dark_mode'}
+                                </span>
                             </button>
 
                             {(tab === 'overview' || tab === 'courses') && (
@@ -631,7 +639,7 @@ export default function AdminDashboard() {
                                                                     </div>
                                                                     <div className="flex-1 min-w-0 pt-0.5">
                                                                         <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                                                                            <span className="font-bold text-slate-900 dark:text-white">{e.user.name}</span> enrolled in '{e.course.title}'
+                                                                            <span className="font-bold text-slate-900 dark:text-white">{e.user.name}</span> enrolled in &apos;{e.course.title}&apos;
                                                                         </p>
                                                                         <p className="text-xs text-slate-500 mt-1">{timeStr}</p>
                                                                     </div>
@@ -654,7 +662,7 @@ export default function AdminDashboard() {
                                 {/* Courses Management */}
                                 {
                                     tab === 'courses' && (
-                                        <div>
+                                        <div className="bg-slate-50/50 dark:bg-slate-950/20 rounded-3xl p-1">
                                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                                                 <div className="flex gap-3">
                                                     <div className="relative">
@@ -681,7 +689,6 @@ export default function AdminDashboard() {
                                                 </button>
                                             </div>
 
-                                            {/* Add/Edit Course Form Outline styling changed to match dark mode aesthetics */}
                                             {showCourseForm && (
                                                 <div className="rounded-2xl border border-primary/20 bg-primary/5 dark:bg-slate-800/50 p-6 mb-8 shadow-sm">
                                                     <div className="flex justify-between items-center mb-4 border-b border-primary/10 pb-2">
@@ -741,7 +748,6 @@ export default function AdminDashboard() {
                                                             <textarea value={courseForm.description} onChange={(e) => setCourseForm({ ...courseForm, description: e.target.value })} placeholder="Course description and learning objectives..." className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all" rows={3} />
                                                         </div>
 
-                                                        {/* Thumbnail Upload Area */}
                                                         <div>
                                                             <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 block">Course Thumbnail</label>
                                                             <div className="flex border border-slate-300 dark:border-slate-700 rounded-xl overflow-hidden bg-white dark:bg-slate-900">
@@ -804,378 +810,175 @@ export default function AdminDashboard() {
                                                 </div>
                                             )}
 
-                                            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mt-6">
-                                                <div className="overflow-x-auto">
-                                                    <table className="w-full text-left text-sm text-slate-500 dark:text-slate-400">
-                                                        <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-700 dark:text-slate-400">
-                                                            <tr>
-                                                                <th className="px-6 py-4 font-semibold">Course Title</th>
-                                                                <th className="px-6 py-4 font-semibold">Stats</th>
-                                                                <th className="px-6 py-4 font-semibold">Categories</th>
-                                                                <th className="px-6 py-4 font-semibold">Price</th>
-                                                                <th className="px-6 py-4 font-semibold text-right">Actions</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                                                            {courses.map((course) => (
-                                                                <React.Fragment key={course.id}>
-                                                                    <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
-                                                                        <td className="px-6 py-4 w-1/3">
-                                                                            <div className="flex items-center gap-4">
-                                                                                <div className="h-12 w-12 shrink-0 rounded-lg overflow-hidden bg-primary/10 flex items-center justify-center text-primary">
-                                                                                    {course.thumbnail ? (
-                                                                                        <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover" />
-                                                                                    ) : (
-                                                                                        <span className="material-symbols-outlined text-2xl">school</span>
-                                                                                    )}
+                                            <div className="mt-8 grid grid-cols-1 gap-8">
+                                                {courses.map((course) => (
+                                                    <motion.div
+                                                        key={course.id}
+                                                        layout
+                                                        initial={{ opacity: 0, y: 20 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-xl hover:shadow-2xl hover:border-primary/40 transition-all duration-500 group overflow-hidden"
+                                                    >
+                                                        <div className="p-8">
+                                                            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+                                                                <div className="flex items-start gap-6 flex-1 min-w-0">
+                                                                    <div className="h-20 w-20 shrink-0 rounded-2xl overflow-hidden bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shadow-inner group-hover:scale-105 transition-transform duration-500">
+                                                                        {course.thumbnail ? <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover" /> : <span className="material-symbols-outlined text-4xl">school</span>}
+                                                                    </div>
+                                                                    <div className="min-w-0 flex-1">
+                                                                        <div className="flex items-center gap-2 mb-2">
+                                                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">{course.category}</span>
+                                                                            {((course as any).tags || []).slice(0, 2).map((t: string) => <span key={t} className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-primary/10 text-primary border border-primary/20">{t}</span>)}
+                                                                        </div>
+                                                                        <h3 className="font-black text-xl text-slate-900 dark:text-white mb-2 group-hover:text-primary transition-colors leading-tight line-clamp-1">{course.title}</h3>
+                                                                        <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed break-words line-clamp-2 max-w-2xl">{course.description}</p>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex flex-wrap items-center gap-6 lg:gap-10 shrink-0">
+                                                                    <div className="flex items-center gap-4 text-left">
+                                                                        <div className="flex flex-col">
+                                                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Students</span>
+                                                                            <div className="flex items-center gap-1.5 text-sm font-bold text-slate-700 dark:text-slate-300">
+                                                                                <span className="material-symbols-outlined text-base text-primary">groups</span> {course._count?.enrollments || 0}
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="flex flex-col">
+                                                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Modules</span>
+                                                                            <div className="flex items-center gap-1.5 text-sm font-bold text-slate-700 dark:text-slate-300">
+                                                                                <span className="material-symbols-outlined text-base text-primary">layers</span> {course._count?.modules || 0}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex flex-col items-end">
+                                                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Price</span>
+                                                                        <div className="text-xl font-black text-slate-900 dark:text-white">${Number(course.price).toFixed(2)}</div>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex items-center gap-2 pt-4 lg:pt-0 border-t lg:border-t-0 border-slate-100 dark:border-slate-800">
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            if (expandedCourse === course.id) { setExpandedCourse(null); setCourseDetails(null); }
+                                                                            else { setExpandedCourse(course.id); loadCourseDetail(course.id); }
+                                                                        }}
+                                                                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${expandedCourse === course.id ? 'bg-primary text-white shadow-lg shadow-primary/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-primary/10 hover:text-primary'}`}
+                                                                    >
+                                                                        <span className="material-symbols-outlined text-lg">{expandedCourse === course.id ? 'expand_less' : 'view_list'}</span>
+                                                                        {expandedCourse === course.id ? 'Close' : 'Manage Content'}
+                                                                    </button>
+                                                                    <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800/50 p-1 rounded-xl border border-slate-100 dark:border-slate-700">
+                                                                        <button onClick={() => handleEditCourseInfo(course)} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-lg text-slate-500 dark:text-slate-400 hover:text-primary transition-colors" title="Edit Info"><span className="material-symbols-outlined text-lg">edit</span></button>
+                                                                        <button onClick={() => setShowModuleForm(showModuleForm === course.id ? null : course.id)} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-lg text-slate-500 dark:text-slate-400 hover:text-primary transition-colors" title="Add Module"><span className="material-symbols-outlined text-lg">create_new_folder</span></button>
+                                                                        <button onClick={() => setShowQuizForm({ id: course.id, type: 'course', mode: 'create' })} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-lg text-slate-500 dark:text-slate-400 hover:text-emerald-500 transition-colors" title="Add Final Exam"><span className="material-symbols-outlined text-lg">quiz</span></button>
+                                                                        <button onClick={() => handleDeleteCourse(course.id)} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-lg text-slate-500 dark:text-slate-400 hover:text-red-500 transition-colors" title="Delete Course"><span className="material-symbols-outlined text-lg">delete</span></button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <AnimatePresence>
+                                                            {expandedCourse === course.id && (
+                                                                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden bg-slate-50/50 dark:bg-slate-950/30 border-t border-slate-100 dark:border-slate-800">
+                                                                    <div className="p-6 space-y-6">
+                                                                        {showModuleForm === course.id && (
+                                                                            <div className="mb-4 p-4 bg-white dark:bg-slate-900 rounded-2xl border border-primary/20 shadow-sm animate-in fade-in zoom-in-95">
+                                                                                <p className="text-xs font-bold text-primary uppercase mb-2">New Module</p>
+                                                                                <input value={moduleTitle} onChange={(e) => setModuleTitle(e.target.value)} placeholder="Title..." className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-sm mb-3" />
+                                                                                <div className="flex gap-2">
+                                                                                    <button onClick={() => handleAddModule(course.id)} className="px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-bold">Create</button>
+                                                                                    <button onClick={() => setShowModuleForm(null)} className="px-4 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs font-bold">Cancel</button>
                                                                                 </div>
-                                                                                <div className="min-w-0">
-                                                                                    <div className="font-bold text-slate-900 dark:text-white truncate">{course.title}</div>
-                                                                                    <div className="text-xs text-slate-500 truncate" title={course.description}>{course.description}</div>
+                                                                            </div>
+                                                                        )}
+                                                                        <div className="space-y-4">
+                                                                            {courseDetails?.modules?.map((mod: any, mi: number) => (
+                                                                                <div key={mod.id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+                                                                                    <div className="px-4 py-3 bg-slate-50 dark:bg-slate-800/50 flex justify-between items-center border-b border-slate-200 dark:border-slate-800">
+                                                                                        <div className="flex items-center gap-3">
+                                                                                            <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center">{mi + 1}</span>
+                                                                                            <h4 className="text-sm font-bold">{mod.title}</h4>
+                                                                                        </div>
+                                                                                        <div className="flex gap-1">
+                                                                                            <button onClick={() => setShowLessonForm(showLessonForm === mod.id ? null : mod.id)} className="p-1 hover:text-primary transition-colors"><span className="material-symbols-outlined text-lg">add_circle</span></button>
+                                                                                            <button onClick={() => setShowQuizForm({ id: mod.id, type: 'module', mode: mod.quizzes?.length > 0 ? 'edit' : 'create', quizId: mod.quizzes?.[0]?.id })} className="p-1 hover:text-emerald-500 transition-colors"><span className="material-symbols-outlined text-lg">quiz</span></button>
+                                                                                            <button onClick={() => handleDeleteModule(mod.id, course.id)} className="p-1 hover:text-red-500 transition-colors"><span className="material-symbols-outlined text-lg">delete</span></button>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <div className="p-3 space-y-2">
+                                                                                        {mod.lessons?.map((lesson: any) => (
+                                                                                            <div key={lesson.id} className="flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-950/50 rounded-lg group/lesson">
+                                                                                                <div className="flex items-center gap-2"><span className="material-symbols-outlined text-slate-400 text-sm">play_circle</span><span className="text-xs font-medium">{lesson.title}</span></div>
+                                                                                                <button onClick={() => handleDeleteLesson(lesson.id)} className="opacity-0 group-hover/lesson:opacity-100 p-1 text-slate-400 hover:text-red-500"><span className="material-symbols-outlined text-sm">close</span></button>
+                                                                                            </div>
+                                                                                        ))}
+                                                                                        {mod.quizzes?.map((quiz: any) => (
+                                                                                            <div key={quiz.id} className="flex justify-between items-center p-2 bg-emerald-500/5 rounded-lg border border-emerald-500/10">
+                                                                                                <div className="flex items-center gap-2"><span className="material-symbols-outlined text-emerald-500 text-sm">task_alt</span><span className="text-xs font-bold text-emerald-600">Quiz: {quiz.title}</span></div>
+                                                                                                <button onClick={() => handleDeleteQuiz(quiz.id)} className="p-1 text-emerald-400 hover:text-red-500"><span className="material-symbols-outlined text-sm">close</span></button>
+                                                                                            </div>
+                                                                                        ))}
+                                                                                        {showLessonForm === mod.id && (
+                                                                                            <div className="mt-2 p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3 animate-in slide-in-from-top-2">
+                                                                                                <input value={lessonForm.title} onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })} placeholder="Lesson Title" className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-xs" />
+                                                                                                <div className="flex gap-2">
+                                                                                                    <button onClick={() => handleAddLesson(mod.id)} className="flex-1 py-1.5 bg-slate-800 text-white rounded-lg text-[10px] font-bold">Add</button>
+                                                                                                    <button onClick={() => setShowLessonForm(null)} className="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 rounded-lg text-[10px] font-bold">Cancel</button>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        )}
+                                                                                    </div>
                                                                                 </div>
+                                                                            ))}
+                                                                        </div>
+                                                                        {courseDetails?.quizzes?.length > 0 && (
+                                                                            <div className="p-4 bg-emerald-500/5 rounded-2xl border-2 border-emerald-500/10 flex justify-between items-center">
+                                                                                <div className="flex items-center gap-3"><span className="material-symbols-outlined text-emerald-500">verified</span><div><p className="text-sm font-bold">Final Certification Exam</p><p className="text-[10px] text-emerald-600">{courseDetails.quizzes[0].title}</p></div></div>
+                                                                                <div className="flex items-center gap-2"><button onClick={() => openQuizEdit(courseDetails.quizzes[0], 'course')} className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-emerald-500/20 text-emerald-600 rounded-lg text-xs font-bold">Edit</button><button onClick={() => handleDeleteQuiz(courseDetails.quizzes[0].id)} className="hover:text-red-500 transition-colors"><span className="material-symbols-outlined">delete</span></button></div>
                                                                             </div>
-                                                                        </td>
-                                                                        <td className="px-6 py-4">
-                                                                            <div className="flex flex-col gap-1 text-xs font-medium text-slate-600 dark:text-slate-400">
-                                                                                <div className="flex items-center gap-1.5"><span className="material-symbols-outlined text-sm text-slate-400">groups</span> {course._count?.enrollments || 0} students</div>
-                                                                                <div className="flex items-center gap-1.5"><span className="material-symbols-outlined text-sm text-slate-400">layers</span> {course._count?.modules || 0} modules</div>
-                                                                            </div>
-                                                                        </td>
-                                                                        <td className="px-6 py-4">
-                                                                            <div className="flex flex-wrap gap-1">
-                                                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                                                                                    {course.category}
-                                                                                </span>
-                                                                                {(course as any).tags?.slice(0, 2).map((t: string) => (
-                                                                                    <span key={t} className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
-                                                                                        {t}
-                                                                                    </span>
-                                                                                ))}
-                                                                                {((course as any).tags?.length > 2) && <span className="text-xs text-slate-400">+{((course as any).tags?.length - 2)}</span>}
-                                                                            </div>
-                                                                        </td>
-                                                                        <td className="px-6 py-4">
-                                                                            <div className="font-semibold text-slate-900 dark:text-white group-hover:text-emerald-500 transition-colors">
-                                                                                ${Number(course.price).toFixed(2)}
-                                                                            </div>
-                                                                        </td>
-                                                                        <td className="px-6 py-4 text-right">
-                                                                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                                <button
-                                                                                    onClick={() => {
-                                                                                        if (expandedCourse === course.id) {
-                                                                                            setExpandedCourse(null);
-                                                                                            setCourseDetails(null);
-                                                                                        } else {
-                                                                                            setExpandedCourse(course.id);
-                                                                                            loadCourseDetail(course.id);
-                                                                                        }
-                                                                                    }}
-                                                                                    className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md text-slate-500 dark:text-slate-400 transition-colors"
-                                                                                    title="Manage Content"
-                                                                                >
-                                                                                    <span className="material-symbols-outlined text-lg">{expandedCourse === course.id ? 'expand_less' : 'view_list'}</span>
-                                                                                </button>
-                                                                                <button onClick={() => handleEditCourseInfo(course)} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md text-slate-500 dark:text-slate-400 hover:text-primary transition-colors" title="Edit Info">
-                                                                                    <span className="material-symbols-outlined text-lg">edit</span>
-                                                                                </button>
-                                                                                <button onClick={() => setShowModuleForm(showModuleForm === course.id ? null : course.id)} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md text-slate-500 dark:text-slate-400 hover:text-primary transition-colors" title="Add Module">
-                                                                                    <span className="material-symbols-outlined text-lg">create_new_folder</span>
-                                                                                </button>
-                                                                                <button onClick={() => setShowQuizForm(showQuizForm?.id === course.id ? null : { id: course.id, type: 'course' })} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md text-slate-500 dark:text-slate-400 hover:text-emerald-500 transition-colors" title="Add Final Exam">
-                                                                                    <span className="material-symbols-outlined text-lg">quiz</span>
-                                                                                </button>
-                                                                                <button onClick={() => handleDeleteCourse(course.id)} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md text-slate-500 dark:text-slate-400 hover:text-red-500 transition-colors" title="Delete Course">
-                                                                                    <span className="material-symbols-outlined text-lg">delete</span>
-                                                                                </button>
-                                                                            </div>
-                                                                        </td>
-                                                                    </tr>
-
-                                                                    {/* Details Row (Accordion) */}
-                                                                    {expandedCourse === course.id && (
-                                                                        <tr>
-                                                                            <td colSpan={5} className="p-0 border-b-0">
-                                                                                <div className="bg-slate-50 dark:bg-slate-900/80 p-6 border-b border-slate-200 dark:border-slate-800 shadow-inner">
-
-                                                                                    {/* Add Module Form */}
-                                                                                    {showModuleForm === course.id && (
-                                                                                        <div className="mb-6 rounded-xl border border-primary/20 bg-white dark:bg-slate-800 p-4 shadow-sm animate-in fade-in zoom-in-95 duration-200">
-                                                                                            <p className="text-sm font-bold text-primary mb-3 flex items-center gap-2"><span className="material-symbols-outlined text-base">create_new_folder</span> Add New Module</p>
-                                                                                            <input value={moduleTitle} onChange={(e) => setModuleTitle(e.target.value)} placeholder="Module title (e.g. Introduction to Patient Care)" className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2 text-sm text-slate-900 dark:text-white focus:border-primary focus:ring-1 focus:ring-primary mb-3" />
-                                                                                            <div className="flex gap-2">
-                                                                                                <button onClick={() => handleAddModule(course.id)} className="rounded-lg bg-primary px-4 py-2 text-xs font-bold text-white hover:bg-sky-500 transition-colors">Save Module</button>
-                                                                                                <button onClick={() => { setShowModuleForm(null); setModuleTitle(''); }} className="rounded-lg border border-slate-300 dark:border-slate-600 px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">Cancel</button>
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    )}
-
-                                                                                    {/* Modules List */}
-                                                                                    {courseDetails && (
-                                                                                        <div className="space-y-4">
-                                                                                            {courseDetails.modules?.length === 0 && (
-                                                                                                <div className="text-center py-8 text-slate-500 flex flex-col items-center gap-2">
-                                                                                                    <span className="material-symbols-outlined text-4xl opacity-50">folder_open</span>
-                                                                                                    <p className="text-sm font-medium">No modules found for this course.</p>
-                                                                                                </div>
-                                                                                            )}
-                                                                                            {courseDetails.modules?.map((mod: any, mi: number) => (
-                                                                                                <div key={mod.id} className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 overflow-hidden shadow-sm">
-                                                                                                    {/* Module header */}
-                                                                                                    <div className="flex items-center justify-between px-4 py-3 bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700/50">
-                                                                                                        <div className="flex items-center gap-3">
-                                                                                                            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 text-primary font-bold text-sm">
-                                                                                                                {mi + 1}
-                                                                                                            </div>
-                                                                                                            <div>
-                                                                                                                <div className="text-sm font-bold text-slate-900 dark:text-white">{mod.title}</div>
-                                                                                                                <div className="text-xs text-slate-500">{mod.lessons?.length || 0} lessons • {mod.quizzes?.length || 0} quizzes</div>
-                                                                                                            </div>
-                                                                                                        </div>
-                                                                                                        <div className="flex items-center gap-1">
-                                                                                                            <button onClick={() => setShowLessonForm(showLessonForm === mod.id ? null : mod.id)} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md text-slate-400 hover:text-primary transition-colors" title="Add Lesson">
-                                                                                                                <span className="material-symbols-outlined text-lg">add_circle</span>
-                                                                                                            </button>
-                                                                                                            <button onClick={() => setShowQuizForm(showQuizForm?.id === mod.id ? null : { id: mod.id, type: 'module' })} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md text-slate-400 hover:text-emerald-500 transition-colors" title="Add Quiz">
-                                                                                                                <span className="material-symbols-outlined text-lg">quiz</span>
-                                                                                                            </button>
-                                                                                                            <button onClick={() => handleDeleteModule(mod.id, course.id)} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md text-slate-400 hover:text-red-500 transition-colors" title="Delete Module">
-                                                                                                                <span className="material-symbols-outlined text-lg">delete</span>
-                                                                                                            </button>
-                                                                                                        </div>
-                                                                                                    </div>
-
-                                                                                                    {/* Lessons list */}
-                                                                                                    <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                                                                                                        {mod.lessons?.map((lesson: any, li: number) => (
-                                                                                                            <div key={lesson.id} className="flex items-center justify-between px-4 py-2.5 pl-14 group/lesson hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                                                                                                                <div className="flex items-center gap-3 min-w-0">
-                                                                                                                    <span className="text-xs font-medium text-slate-400 w-6">{mi + 1}.{li + 1}</span>
-                                                                                                                    <span className="material-symbols-outlined text-slate-400 text-sm">play_circle</span>
-                                                                                                                    <span className="text-sm text-slate-700 dark:text-slate-300 font-medium truncate">{lesson.title}</span>
-                                                                                                                    <div className="flex gap-1.5">
-                                                                                                                        {lesson.videoUrl && <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">Video</span>}
-                                                                                                                        {lesson.materialUrl && <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">Docs</span>}
-                                                                                                                    </div>
-                                                                                                                </div>
-                                                                                                                <button onClick={() => handleDeleteLesson(lesson.id)} className="p-1.5 text-slate-300 hover:text-red-500 opacity-0 group-hover/lesson:opacity-100 transition-all rounded hover:bg-red-50 dark:hover:bg-red-900/20">
-                                                                                                                    <span className="material-symbols-outlined text-base">close</span>
-                                                                                                                </button>
-                                                                                                            </div>
-                                                                                                        ))}
-
-                                                                                                        {/* Module Quizzes list */}
-                                                                                                        {mod.quizzes?.map((quiz: any) => (
-                                                                                                            <div key={quiz.id} className="flex items-center justify-between px-4 py-2.5 pl-14 group/quiz bg-emerald-50/30 dark:bg-emerald-900/10 hover:bg-emerald-50/80 dark:hover:bg-emerald-900/20 transition-colors">
-                                                                                                                <div className="flex items-center gap-3 min-w-0">
-                                                                                                                    <span className="material-symbols-outlined text-emerald-500 text-sm">assignment</span>
-                                                                                                                    <span className="text-sm text-emerald-700 dark:text-emerald-400 font-semibold truncate">{quiz.title}</span>
-                                                                                                                    <span className="text-xs text-emerald-600/70 dark:text-emerald-400/70">({quiz._count?.questions || 0} Qs)</span>
-                                                                                                                </div>
-                                                                                                                <div className="flex items-center gap-1 opacity-0 group-hover/quiz:opacity-100 transition-all">
-                                                                                                                    <button onClick={() => openQuizEdit(quiz, 'module')} className="p-1.5 text-slate-400 hover:text-primary rounded hover:bg-primary/10 transition-colors">
-                                                                                                                        <span className="material-symbols-outlined text-base">edit</span>
-                                                                                                                    </button>
-                                                                                                                    <button onClick={() => handleDeleteQuiz(quiz.id)} className="p-1.5 text-slate-400 hover:text-red-500 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
-                                                                                                                        <span className="material-symbols-outlined text-base">delete</span>
-                                                                                                                    </button>
-                                                                                                                </div>
-                                                                                                            </div>
-                                                                                                        ))}
-                                                                                                    </div>
-
-                                                                                                    {/* Add Lesson Form (under specific module) */}
-                                                                                                    {showLessonForm === mod.id && (
-                                                                                                        <div className="border-t border-slate-100 dark:border-slate-700/50 p-4 bg-slate-50/50 dark:bg-slate-800/30 animate-in fade-in slide-in-from-top-2 duration-200">
-                                                                                                            <div className="max-w-2xl space-y-3 relative before:absolute before:left-4 before:top-0 before:bottom-0 before:w-px before:bg-primary/20 pl-8 ml-2">
-                                                                                                                <p className="text-xs font-bold text-primary flex items-center gap-2 -ml-8"><span className="material-symbols-outlined text-sm bg-primary/10 p-1 rounded-full">add</span> Add Content to Module</p>
-                                                                                                                <input value={lessonForm.title} onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })} placeholder="Lesson Title" className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary" />
-                                                                                                                <input value={lessonForm.description} onChange={(e) => setLessonForm({ ...lessonForm, description: e.target.value })} placeholder="Brief Description" className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary" />
-
-                                                                                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                                                                                    {/* Video */}
-                                                                                                                    <div>
-                                                                                                                        <label className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 block">Video URL</label>
-                                                                                                                        <div className="flex gap-2">
-                                                                                                                            <input value={lessonForm.videoUrl} onChange={(e) => setLessonForm({ ...lessonForm, videoUrl: e.target.value })} placeholder="https://..." className="flex-1 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary" />
-                                                                                                                            <button type="button" onClick={() => handleLessonUpload('video')} disabled={uploading.video} className="flex items-center gap-1 rounded-lg bg-secondary/10 px-3 py-1.5 text-xs font-bold text-secondary hover:bg-secondary/20 disabled:opacity-50 transition shrink-0 relative overflow-hidden">
-                                                                                                                                {uploading.video && uploadProgress !== null && (
-                                                                                                                                    <div className="absolute inset-y-0 left-0 bg-secondary/20 transition-all duration-300 z-0" style={{ width: `${uploadProgress}%` }}></div>
-                                                                                                                                )}
-                                                                                                                                <span className="material-symbols-outlined text-sm relative z-10">upload</span>
-                                                                                                                                <span className="relative z-10">{uploading.video ? (uploadProgress !== null ? `${uploadProgress}%` : '...') : 'Upload'}</span>
-                                                                                                                            </button>
-                                                                                                                        </div>
-                                                                                                                    </div>
-                                                                                                                    {/* Material */}
-                                                                                                                    <div>
-                                                                                                                        <label className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 block">Document URL</label>
-                                                                                                                        <div className="flex gap-2">
-                                                                                                                            <input value={lessonForm.materialUrl} onChange={(e) => setLessonForm({ ...lessonForm, materialUrl: e.target.value })} placeholder="https://..." className="flex-1 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary" />
-                                                                                                                            <button type="button" onClick={() => handleLessonUpload('material')} disabled={uploading.material} className="flex items-center gap-1 rounded-lg bg-teal-500/10 px-3 py-1.5 text-xs font-bold text-teal-600 dark:text-teal-400 hover:bg-teal-500/20 disabled:opacity-50 transition shrink-0 relative overflow-hidden">
-                                                                                                                                {uploading.material && uploadProgress !== null && (
-                                                                                                                                    <div className="absolute inset-y-0 left-0 bg-teal-500/20 transition-all duration-300 z-0" style={{ width: `${uploadProgress}%` }}></div>
-                                                                                                                                )}
-                                                                                                                                <span className="material-symbols-outlined text-sm relative z-10">upload</span>
-                                                                                                                                <span className="relative z-10">{uploading.material ? (uploadProgress !== null ? `${uploadProgress}%` : '...') : 'Upload'}</span>
-                                                                                                                            </button>
-                                                                                                                        </div>
-                                                                                                                    </div>
-                                                                                                                </div>
-
-                                                                                                                <div className="flex gap-2 pt-2">
-                                                                                                                    <button onClick={() => handleAddLesson(mod.id)} className="rounded-lg bg-slate-900 dark:bg-white px-4 py-2 text-xs font-bold text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors shadow">Save Lesson</button>
-                                                                                                                    <button onClick={() => setShowLessonForm(null)} className="rounded-lg border border-slate-300 dark:border-slate-600 px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">Cancel</button>
-                                                                                                                </div>
-                                                                                                            </div>
-                                                                                                        </div>
-                                                                                                    )}
-                                                                                                </div>
-                                                                                            ))}
-
-                                                                                            {/* Final Exams List */}
-                                                                                            {courseDetails.quizzes?.length > 0 && (
-                                                                                                <div className="mt-6">
-                                                                                                    <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
-                                                                                                        <span className="material-symbols-outlined text-emerald-500">verified</span> Final Examinations
-                                                                                                    </h4>
-                                                                                                    <div className="space-y-2">
-                                                                                                        {courseDetails.quizzes.map((quiz: any) => (
-                                                                                                            <div key={quiz.id} className="rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-900/10 hover:bg-emerald-100 dark:hover:bg-emerald-900/20 transition-colors group/exam">
-                                                                                                                <div className="flex items-center justify-between px-4 py-3">
-                                                                                                                    <div className="flex items-center gap-3">
-                                                                                                                        <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                                                                                                                            <span className="material-symbols-outlined text-sm">workspace_premium</span>
-                                                                                                                        </div>
-                                                                                                                        <div>
-                                                                                                                            <div className="text-sm font-bold text-emerald-900 dark:text-emerald-300">{quiz.title}</div>
-                                                                                                                            <div className="text-xs text-emerald-600/80 dark:text-emerald-400/80">{quiz._count?.questions || 0} questions • Passing: {quiz.passingScore}%</div>
-                                                                                                                        </div>
-                                                                                                                    </div>
-                                                                                                                    <div className="flex gap-1 opacity-0 group-hover/exam:opacity-100 transition-opacity">
-                                                                                                                        <button onClick={() => openQuizEdit(quiz, 'course')} className="p-1.5 text-emerald-600/70 hover:text-emerald-600 hover:bg-emerald-500/10 rounded transition-colors" title="Edit Exam">
-                                                                                                                            <span className="material-symbols-outlined text-lg">edit</span>
-                                                                                                                        </button>
-                                                                                                                        <button onClick={() => handleDeleteQuiz(quiz.id)} className="p-1.5 text-emerald-600/70 hover:text-red-500 hover:bg-red-500/10 rounded transition-colors" title="Delete Exam">
-                                                                                                                            <span className="material-symbols-outlined text-lg">delete</span>
-                                                                                                                        </button>
-                                                                                                                    </div>
-                                                                                                                </div>
-                                                                                                            </div>
-                                                                                                        ))}
-                                                                                                    </div>
-                                                                                                </div>
-                                                                                            )}
-                                                                                        </div>
-                                                                                    )}
-
-                                                                                    {/* Quiz Creation Form (Unified for Course Exam or Module Quiz) */}
-                                                                                    {showQuizForm?.id && (
-                                                                                        <div className="mt-6 rounded-2xl border border-emerald-200 dark:border-emerald-800 bg-white dark:bg-slate-800 p-6 shadow-lg shadow-emerald-500/5 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
-                                                                                            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-700">
-                                                                                                <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                                                                                                    <span className="material-symbols-outlined">quiz</span>
-                                                                                                </div>
-                                                                                                <div>
-                                                                                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                                                                                                        {showQuizForm.mode === 'edit'
-                                                                                                            ? (showQuizForm.type === 'course' ? 'Edit Final Exam' : 'Edit Module Quiz')
-                                                                                                            : (showQuizForm.type === 'course' ? 'Create Final Exam' : 'Create Module Quiz')}
-                                                                                                    </h3>
-                                                                                                    <p className="text-xs text-slate-500">Add questions and configure passing criteria.</p>
-                                                                                                </div>
-                                                                                            </div>
-
-                                                                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-                                                                                                <div className="sm:col-span-2">
-                                                                                                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 block">Assessment Title</label>
-                                                                                                    <input value={quizForm.title} onChange={(e) => setQuizForm({ ...quizForm, title: e.target.value })} placeholder={showQuizForm.type === 'course' ? "E.g., Final Certification Exam" : "E.g., Module 1 Knowledge Check"} className="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
-                                                                                                </div>
-                                                                                                <div>
-                                                                                                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 block">Passing Score (%)</label>
-                                                                                                    <input type="number" value={quizForm.passingScore} onChange={(e) => setQuizForm({ ...quizForm, passingScore: e.target.value })} className="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
-                                                                                                </div>
-                                                                                            </div>
-
-                                                                                            <div className="space-y-6 mb-8">
-                                                                                                <div className="flex items-center justify-between">
-                                                                                                    <h4 className="font-bold text-slate-800 dark:text-slate-200 text-sm">Questions ({quizForm.questions.length})</h4>
-                                                                                                    <button onClick={addQuestion} className="flex items-center gap-1 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors border border-emerald-200 dark:border-emerald-800/50">
-                                                                                                        <span className="material-symbols-outlined text-sm">add</span> Add Question
-                                                                                                    </button>
-                                                                                                </div>
-
-                                                                                                {quizForm.questions.map((q, qi) => (
-                                                                                                    <div key={qi} className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-5 relative group/question">
-                                                                                                        {quizForm.questions.length > 1 && (
-                                                                                                            <button onClick={() => {
-                                                                                                                const qs = [...quizForm.questions];
-                                                                                                                qs.splice(qi, 1);
-                                                                                                                setQuizForm({ ...quizForm, questions: qs });
-                                                                                                            }} className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/50 text-red-600 border border-red-200 dark:border-red-800 flex items-center justify-center opacity-0 group-hover/question:opacity-100 shadow-sm hover:scale-110 transition-all z-10">
-                                                                                                                <span className="material-symbols-outlined text-sm">close</span>
-                                                                                                            </button>
-                                                                                                        )}
-                                                                                                        <div className="flex gap-4">
-                                                                                                            <div className="w-8 shrink-0 text-center font-bold text-slate-400 bg-white dark:bg-slate-700 h-8 rounded-lg flex items-center justify-center border border-slate-200 dark:border-slate-600">
-                                                                                                                {qi + 1}
-                                                                                                            </div>
-                                                                                                            <div className="flex-1 space-y-4">
-                                                                                                                <textarea value={q.text} onChange={(e) => updateQuestion(qi, 'text', e.target.value)} placeholder="Type your question here..." className="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-4 py-3 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" rows={2} />
-
-                                                                                                                <div className="space-y-3">
-                                                                                                                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 ml-1">Answer Options (Select correct answer)</p>
-                                                                                                                    {q.options.map((opt, oi) => (
-                                                                                                                        <div key={oi} className={`flex items-center gap-3 p-2 rounded-lg border transition-colors ${q.correctAnswer === oi ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-900/10' : 'border-transparent hover:border-slate-300 dark:hover:border-slate-600'}`}>
-                                                                                                                            <div className="flex items-center justify-center w-6 h-6 shrink-0">
-                                                                                                                                <input
-                                                                                                                                    type="radio"
-                                                                                                                                    name={`q-${qi}-correct`}
-                                                                                                                                    checked={q.correctAnswer === oi}
-                                                                                                                                    onChange={() => updateQuestion(qi, 'correctAnswer', oi)}
-                                                                                                                                    className="w-4 h-4 text-emerald-600 focus:ring-emerald-500 border-slate-300 rounded-full cursor-pointer"
-                                                                                                                                />
-                                                                                                                            </div>
-                                                                                                                            <input
-                                                                                                                                value={opt}
-                                                                                                                                onChange={(e) => updateOption(qi, oi, e.target.value)}
-                                                                                                                                placeholder={`Option ${oi + 1}`}
-                                                                                                                                className={`flex-1 rounded-lg border px-3 py-2 text-sm transition-colors ${q.correctAnswer === oi ? 'border-emerald-200 dark:border-emerald-800 bg-white dark:bg-slate-800 focus:border-emerald-500' : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:border-slate-400'}`}
-                                                                                                                            />
-                                                                                                                        </div>
-                                                                                                                    ))}
-                                                                                                                </div>
-                                                                                                            </div>
-                                                                                                        </div>
-                                                                                                    </div>
-                                                                                                ))}
-                                                                                            </div>
-
-                                                                                            <div className="flex items-center justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-700">
-                                                                                                <button onClick={() => setShowQuizForm(null)} className="rounded-xl border border-slate-300 dark:border-slate-600 px-6 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">Cancel</button>
-                                                                                                <button onClick={() => handleSaveQuiz(showQuizForm.id, showQuizForm.type)} className="rounded-xl bg-emerald-600 px-6 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-600/20 flex items-center gap-2">
-                                                                                                    <span className="material-symbols-outlined text-base">save</span>
-                                                                                                    {showQuizForm.mode === 'edit' ? 'Save Changes' : (showQuizForm.type === 'course' ? 'Create Exam' : 'Create Quiz')}
-                                                                                                </button>
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    )}
-
-                                                                                </div>
-                                                                            </td>
-                                                                        </tr>
-                                                                    )}
-                                                                </React.Fragment>
-                                                            ))}
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                                <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
-                                                    <p className="text-sm text-slate-500">
-                                                        Showing <span className="font-medium text-slate-900 dark:text-white">{courses.length}</span> course{courses.length !== 1 ? 's' : ''}
-                                                    </p>
-                                                </div>
+                                                                        )}
+                                                                    </div>
+                                                                </motion.div>
+                                                            )}
+                                                        </AnimatePresence>
+                                                    </motion.div>
+                                                ))}
                                             </div>
+
+                                            {showQuizForm && (
+                                                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+                                                    <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+                                                        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                                                            <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center"><span className="material-symbols-outlined">quiz</span></div><h3 className="text-xl font-bold">{showQuizForm.mode === 'edit' ? 'Edit Quiz' : 'Create New Assessment'}</h3></div>
+                                                            <button onClick={() => setShowQuizForm(null)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"><span className="material-symbols-outlined">close</span></button>
+                                                        </div>
+                                                        <div className="p-6 overflow-y-auto space-y-8">
+                                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                                <div><label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Title</label><input value={quizForm.title} onChange={(e) => setQuizForm({ ...quizForm, title: e.target.value })} className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-4 py-2.5 text-sm" /></div>
+                                                                <div><label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Passing Score (%)</label><input type="number" value={quizForm.passingScore} onChange={(e) => setQuizForm({ ...quizForm, passingScore: e.target.value })} className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-4 py-2.5 text-sm" /></div>
+                                                            </div>
+                                                            <div className="space-y-6">
+                                                                <div className="flex justify-between items-center"><h4 className="text-sm font-bold">Questions ({quizForm.questions.length})</h4><button onClick={addQuestion} className="px-4 py-2 bg-emerald-500/10 text-emerald-500 rounded-lg text-xs font-bold flex items-center gap-1"><span className="material-symbols-outlined text-sm">add</span>Add Question</button></div>
+                                                                <div className="space-y-4">
+                                                                    {quizForm.questions.map((q, qi) => (
+                                                                        <div key={qi} className="p-5 bg-slate-50 dark:bg-slate-950/50 rounded-2xl border border-slate-200 dark:border-slate-800 relative group/q">
+                                                                            <button onClick={() => { const qs = [...quizForm.questions]; qs.splice(qi, 1); setQuizForm({ ...quizForm, questions: qs }); }} className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover/q:opacity-100 transition-opacity"><span className="material-symbols-outlined text-xs">close</span></button>
+                                                                            <textarea value={q.text} onChange={(e) => updateQuestion(qi, 'text', e.target.value)} placeholder="Question text..." className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 text-sm mb-4" rows={2} />
+                                                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                                                {q.options.map((opt, oi) => (
+                                                                                    <div key={oi} className={`flex items-center gap-3 p-2 rounded-xl border transition-all ${q.correctAnswer === oi ? 'border-emerald-500 bg-emerald-500/5' : 'border-slate-200 dark:border-slate-800'}`}>
+                                                                                        <input type="radio" name={`q-${qi}`} checked={q.correctAnswer === oi} onChange={() => updateQuestion(qi, 'correctAnswer', oi)} className="text-emerald-500 focus:ring-emerald-500" />
+                                                                                        <input value={opt} onChange={(e) => updateOption(qi, oi, e.target.value)} className="flex-1 bg-transparent border-none p-0 text-sm focus:ring-0" placeholder={`Option ${oi + 1}`} />
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="p-6 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3"><button onClick={() => setShowQuizForm(null)} className="px-6 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-bold">Cancel</button><button onClick={() => handleSaveQuiz(showQuizForm.id, showQuizForm.type)} className="px-8 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-bold shadow-lg shadow-emerald-500/20">Save Assessment</button></div>
+                                                    </motion.div>
+                                                </div>
+                                            )}
                                         </div>
                                     )
                                 }
