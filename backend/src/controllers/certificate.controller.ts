@@ -93,100 +93,90 @@ export const downloadCertificate = async (req: Request, res: Response) => {
         const W = doc.page.width;   // 842
         const H = doc.page.height;  // 595
 
-        const navy = '#1e3a5f';
-        const dark = '#1e293b';
+        // Theme colors matching the website
+        const primary = '#0db9f2';     // --color-primary (teal/cyan)
+        const primaryDark = '#0a96c5'; // darker shade for accents
+        const dark = '#1e293b';        // slate-800
         const slate700 = '#334155';
         const slate500 = '#64748b';
         const slate400 = '#94a3b8';
         const borderLight = '#e2e8f0';
-        const badgeBg = '#eff6ff';
-        const blue100 = '#dbeafe';
+        const badgeBg = '#f0f9ff';     // primary/5 equivalent
+        const badgeBorder = '#bae6fd';  // primary/20 equivalent
 
         // ============ BACKGROUND ============
         doc.rect(0, 0, W, H).fill('#ffffff');
 
         // ============ DECORATIVE DOUBLE BORDER ============
-        // Outer: thick navy double-style border (matches border-[3px] border-double border-blue-900/20)
         doc.lineWidth(3);
-        doc.rect(18, 18, W - 36, H - 36).strokeOpacity(0.2).stroke(navy);
+        doc.rect(18, 18, W - 36, H - 36).strokeOpacity(0.2).stroke(primary);
         doc.strokeOpacity(1);
-        // Inner: thin subtle border (matches border border-blue-900/10)
         doc.lineWidth(0.75);
-        doc.rect(28, 28, W - 56, H - 56).strokeOpacity(0.1).stroke(navy);
+        doc.rect(28, 28, W - 56, H - 56).strokeOpacity(0.1).stroke(primary);
         doc.strokeOpacity(1);
 
         // ============ CORNER GRADIENT ACCENTS ============
-        // Top-left (matches from-blue-600/10)
         doc.save();
         doc.opacity(0.08);
-        doc.moveTo(18, 18).lineTo(150, 18).lineTo(18, 150).closePath().fill(navy);
+        doc.moveTo(18, 18).lineTo(150, 18).lineTo(18, 150).closePath().fill(primary);
         doc.restore();
-        // Bottom-right
         doc.save();
         doc.opacity(0.08);
-        doc.moveTo(W - 18, H - 18).lineTo(W - 150, H - 18).lineTo(W - 18, H - 150).closePath().fill(navy);
+        doc.moveTo(W - 18, H - 18).lineTo(W - 150, H - 18).lineTo(W - 18, H - 150).closePath().fill(primary);
         doc.restore();
 
-        // ============ HEADER: CAREACADEMY BRANDING ============
+        // ============ HEADER: BRANDING ============
         const topY = 52;
-        // Medical icon + "CareAcademy" (matches text-blue-900 text-4xl + text-xl font-bold)
-        doc.font('Helvetica-Bold').fontSize(14).fillColor(navy)
-            .text('✚  CareAcademy', 0, topY, { align: 'center' });
+        doc.font('Helvetica-Bold').fontSize(14).fillColor(primary)
+            .text('✚  Excelcommunity Living Inc', 0, topY, { align: 'center' });
 
-        // ============ TITLE (serif, matching font-serif font-bold) ============
+        // ============ TITLE ============
         doc.font('Times-Bold').fontSize(26).fillColor(dark)
-            .text('Certified Nursing Assistant', 0, topY + 30, { align: 'center' });
-        // Subtitle (matches text-xl md:text-2xl font-semibold text-slate-700)
+            .text('Certificate of Completion', 0, topY + 30, { align: 'center' });
         doc.font('Times-Roman').fontSize(17).fillColor(slate700)
-            .text('(CNA) Completion Certificate', 0, topY + 60, { align: 'center' });
+            .text('Professional Training Program', 0, topY + 60, { align: 'center' });
 
-        // ============ DECORATIVE LINE (matches h-1 w-24 bg-blue-900 rounded-full) ============
+        // ============ DECORATIVE LINE ============
         const lineY = topY + 88;
         doc.save();
-        doc.roundedRect(W / 2 - 48, lineY, 96, 4, 2).fill(navy);
+        doc.roundedRect(W / 2 - 48, lineY, 96, 4, 2).fill(primary);
         doc.restore();
 
         // ============ "THIS IS TO CERTIFY THAT" ============
-        // Matches text-slate-500 text-lg uppercase tracking-widest font-medium
         doc.font('Helvetica').fontSize(11).fillColor(slate500)
             .text('THIS IS TO CERTIFY THAT', 0, lineY + 22, {
                 align: 'center', characterSpacing: 4,
             });
 
-        // ============ STUDENT NAME (Great Vibes cursive) ============
-        // Matches style={{ fontFamily: "'Great Vibes', cursive" }} text-5xl md:text-7xl
+        // ============ STUDENT NAME ============
         doc.font('GreatVibes').fontSize(48).fillColor(dark)
             .text(certificate.user.name || 'Student', 0, lineY + 46, { align: 'center' });
 
         // ============ UNDERLINE BELOW NAME ============
-        // Matches w-1/3 h-px bg-slate-200
         const nameUnderY = lineY + 102;
         doc.moveTo(W / 2 - 120, nameUnderY).lineTo(W / 2 + 120, nameUnderY)
             .lineWidth(0.5).stroke(borderLight);
 
         // ============ "HAS SUCCESSFULLY COMPLETED..." ============
-        // Matches text-slate-500 text-base uppercase tracking-widest font-medium
         doc.font('Helvetica').fontSize(10).fillColor(slate500)
-            .text('HAS SUCCESSFULLY COMPLETED THE STATE-APPROVED TRAINING PROGRAM FOR', 0, nameUnderY + 14, {
+            .text('HAS SUCCESSFULLY COMPLETED THE APPROVED TRAINING PROGRAM FOR', 0, nameUnderY + 14, {
                 align: 'center', characterSpacing: 2,
             });
 
         // ============ COURSE TITLE ============
-        // Matches text-2xl md:text-3xl font-bold text-blue-900
-        doc.font('Helvetica-Bold').fontSize(22).fillColor(navy)
+        doc.font('Helvetica-Bold').fontSize(22).fillColor(primary)
             .text(certificate.course.title, 80, nameUnderY + 38, {
                 align: 'center', width: W - 160,
             });
 
         // ============ AUTHENTICATED BADGE ============
-        // Matches bg-blue-50 border border-blue-100 px-4 py-2 rounded-lg
         const badgeY = nameUnderY + 76;
         const badgeW = 220;
         const badgeH = 26;
         const badgeX = W / 2 - badgeW / 2;
         doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 6).fill(badgeBg);
-        doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 6).lineWidth(0.5).stroke(blue100);
-        doc.font('Helvetica-Bold').fontSize(10).fillColor(navy)
+        doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 6).lineWidth(0.5).stroke(badgeBorder);
+        doc.font('Helvetica-Bold').fontSize(10).fillColor(primaryDark)
             .text('✓  Authenticated Record', badgeX, badgeY + 8, {
                 width: badgeW, align: 'center',
             });
@@ -195,20 +185,16 @@ export const downloadCertificate = async (req: Request, res: Response) => {
         const bottomY = H - 120;
 
         // --- Date (left) ---
-        // Matches text-lg font-semibold text-slate-800
         const dateStr = certificate.issuedAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
         doc.font('Helvetica-Bold').fontSize(13).fillColor(dark)
             .text(dateStr, 60, bottomY, { width: 200, align: 'center' });
-        // Underline (matches border-b border-slate-300)
         doc.moveTo(60, bottomY + 20).lineTo(260, bottomY + 20).lineWidth(0.5).stroke('#cbd5e1');
-        // Label (matches text-xs uppercase tracking-wider text-slate-500 font-medium)
         doc.font('Helvetica').fontSize(7).fillColor(slate500)
             .text('DATE ISSUED', 60, bottomY + 26, {
                 width: 200, align: 'center', characterSpacing: 2,
             });
 
         // --- Seal (center) ---
-        // Generate QR code for verification
         const baseUrl = process.env.NODE_ENV === 'production'
             ? process.env.FRONTEND_URL
             : 'http://localhost:3000';
@@ -218,34 +204,26 @@ export const downloadCertificate = async (req: Request, res: Response) => {
         }
 
         const verifyUrl = `${baseUrl}/certificate/verify/${certificate.uniqueId}`;
-        const qrCodeDataUrl = await QRCode.toDataURL(verifyUrl, { margin: 1, width: 90, color: { dark: navy, light: '#ffffff' } });
+        const qrCodeDataUrl = await QRCode.toDataURL(verifyUrl, { margin: 1, width: 90, color: { dark: primaryDark, light: '#ffffff' } });
 
         const cx = W / 2;
-        const cy = bottomY; // Place QR code above text
-
-        // Add QR code image
+        const cy = bottomY;
         doc.image(qrCodeDataUrl, cx - 45, cy - 20, { width: 90 });
-
-        // "Registry Verified" text below QR code
-        doc.font('Helvetica-Bold').fontSize(8).fillColor(navy)
+        doc.font('Helvetica-Bold').fontSize(8).fillColor(primaryDark)
             .text('SCAN TO VERIFY', cx - 50, cy + 75, { width: 100, align: 'center', characterSpacing: 1 });
 
         // --- Signature (right) ---
-        // Matches Great Vibes cursive: style={{ fontFamily: "'Great Vibes'" }} text-4xl text-slate-800 -rotate-2
         doc.font('GreatVibes').fontSize(22).fillColor(dark)
-            .text('Sarah Jenkins, RN', W - 280, bottomY - 5, { width: 220, align: 'center' });
-        // Underline (matches border-b border-slate-300)
+            .text('Administrator', W - 280, bottomY - 5, { width: 220, align: 'center' });
         doc.moveTo(W - 280, bottomY + 20).lineTo(W - 60, bottomY + 20).lineWidth(0.5).stroke('#cbd5e1');
-        // Label (matches text-xs uppercase tracking-wider text-slate-500 font-medium)
         doc.font('Helvetica').fontSize(7).fillColor(slate500)
-            .text('DIRECTOR OF NURSING', W - 280, bottomY + 26, {
+            .text('PROGRAM DIRECTOR', W - 280, bottomY + 26, {
                 width: 220, align: 'center', characterSpacing: 2,
             });
 
         // ============ FOOTER: CREDENTIAL ID ============
-        // Matches font-mono text-[10px] text-slate-400
         doc.font('Courier').fontSize(8).fillColor(slate400)
-            .text(`Credential ID: ${certificate.uniqueId}  •  Verify at careacademy.com/verify`,
+            .text(`Credential ID: ${certificate.uniqueId}  •  Excelcommunity Living Inc`,
                 0, H - 42, { align: 'center', width: W });
 
         doc.end();
