@@ -116,6 +116,18 @@ export interface DashboardStats {
         totalCourses: number;
         totalEnrollments: number;
         totalCertificates: number;
+        trends: {
+            users: number;
+            courses: number;
+            enrollments: number;
+            certificates: number;
+        };
+        analytics: {
+            avgScore: number;
+            passRate: number;
+            totalExams: number;
+            passedExams: number;
+        };
     };
     recentEnrollments: Array<{
         id: string;

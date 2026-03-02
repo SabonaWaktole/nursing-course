@@ -6,6 +6,7 @@ import api from '@/lib/api';
 import RoleGuard from '@/components/RoleGuard';
 import { motion, AnimatePresence } from 'framer-motion';
 import StudentSidebar from '@/components/StudentSidebar';
+import AdminSidebar from '@/components/AdminSidebar';
 
 export default function SettingsPage() {
     const { user, updateUser } = useAuth();
@@ -22,6 +23,10 @@ export default function SettingsPage() {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [passwordStatus, setPasswordStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
     const [savingPassword, setSavingPassword] = useState(false);
+
+    // Sidebar State
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     useEffect(() => {
         if (user && user.name) {
@@ -89,10 +94,20 @@ export default function SettingsPage() {
 
     return (
         <RoleGuard allowedRoles={['STUDENT', 'ADMIN']}>
-            <div className="flex min-h-screen bg-background-light dark:bg-background-dark transition-colors duration-300">
-                <StudentSidebar />
+            <div className={`flex h-screen overflow-hidden bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-sans antialiased transition-colors duration-200 relative`}>
+                {user?.role === 'ADMIN' ? (
+                    <AdminSidebar
+                        tab="settings"
+                        isSidebarCollapsed={isSidebarCollapsed}
+                        setIsSidebarCollapsed={setIsSidebarCollapsed}
+                        isMobileMenuOpen={isMobileMenuOpen}
+                        setIsMobileMenuOpen={setIsMobileMenuOpen}
+                    />
+                ) : (
+                    <StudentSidebar />
+                )}
 
-                <main className="flex-1 p-6 lg:p-10 overflow-y-auto">
+                <main className="flex-1 p-6 lg:p-10 overflow-y-auto custom-scrollbar">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
