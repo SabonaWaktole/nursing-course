@@ -20,11 +20,23 @@ export default function StudentHeader({ title, subtitle }: StudentHeaderProps) {
         setIsDark(document.documentElement.classList.contains('dark'));
     }, []);
 
+    // Load notifications lazily from cache first, then refresh in background
     useEffect(() => {
         if (!user) return;
-        api.get('/admin/notifications').then(res => {
-            setNotifications(res.data || []);
-        }).catch(() => { });
+        // Load from cache instantly (no delay)
+        const cached = sessionStorage.getItem('student_notifications');
+        if (cached) {
+            try { setNotifications(JSON.parse(cached)); } catch { }
+        }
+        // Refresh from server in background (non-blocking)
+        const timer = setTimeout(() => {
+            api.get('/admin/notifications').then(res => {
+                const data = res.data || [];
+                setNotifications(data);
+                sessionStorage.setItem('student_notifications', JSON.stringify(data));
+            }).catch(() => { });
+        }, 500); // Small delay so page content loads first
+        return () => clearTimeout(timer);
     }, [user]);
 
     const unreadCount = notifications.filter(n => !n.read).length;
@@ -81,8 +93,8 @@ export default function StudentHeader({ title, subtitle }: StudentHeaderProps) {
                                             >
                                                 <div className="flex gap-3">
                                                     <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${n.type === 'CERT_APPROVED' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600' :
-                                                            n.type === 'CERT_REJECTED' ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-600' :
-                                                                'bg-amber-100 dark:bg-amber-900/30 text-amber-600'
+                                                        n.type === 'CERT_REJECTED' ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-600' :
+                                                            'bg-amber-100 dark:bg-amber-900/30 text-amber-600'
                                                         }`}>
                                                         <span className="material-symbols-outlined text-lg">
                                                             {n.type === 'CERT_APPROVED' ? 'verified' :
