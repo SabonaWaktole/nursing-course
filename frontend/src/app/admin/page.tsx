@@ -175,6 +175,18 @@ export default function AdminDashboard() {
         }
     };
 
+    const handleRevokeCertificate = async (certId: string) => {
+        if (!confirm('Are you sure you want to revoke this certificate? The student\'s course progress will be reset to 0%.')) return;
+        try {
+            await api.patch(`/admin/certificates/${certId}/revoke`);
+            loadCertificates();
+            const notifsRes = await api.get('/admin/notifications');
+            setNotifications(notifsRes.data);
+        } catch (error: any) {
+            alert(error.response?.data?.message || 'Error revoking certificate');
+        }
+    };
+
     const markRead = async (id: string) => {
         try {
             await api.patch(`/admin/notifications/${id}/read`);
@@ -1428,6 +1440,14 @@ export default function AdminDashboard() {
                                                                                     </>
                                                                                 ) : (
                                                                                     <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                                        {c.status === 'APPROVED' && (
+                                                                                            <button
+                                                                                                onClick={() => handleRevokeCertificate(c.id)}
+                                                                                                className="px-3 py-1 bg-red-50 dark:bg-red-500/10 text-red-600 border border-red-200 dark:border-red-500/20 text-[10px] font-bold rounded-lg hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors shadow-sm mr-2"
+                                                                                            >
+                                                                                                Revoke
+                                                                                            </button>
+                                                                                        )}
                                                                                         <button className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md text-slate-400 hover:text-primary transition-colors" title="View Details">
                                                                                             <span className="material-symbols-outlined text-lg">visibility</span>
                                                                                         </button>

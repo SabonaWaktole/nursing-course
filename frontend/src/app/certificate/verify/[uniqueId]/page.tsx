@@ -1,7 +1,7 @@
 import VerifyClient from './VerifyClient';
 
-export default async function VerifyCertificatePage({ params }: { params: { uniqueId: string } }) {
-    const { uniqueId } = params;
+export default async function VerifyCertificatePage({ params }: { params: Promise<{ uniqueId: string }> }) {
+    const { uniqueId } = await params;
 
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
