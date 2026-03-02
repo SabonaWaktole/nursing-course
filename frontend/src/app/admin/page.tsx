@@ -534,7 +534,7 @@ export default function AdminDashboard() {
                                                         <span className="material-symbols-outlined text-primary">notifications_active</span> Recent Enrollments
                                                     </h3>
                                                     <div className="space-y-6">
-                                                        {stats.recentEnrollments.map((e, i) => {
+                                                        {stats?.recentEnrollments?.map((e, i) => {
                                                             const colors = [
                                                                 { bg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', icon: 'verified', blur: 'bg-emerald-500/20' },
                                                                 { bg: 'bg-blue-500/10 text-blue-400 border-blue-500/20', icon: 'person_add', blur: 'bg-blue-500/20' },
@@ -568,8 +568,8 @@ export default function AdminDashboard() {
                                                                 </div>
                                                             );
                                                         })}
-                                                        {stats.recentEnrollments.length === 0 && (
-                                                            <p className="text-sm text-slate-500">No recent enrollments to perform.</p>
+                                                        {(!stats || stats.recentEnrollments.length === 0) && (
+                                                            <p className="text-sm text-slate-500">No recent enrollments available.</p>
                                                         )}
                                                     </div>
                                                     <button className="w-full mt-8 py-3 border border-slate-200 dark:border-slate-800 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
@@ -789,7 +789,19 @@ export default function AdminDashboard() {
                                                                     </button>
                                                                     <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800/50 p-1 rounded-xl border border-slate-100 dark:border-slate-700">
                                                                         <button onClick={() => handleEditCourseInfo(course)} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-lg text-slate-500 dark:text-slate-400 hover:text-primary transition-colors" title="Edit Info"><span className="material-symbols-outlined text-lg">edit</span></button>
-                                                                        <button onClick={() => setShowModuleForm(showModuleForm === course.id ? null : course.id)} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-lg text-slate-500 dark:text-slate-400 hover:text-primary transition-colors" title="Add Module"><span className="material-symbols-outlined text-lg">create_new_folder</span></button>
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                if (expandedCourse !== course.id) {
+                                                                                    setExpandedCourse(course.id);
+                                                                                    loadCourseDetail(course.id);
+                                                                                }
+                                                                                setShowModuleForm(showModuleForm === course.id ? null : course.id);
+                                                                            }}
+                                                                            className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-lg text-slate-500 dark:text-slate-400 hover:text-primary transition-colors"
+                                                                            title="Add Module"
+                                                                        >
+                                                                            <span className="material-symbols-outlined text-lg">create_new_folder</span>
+                                                                        </button>
                                                                         <button onClick={() => setShowQuizForm({ id: course.id, type: 'course', mode: 'create' })} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-lg text-slate-500 dark:text-slate-400 hover:text-emerald-500 transition-colors" title="Add Final Exam"><span className="material-symbols-outlined text-lg">quiz</span></button>
                                                                         <button onClick={() => handleDeleteCourse(course.id)} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-lg text-slate-500 dark:text-slate-400 hover:text-red-500 transition-colors" title="Delete Course"><span className="material-symbols-outlined text-lg">delete</span></button>
                                                                     </div>
@@ -827,9 +839,18 @@ export default function AdminDashboard() {
                                                                                     </div>
                                                                                     <div className="p-3 space-y-2">
                                                                                         {mod.lessons?.map((lesson: any) => (
-                                                                                            <div key={lesson.id} className="flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-950/50 rounded-lg group/lesson">
-                                                                                                <div className="flex items-center gap-2"><span className="material-symbols-outlined text-slate-400 text-sm">play_circle</span><span className="text-xs font-medium">{lesson.title}</span></div>
-                                                                                                <button onClick={() => handleDeleteLesson(lesson.id)} className="opacity-0 group-hover/lesson:opacity-100 p-1 text-slate-400 hover:text-red-500"><span className="material-symbols-outlined text-sm">close</span></button>
+                                                                                            <div key={lesson.id} className="flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-950/50 rounded-lg group/lesson transition-all hover:bg-white dark:hover:bg-slate-900 shadow-sm border border-transparent hover:border-slate-200 dark:hover:border-slate-800">
+                                                                                                <div className="flex items-center gap-3">
+                                                                                                    <span className="material-symbols-outlined text-slate-400 text-sm">play_circle</span>
+                                                                                                    <div className="flex flex-col">
+                                                                                                        <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">{lesson.title}</span>
+                                                                                                        <div className="flex gap-2">
+                                                                                                            {lesson.videoUrl && <span className="text-[9px] font-black uppercase text-emerald-500 flex items-center gap-0.5"><span className="material-symbols-outlined text-[10px]">videocam</span> Video</span>}
+                                                                                                            {lesson.materialUrl && <span className="text-[9px] font-black uppercase text-sky-500 flex items-center gap-0.5"><span className="material-symbols-outlined text-[10px]">description</span> PDF</span>}
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                                <button onClick={() => handleDeleteLesson(lesson.id)} className="opacity-0 group-hover/lesson:opacity-100 p-1 text-slate-400 hover:text-red-500 transition-opacity"><span className="material-symbols-outlined text-sm">delete</span></button>
                                                                                             </div>
                                                                                         ))}
                                                                                         {mod.quizzes?.map((quiz: any) => (
@@ -839,11 +860,57 @@ export default function AdminDashboard() {
                                                                                             </div>
                                                                                         ))}
                                                                                         {showLessonForm === mod.id && (
-                                                                                            <div className="mt-2 p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3 animate-in slide-in-from-top-2">
-                                                                                                <input value={lessonForm.title} onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })} placeholder="Lesson Title" className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-xs" />
-                                                                                                <div className="flex gap-2">
-                                                                                                    <button onClick={() => handleAddLesson(mod.id)} className="flex-1 py-1.5 bg-slate-800 text-white rounded-lg text-[10px] font-bold">Add</button>
-                                                                                                    <button onClick={() => setShowLessonForm(null)} className="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 rounded-lg text-[10px] font-bold">Cancel</button>
+                                                                                            <div className="mt-2 p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4 animate-in slide-in-from-top-2">
+                                                                                                <div className="space-y-3">
+                                                                                                    <input
+                                                                                                        value={lessonForm.title}
+                                                                                                        onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })}
+                                                                                                        placeholder="Lesson Title"
+                                                                                                        className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-bold"
+                                                                                                    />
+                                                                                                    <textarea
+                                                                                                        value={lessonForm.description}
+                                                                                                        onChange={(e) => setLessonForm({ ...lessonForm, description: e.target.value })}
+                                                                                                        placeholder="Lesson Description (optional)"
+                                                                                                        rows={2}
+                                                                                                        className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-xs"
+                                                                                                    />
+
+                                                                                                    <div className="grid grid-cols-2 gap-3">
+                                                                                                        <div className="space-y-1">
+                                                                                                            <button
+                                                                                                                onClick={() => handleLessonUpload('video')}
+                                                                                                                className={`w-full flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${lessonForm.videoUrl ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 hover:border-primary hover:text-primary'}`}
+                                                                                                            >
+                                                                                                                <span className="material-symbols-outlined text-sm">{lessonForm.videoUrl ? 'check_circle' : 'videocam'}</span>
+                                                                                                                {uploading.video ? 'Uploading...' : (lessonForm.videoUrl ? 'Video Added' : 'Add Video')}
+                                                                                                            </button>
+                                                                                                        </div>
+                                                                                                        <div className="space-y-1">
+                                                                                                            <button
+                                                                                                                onClick={() => handleLessonUpload('material')}
+                                                                                                                className={`w-full flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${lessonForm.materialUrl ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 hover:border-primary hover:text-primary'}`}
+                                                                                                            >
+                                                                                                                <span className="material-symbols-outlined text-sm">{lessonForm.materialUrl ? 'check_circle' : 'description'}</span>
+                                                                                                                {uploading.material ? 'Uploading...' : (lessonForm.materialUrl ? 'PDF Added' : 'Add PDF')}
+                                                                                                            </button>
+                                                                                                        </div>
+                                                                                                    </div>
+
+                                                                                                    {uploadProgress !== null && (
+                                                                                                        <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1 overflow-hidden">
+                                                                                                            <motion.div
+                                                                                                                initial={{ width: 0 }}
+                                                                                                                animate={{ width: `${uploadProgress}%` }}
+                                                                                                                className="bg-primary h-full"
+                                                                                                            />
+                                                                                                        </div>
+                                                                                                    )}
+                                                                                                </div>
+
+                                                                                                <div className="flex gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                                                                                                    <button onClick={() => handleAddLesson(mod.id)} className="flex-1 py-2 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20">Create Lesson</button>
+                                                                                                    <button onClick={() => setShowLessonForm(null)} className="px-4 py-2 bg-slate-200 dark:bg-slate-800 rounded-xl text-[10px] font-black uppercase tracking-widest">Cancel</button>
                                                                                                 </div>
                                                                                             </div>
                                                                                         )}
@@ -1028,7 +1095,7 @@ export default function AdminDashboard() {
 
                                 {/* Results Tab */}
                                 {
-                                    tab === 'results' && (
+                                    tab === 'results' && stats && (
                                         <div className="flex-1 overflow-y-auto p-4 sm:p-8 scroll-smooth">
                                             {/* Analytics Cards */}
                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -1081,7 +1148,7 @@ export default function AdminDashboard() {
 
                                 {/* Certificates Tab */}
                                 {
-                                    tab === 'certificates' && (
+                                    tab === 'certificates' && stats && (
                                         <div className="flex-1 overflow-y-auto p-4 sm:p-8 scroll-smooth">
                                             {/* Summary Cards & Verification */}
                                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
@@ -1098,7 +1165,7 @@ export default function AdminDashboard() {
                                                             <span className="text-2xl font-bold text-slate-900 dark:text-white">{certificates.length}</span>
                                                         </div>
                                                     </div>
-                                                     <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center group hover:border-amber-500/30 transition-colors">
+                                                    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center group hover:border-amber-500/30 transition-colors">
                                                         <div>
                                                             <div className="flex items-center gap-2 mb-2">
                                                                 <div className="w-8 h-8 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center">

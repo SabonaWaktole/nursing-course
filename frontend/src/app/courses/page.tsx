@@ -22,7 +22,7 @@ export default function CoursesPage() {
     const [selectedTag, setSelectedTag] = useState('All');
     const [loading, setLoading] = useState(true);
     const [tags, setTags] = useState<string[]>(['All']);
-
+    const [isExpanded, setIsExpanded] = useState(false);
     useEffect(() => {
         api.get('/courses').then((res) => {
             setCourses(res.data);
@@ -108,34 +108,66 @@ export default function CoursesPage() {
 
                 {/* Featured Highlight */}
                 {filtered.length > 0 && (
-                    <div className="relative group overflow-hidden rounded-2xl mb-12 bg-slate-900">
-                        <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/60 to-transparent z-10"></div>
+                    <div className="relative group overflow-hidden rounded-3xl mb-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl transition-all duration-500">
+                        {/* Dynamic Gradient Overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-white via-white/80 dark:from-slate-900 dark:via-slate-900/60 to-transparent z-10"></div>
+
                         <div className="relative z-20 p-8 md:p-12 flex flex-col justify-center max-w-xl min-h-[320px]">
-                            <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-widest mb-4">
-                                <span className="material-symbols-outlined text-sm">auto_awesome</span>
+                            <div className="flex items-center gap-2 text-primary font-black text-xs uppercase tracking-widest mb-4">
+                                <span className="material-symbols-outlined text-sm animate-pulse">auto_awesome</span>
                                 Most Popular This Month
                             </div>
-                            <h3 className="text-3xl font-bold text-white mb-4">{filtered[0].title}</h3>
-                            <p className="text-slate-300 mb-8 leading-relaxed">{filtered[0].description || "Master the latest clinical techniques used in high-acuity environments."}</p>
+                            <h3 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-4 tracking-tight leading-tight">{filtered[0].title}</h3>
+
+                            <div className="relative mb-8">
+                                <p className={`text-slate-600 dark:text-slate-300 leading-relaxed font-medium transition-all duration-500 ${!isExpanded ? 'line-clamp-3' : ''}`}>
+                                    {filtered[0].description || "Master the latest clinical techniques used in high-acuity environments. This comprehensive course covers advanced nursing protocols, emergency response strategies, and evidence-based patient care."}
+                                </p>
+                                {(filtered[0].description?.length > 160 || !filtered[0].description) && (
+                                    <button
+                                        onClick={() => setIsExpanded(!isExpanded)}
+                                        className="text-primary hover:text-primary/80 font-bold text-xs uppercase tracking-widest mt-2 flex items-center gap-1 transition-colors"
+                                    >
+                                        {isExpanded ? (
+                                            <>See Less <span className="material-symbols-outlined text-sm rotate-180">expand_more</span></>
+                                        ) : (
+                                            <>See More <span className="material-symbols-outlined text-sm">expand_more</span></>
+                                        )}
+                                    </button>
+                                )}
+                            </div>
+
                             <div className="flex flex-wrap items-center gap-6">
-                                <Link href={`/courses/${filtered[0].id}`} className="bg-primary hover:bg-primary/90 text-white font-bold py-3 px-8 rounded-xl transition-all flex items-center gap-2">
-                                    Enroll Now <span className="material-symbols-outlined">arrow_forward</span>
+                                <Link href={`/courses/${filtered[0].id}`} className="bg-primary hover:bg-primary/90 text-white font-black py-4 px-10 rounded-2xl shadow-lg shadow-primary/30 transition-all hover:-translate-y-1 flex items-center gap-2 text-sm tracking-tight">
+                                    ENROLL NOW <span className="material-symbols-outlined text-sm">arrow_forward</span>
                                 </Link>
-                                <div className="flex flex-col">
-                                    <span className="text-white font-bold text-lg">4.9/5.0</span>
-                                    <span className="text-slate-400 text-xs">{courses.length * 340} Students</span>
+                                <div className="flex items-center gap-3">
+                                    <div className="flex -space-x-2">
+                                        {[1, 2, 3].map(i => (
+                                            <div key={i} className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-900 bg-slate-200 dark:bg-slate-700 flex items-center justify-center overflow-hidden">
+                                                <span className="material-symbols-outlined text-xs text-slate-400">person</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-slate-900 dark:text-white font-black text-sm tracking-tight">4.9/5.0</span>
+                                        <span className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider">{courses.length * 340}+ Students</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div
-                            className="absolute inset-0 w-full h-full bg-center bg-cover"
+
+                        <motion.div
+                            whileHover={{ scale: 1.05 }}
+                            transition={{ duration: 0.8 }}
+                            className="absolute inset-0 w-full h-full bg-center bg-cover -z-0"
                             style={{
                                 backgroundImage: `url('${filtered[0].thumbnail
                                     ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}${filtered[0].thumbnail}`
                                     : FEATURED_IMAGE
                                     }')`
                             }}
-                        ></div>
+                        ></motion.div>
                     </div>
                 )}
 
