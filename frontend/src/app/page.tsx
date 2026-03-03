@@ -25,9 +25,27 @@ const TESTIMONIALS = [
 
 export default function LandingPage() {
   const [courses, setCourses] = useState<Course[]>([]);
+  const [stats, setStats] = useState({
+    activeStudents: "50k+",
+    completionRate: "94%",
+    partnerClinics: "200+",
+    averageRating: "4.9/5"
+  });
 
   useEffect(() => {
+    // Fetch courses
     api.get('/courses').then((res) => setCourses(res.data.slice(0, 3))).catch(() => { });
+
+    // Fetch platform stats
+    api.get('/courses/stats').then((res) => {
+      const data = res.data;
+      setStats({
+        activeStudents: data.activeStudents > 1000 ? `${(data.activeStudents / 1000).toFixed(1)}k+` : `${data.activeStudents}+`,
+        completionRate: `${data.completionRate}%`,
+        partnerClinics: `${data.partnerClinics}+`,
+        averageRating: `${data.averageRating}/5`
+      });
+    }).catch(err => console.error("Could not load stats", err));
   }, []);
 
   const courseLabels = ["Bestseller", null, "Trending"];
@@ -63,11 +81,6 @@ export default function LandingPage() {
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                   <Link href="/courses" className="px-8 py-4 bg-primary text-white font-bold rounded-xl shadow-xl shadow-primary/30 hover:-translate-y-0.5 transition-all text-lg flex items-center justify-center gap-2">
                     Browse Courses <span className="material-symbols-outlined">arrow_forward</span>
-                  </Link>
-                </motion.div>
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Link href="/register" className="px-8 py-4 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 transition-all text-lg text-center h-full block leading-none flex items-center justify-center">
-                    View Demo
                   </Link>
                 </motion.div>
               </div>
@@ -133,10 +146,10 @@ export default function LandingPage() {
             className="grid grid-cols-2 lg:grid-cols-4 gap-8"
           >
             {[
-              { value: "50k+", label: "Active Students" },
-              { value: "94%", label: "Completion Rate" },
-              { value: "200+", label: "Partner Clinics" },
-              { value: "4.9/5", label: "Average Rating" },
+              { value: stats.activeStudents, label: "Active Students" },
+              { value: stats.completionRate, label: "Completion Rate" },
+              { value: stats.partnerClinics, label: "Partner Clinics" },
+              { value: stats.averageRating, label: "Average Rating" },
             ].map((stat) => (
               <motion.div
                 key={stat.label}

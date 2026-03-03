@@ -19,6 +19,31 @@ export const getAllCourses = async (req: Request, res: Response) => {
     }
 };
 
+export const getPlatformStats = async (req: Request, res: Response) => {
+    try {
+        const [totalStudents, allEnrollments, totalReviews] = await Promise.all([
+            prisma.user.count({ where: { role: 'STUDENT' } }),
+            prisma.enrollment.findMany({ select: { completed: true } }),
+            prisma.course.count() // Fallback since there are no actual reviews
+        ]);
+
+        const completedEnrollments = allEnrollments.filter(e => e.completed).length;
+        const completionRate = allEnrollments.length > 0
+            ? Math.round((completedEnrollments / allEnrollments.length) * 100)
+            : 0;
+
+        res.json({
+            activeStudents: totalStudents,
+            completionRate: completionRate,
+            partnerClinics: 200, // Hardcoded for now
+            averageRating: 4.9 // Hardcoded for now
+        });
+    } catch (error: any) {
+        console.error('getPlatformStats error:', error);
+        res.status(500).json({ message: 'Error fetching platform stats' });
+    }
+};
+
 export const getCourseById = async (req: Request, res: Response) => {
     try {
         const id = req.params.id as string;

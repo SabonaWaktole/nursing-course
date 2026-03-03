@@ -44,17 +44,11 @@ export default function Navbar() {
 
                     {/* Right side */}
                     <div className="hidden md:flex items-center gap-3">
-                        {/* Search */}
-                        <form onSubmit={handleSearch} className="relative">
-                            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">search</span>
-                            <input
-                                type="text"
-                                placeholder="Search courses..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-48 lg:w-56 pl-10 pr-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 border-none focus:ring-2 focus:ring-primary text-sm text-slate-700 dark:text-slate-300 placeholder:text-slate-400"
-                            />
-                        </form>
+                        {/* Phone Number */}
+                        <div className="flex items-center gap-2 text-primary font-bold bg-primary/10 px-4 py-2 rounded-lg text-sm transition-colors hover:bg-primary/20 cursor-pointer">
+                            <span className="material-symbols-outlined text-xl">phone</span>
+                            <span>1661-600-5354</span>
+                        </div>
 
                         <ThemeToggle />
 
@@ -99,16 +93,11 @@ export default function Navbar() {
             {/* Mobile Menu */}
             {mobileOpen && (
                 <div className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark px-4 py-4 md:hidden shadow-xl max-h-[80vh] overflow-y-auto">
-                    <form onSubmit={handleSearch} className="relative mb-4">
-                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
-                        <input
-                            type="text"
-                            placeholder="Search courses..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 rounded-lg bg-slate-100 dark:bg-slate-800 border-none focus:ring-2 focus:ring-primary text-sm"
-                        />
-                    </form>
+                    {/* Phone Number */}
+                    <div className="flex items-center justify-center gap-2 text-primary font-bold bg-primary/10 px-4 py-3 rounded-lg mb-4 cursor-pointer hover:bg-primary/20 transition-colors">
+                        <span className="material-symbols-outlined">phone</span>
+                        <span>1661-600-5354</span>
+                    </div>
 
                     <div className="flex flex-col gap-1">
                         <Link href="/" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-primary bg-primary/10" onClick={() => setMobileOpen(false)}>

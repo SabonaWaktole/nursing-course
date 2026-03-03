@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
     getAllCourses,
+    getPlatformStats,
     getCourseById,
     createCourse,
     updateCourse,
@@ -20,6 +21,7 @@ const router = Router();
 
 // Public
 router.get('/', getAllCourses);
+router.get('/stats', getPlatformStats);
 
 // Student (must be before /:id to prevent "my" matching as courseId)
 router.get('/my/enrollments', authenticate, getMyEnrollments);
