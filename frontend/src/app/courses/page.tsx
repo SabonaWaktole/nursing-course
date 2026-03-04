@@ -5,6 +5,7 @@ import Link from 'next/link';
 import api from '@/lib/api';
 import { Course } from '@/lib/types';
 import { motion } from 'framer-motion';
+import { getFileUrl } from '@/lib/url-utils';
 
 const PLACEHOLDER_IMAGES = [
     "https://lh3.googleusercontent.com/aida-public/AB6AXuCx8O0XAYxQEfXeLfRH-6FfKX-9Z25q3IW2LEzqB3vq2Gjsi19mvFXdUV6eATG3m2EWGewTGxSWwZzZXOXhFNxiJGchZ1X7Ngn3ziO1W125d4PgRVqSLp30uM7ytxTK6mtU312iAhNc30w8kysWGRCCo23qNaFSvHITxKvRUlzopPkUReQMbvlGci6rk0oe9mu3vr9DRmMtZA_iAIhN1kR6zQSUXKhDrjd-2_Dc271nGTlZfm3brlEaniNbZg1m-EsYIoN4rqNGht0",
@@ -163,7 +164,7 @@ export default function CoursesPage() {
                             className="absolute inset-0 w-full h-full bg-center bg-cover -z-0"
                             style={{
                                 backgroundImage: `url('${filtered[0].thumbnail
-                                    ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}${filtered[0].thumbnail}`
+                                    ? getFileUrl(filtered[0].thumbnail)
                                     : FEATURED_IMAGE
                                     }')`
                             }}
@@ -228,7 +229,7 @@ export default function CoursesPage() {
                                         <img
                                             alt={course.title}
                                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                            src={course.thumbnail ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}${course.thumbnail}` : PLACEHOLDER_IMAGES[idx % PLACEHOLDER_IMAGES.length]}
+                                            src={course.thumbnail ? getFileUrl(course.thumbnail) : PLACEHOLDER_IMAGES[idx % PLACEHOLDER_IMAGES.length]}
                                         />
                                     </div>
                                     <div className="p-6 flex flex-col flex-1">

@@ -10,6 +10,7 @@ import Link from 'next/link';
 import RoleGuard from '@/components/RoleGuard';
 import StudentSidebar from '@/components/StudentSidebar';
 import StudentHeader from '@/components/StudentHeader';
+import { getFileUrl } from '@/lib/url-utils';
 
 const COURSE_IMAGES = [
     "https://lh3.googleusercontent.com/aida-public/AB6AXuCu-zYmikqqgWp7XL195teqe8TOODyvoboA8HIQmeON3V97MwR-VD5-AxiKyfAPHRYrvXuAX694m8rSKhNDf6Z_e6V1vX809P1f4QmT-DCvV66SOC_ZlAphWkaice6oJ8b9QHPjclKgcJH8q66s9rAFnwymE5hWSi5zsHFnBr-emaAYkjl-6gSxwd6uT1kNx3pDvF1rbUfNE9xLspdMXfQ0AI7IlP1VVqS0aZayH1lszHnmXHDC2uqC0N03CL8FKph-CzKArx9A_-Q",
@@ -110,7 +111,7 @@ export default function MyCoursesPage() {
                                                     <Link href={`/courses/${activeEnrollment.course.id}`} className="relative overflow-hidden rounded-3xl bg-slate-900 p-8 text-white min-h-[220px] flex flex-col justify-end group block">
                                                         <div className="absolute inset-0 opacity-40 bg-center bg-cover" style={{
                                                             backgroundImage: `url('${activeEnrollment.course.thumbnail
-                                                                ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}${activeEnrollment.course.thumbnail}`
+                                                                ? getFileUrl(activeEnrollment.course.thumbnail)
                                                                 : HERO_BG
                                                                 }')`
                                                         }}></div>
@@ -182,7 +183,7 @@ export default function MyCoursesPage() {
                                                                     className="absolute inset-0 bg-center bg-cover group-hover:scale-105 transition-transform duration-500"
                                                                     style={{
                                                                         backgroundImage: `url('${enrollment.course.thumbnail
-                                                                            ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}${enrollment.course.thumbnail}`
+                                                                            ? getFileUrl(enrollment.course.thumbnail)
                                                                             : COURSE_IMAGES[idx % COURSE_IMAGES.length]
                                                                             }')`
                                                                     }}

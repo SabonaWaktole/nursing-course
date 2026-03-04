@@ -8,6 +8,7 @@ import { Quiz, QuizResult, Course } from '@/lib/types';
 import Link from 'next/link';
 import RoleGuard from '@/components/RoleGuard';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getFileUrl } from '@/lib/url-utils';
 
 export default function QuizPage() {
     const { quizId } = useParams();
@@ -477,7 +478,7 @@ function QuizResultScreen({ result, user, quiz, onRetry, courseCompleted, nextEx
                         {courses.map(course => (
                             <Link key={course.id} href={`/courses/${course.id}`} className="bg-white rounded-xl border border-slate-200 overflow-hidden group hover:shadow-xl transition-all duration-300 flex flex-col h-full">
                                 <div className="relative h-40 overflow-hidden">
-                                    <img src={course.thumbnail || 'https://images.unsplash.com/photo-1576091160550-217359f4ecf8?auto=format&fit=crop&q=80'} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" alt="" />
+                                    <img src={course.thumbnail ? getFileUrl(course.thumbnail) : 'https://images.unsplash.com/photo-1576091160550-217359f4ecf8?auto=format&fit=crop&q=80'} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" alt="" />
                                     <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-slate-900 flex items-center gap-1">
                                         <span className="material-symbols-outlined text-yellow-500 text-[12px]">star</span>
                                         4.8

@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { Course } from '@/lib/types';
 import { motion } from 'framer-motion';
+import { getFileUrl } from '@/lib/url-utils';
 
 const HERO_IMAGE = "https://lh3.googleusercontent.com/aida-public/AB6AXuDL3Ct44XGGczsC3PgCH88mGoarkOnfGqO5yGNDimM3qDhIrSmMljtkwyBxg60rnV-szI55fdbZKDM8oVetYU7ZJdpAieBJboQWzpk1XaoIBNzAbjI-wLJVlGOKPPdHpWKF2EfsflwbmSY9bkWfbMDeaXNk8HiHIdVsi48QHKuhQeZ6Kf6nkz1yjTfCkLvCi6HqBf1gpkjyswXnw9aR9krjnmHHH2L9WFU7Aa29LuTa-8IFbraOD5LvQbGxu7f9x7CqhIzkfa58g7A";
 const AVATARS = [
@@ -203,7 +204,7 @@ export default function LandingPage() {
                     <img
                       alt={course.title}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      src={course.thumbnail ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}${course.thumbnail}` : COURSE_IMAGES[idx % 3]}
+                      src={course.thumbnail ? getFileUrl(course.thumbnail) : COURSE_IMAGES[idx % 3]}
                     />
                     {courseLabels[idx] && (
                       <div className={`absolute top-4 left-4 ${courseColors[idx]} text-white text-[10px] font-black uppercase px-2 py-1 rounded`}>

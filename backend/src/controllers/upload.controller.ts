@@ -1,76 +1,71 @@
 import { Request, Response } from 'express';
 import multer from 'multer';
 import path from 'path';
-import { supabase } from '../utils/supabase';
+import fs from 'fs';
 
-// Use memory storage to access file buffer for Supabase upload
-const storage = multer.memoryStorage();
+// Ensure upload directories exist
+const uploadDir = path.join(process.cwd(), 'uploads');
+const folders = ['videos', 'materials', 'thumbnails'];
+folders.forEach(folder => {
+    const dir = path.join(uploadDir, folder);
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+    }
+});
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        let folder = 'materials';
+        if (file.fieldname === 'video') folder = 'videos';
+        if (file.fieldname === 'thumbnail') folder = 'thumbnails';
+        cb(null, path.join('uploads', folder));
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));
+    }
+});
 
 export const upload = multer({
     storage,
     limits: { fileSize: 100 * 1024 * 1024 }, // 100MB limit
     fileFilter: (req, file, cb) => {
+        const ext = path.extname(file.originalname).toLowerCase();
         if (file.fieldname === 'video') {
             const allowed = ['.mp4', '.webm', '.mov', '.avi'];
-            const ext = path.extname(file.originalname).toLowerCase();
             if (allowed.includes(ext)) {
                 cb(null, true);
             } else {
-                cb(new Error('Invalid video format'));
+                cb(new Error('Invalid video format') as any);
             }
         } else if (file.fieldname === 'thumbnail') {
             const allowed = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
-            const ext = path.extname(file.originalname).toLowerCase();
             if (allowed.includes(ext)) {
                 cb(null, true);
             } else {
-                cb(new Error('Invalid image format'));
+                cb(new Error('Invalid image format') as any);
             }
         } else {
             const allowed = ['.pdf', '.doc', '.docx', '.zip', '.ppt', '.pptx'];
-            const ext = path.extname(file.originalname).toLowerCase();
             if (allowed.includes(ext)) {
                 cb(null, true);
             } else {
-                cb(new Error('Invalid file format'));
+                cb(new Error('Invalid file format') as any);
             }
         }
     },
 });
 
-const uploadToSupabase = async (file: Express.Multer.File, folder: 'videos' | 'materials' | 'thumbnails'): Promise<string> => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const filename = `${uniqueSuffix}${path.extname(file.originalname)}`;
-    const filePath = `${folder}/${filename}`;
-
-    const { data, error } = await supabase.storage
-        .from('uploads')
-        .upload(filePath, file.buffer, {
-            contentType: file.mimetype,
-            upsert: false
-        });
-
-    if (error) {
-        throw error;
-    }
-
-    const { data: publicUrlData } = supabase.storage
-        .from('uploads')
-        .getPublicUrl(filePath);
-
-    return publicUrlData.publicUrl;
-};
-
 export const uploadVideo = async (req: Request, res: Response) => {
     try {
         if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
 
-        const publicUrl = await uploadToSupabase(req.file, 'videos');
-
-        res.json({ url: publicUrl, filename: req.file.originalname });
+        // Return relative path from root
+        const fileUrl = `/uploads/videos/${req.file.filename}`;
+        res.json({ url: fileUrl, filename: req.file.originalname });
     } catch (error: any) {
-        console.error('Supabase upload error:', error);
-        res.status(500).json({ message: 'Error uploading video to storage', error: error.message });
+        console.error('File upload error:', error);
+        res.status(500).json({ message: 'Error uploading video', error: error.message });
     }
 };
 
@@ -78,12 +73,11 @@ export const uploadMaterial = async (req: Request, res: Response) => {
     try {
         if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
 
-        const publicUrl = await uploadToSupabase(req.file, 'materials');
-
-        res.json({ url: publicUrl, filename: req.file.originalname });
+        const fileUrl = `/uploads/materials/${req.file.filename}`;
+        res.json({ url: fileUrl, filename: req.file.originalname });
     } catch (error: any) {
-        console.error('Supabase upload error:', error);
-        res.status(500).json({ message: 'Error uploading material to storage', error: error.message });
+        console.error('File upload error:', error);
+        res.status(500).json({ message: 'Error uploading material', error: error.message });
     }
 };
 
@@ -91,11 +85,10 @@ export const uploadThumbnail = async (req: Request, res: Response) => {
     try {
         if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
 
-        const publicUrl = await uploadToSupabase(req.file, 'thumbnails');
-
-        res.json({ url: publicUrl, filename: req.file.originalname });
+        const fileUrl = `/uploads/thumbnails/${req.file.filename}`;
+        res.json({ url: fileUrl, filename: req.file.originalname });
     } catch (error: any) {
-        console.error('Supabase upload error:', error);
-        res.status(500).json({ message: 'Error uploading thumbnail to storage', error: error.message });
+        console.error('File upload error:', error);
+        res.status(500).json({ message: 'Error uploading thumbnail', error: error.message });
     }
 };

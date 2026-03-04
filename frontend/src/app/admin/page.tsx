@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import RoleGuard from '@/components/RoleGuard';
 import AdminSidebar from '@/components/AdminSidebar';
+import { getFileUrl } from '@/lib/url-utils';
 
 export default function AdminDashboard() {
     const { user } = useAuth();
@@ -786,7 +787,7 @@ export default function AdminDashboard() {
                                                             <div className="flex border border-slate-300 dark:border-slate-700 rounded-xl overflow-hidden bg-white dark:bg-slate-900">
                                                                 {courseForm.thumbnail ? (
                                                                     <div className="h-20 w-32 shrink-0 bg-slate-100 dark:bg-slate-800 flex items-center justify-center border-r border-slate-300 dark:border-slate-700">
-                                                                        <img src={courseForm.thumbnail} alt="Preview" className="h-full w-full object-cover" />
+                                                                        <img src={getFileUrl(courseForm.thumbnail)} alt="Preview" className="h-full w-full object-cover" />
                                                                     </div>
                                                                 ) : (
                                                                     <div className="h-20 w-32 shrink-0 bg-slate-50 dark:bg-slate-800/50 flex flex-col items-center justify-center text-xs text-slate-400 border-r border-slate-300 dark:border-slate-700 border-dashed">
@@ -856,7 +857,7 @@ export default function AdminDashboard() {
                                                             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
                                                                 <div className="flex items-start gap-6 flex-1 min-w-0">
                                                                     <div className="h-20 w-20 shrink-0 rounded-2xl overflow-hidden bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shadow-inner group-hover:scale-105 transition-transform duration-500">
-                                                                        {course.thumbnail ? <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover" /> : <span className="material-symbols-outlined text-4xl">school</span>}
+                                                                        {course.thumbnail ? <img src={getFileUrl(course.thumbnail)} alt={course.title} className="w-full h-full object-cover" /> : <span className="material-symbols-outlined text-4xl">school</span>}
                                                                     </div>
                                                                     <div className="min-w-0 flex-1">
                                                                         <div className="flex items-center gap-2 mb-2">
