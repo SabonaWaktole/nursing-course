@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { Course } from '@/lib/types';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { getFileUrl } from '@/lib/url-utils';
 import {
     useSectionContainerVariants,
@@ -36,10 +36,10 @@ export default function CoursesPage() {
     const buttonHover = useButtonHoverMotion();
     const cardHover = useCardHoverMotion();
     const glowHover = useGlowHoverMotion();
+
     useEffect(() => {
         api.get('/courses').then((res) => {
             setCourses(res.data);
-            // Build unique tags from all courses
             const allTags = new Set<string>();
             res.data.forEach((c: Course) => {
                 if (c.tags) c.tags.forEach((t: string) => allTags.add(t));
@@ -57,57 +57,99 @@ export default function CoursesPage() {
     });
 
     return (
-        <div className="min-h-screen bg-background-light dark:bg-background-dark overflow-x-hidden">
+        <div className="min-h-screen bg-background-light dark:bg-background-dark overflow-x-hidden relative">
+            {/* Ambient floating orbs */}
+            <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
+                <motion.div
+                    animate={{ y: [0, -50, 0], x: [0, 30, 0], scale: [1, 1.15, 1] }}
+                    transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
+                    className="absolute top-[5%] right-[10%] w-[30vw] h-[30vw] max-w-[400px] max-h-[400px] bg-primary/[0.04] dark:bg-primary/[0.06] rounded-full blur-[100px]"
+                />
+                <motion.div
+                    animate={{ y: [0, 40, 0], x: [0, -20, 0], scale: [1, 1.1, 1] }}
+                    transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut', delay: 4 }}
+                    className="absolute bottom-[10%] left-[5%] w-[25vw] h-[25vw] max-w-[350px] max-h-[350px] bg-blue-400/[0.04] dark:bg-blue-400/[0.06] rounded-full blur-[100px]"
+                />
+            </div>
+
             <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
                 {/* Hero Header */}
                 <motion.div
-                    variants={sectionItem}
-                    initial="hidden"
-                    whileInView="show"
-                    viewport={{ once: true, margin: "-80px" }}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, ease: [0.25, 0.8, 0.25, 1] }}
                     className="mb-10"
                 >
                     <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                         <div className="max-w-2xl">
-                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase bg-primary/10 text-primary mb-4">
+                            <motion.span
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ duration: 0.4, delay: 0.1 }}
+                                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase bg-primary/10 text-primary mb-4 animate-glow-pulse"
+                            >
+                                <span className="material-symbols-outlined text-[14px] mr-1.5">school</span>
                                 Expert-Led Training
-                            </span>
-                            <h1 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white mb-4 tracking-tight">
-                                Course <span className="text-primary">Catalog</span>
-                            </h1>
-                            <p className="text-lg text-slate-600 dark:text-slate-400 leading-relaxed">
+                            </motion.span>
+                            <motion.h1
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.5, delay: 0.15, ease: [0.25, 0.8, 0.25, 1] }}
+                                className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white mb-4 tracking-tight"
+                            >
+                                Course <span className="text-primary relative">
+                                    Catalog
+                                    <span className="absolute -bottom-1 left-0 right-0 h-[3px] bg-gradient-to-r from-primary/60 to-primary/10 rounded-full" />
+                                </span>
+                            </motion.h1>
+                            <motion.p
+                                initial={{ opacity: 0, y: 16 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.5, delay: 0.25 }}
+                                className="text-lg text-slate-600 dark:text-slate-400 leading-relaxed"
+                            >
                                 Upgrade your nursing career with industry-recognized certifications and professional development workshops.
-                            </p>
+                            </motion.p>
                         </div>
-                        <div className="flex items-center gap-2 text-sm font-medium text-slate-500 bg-white dark:bg-slate-800 px-4 py-2 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
-                            <span className="flex h-2 w-2 rounded-full bg-green-500"></span>
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.4, delay: 0.35 }}
+                            className="flex items-center gap-2 text-sm font-medium text-slate-500 bg-white dark:bg-slate-800 px-4 py-2.5 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700"
+                        >
+                            <span className="relative flex h-2.5 w-2.5">
+                                <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+                            </span>
                             {courses.length} Courses Available Today
-                        </div>
+                        </motion.div>
                     </div>
                 </motion.div>
 
                 {/* Filters & Search */}
                 <motion.div
-                    variants={sectionItem}
-                    initial="hidden"
-                    whileInView="show"
-                    viewport={{ once: true, margin: "-60px" }}
-                    className="sticky top-20 z-40 bg-background-light/95 dark:bg-background-dark/95 py-4 mb-8 backdrop-blur-sm"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.45, delay: 0.3 }}
+                    className="sticky top-20 z-40 bg-background-light/80 dark:bg-background-dark/80 py-4 mb-8 backdrop-blur-xl rounded-2xl"
                 >
                     <div className="flex flex-col lg:flex-row gap-4">
-                        <div className="relative flex-1">
+                        <div className="relative flex-1 group">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <span className="material-symbols-outlined text-slate-400">search</span>
+                                <motion.span
+                                    animate={{ rotate: [0, 0, 0] }}
+                                    className="material-symbols-outlined text-slate-400 group-focus-within:text-primary transition-colors duration-300"
+                                >search</motion.span>
                             </div>
                             <input
-                                className="block w-full pl-11 pr-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-slate-900 dark:text-white placeholder-slate-400 shadow-sm"
+                                className="block w-full pl-11 pr-4 py-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/30 focus:border-primary/50 text-slate-900 dark:text-white placeholder-slate-400 shadow-sm transition-all duration-300 focus:shadow-[0_0_20px_rgba(13,185,242,0.1)]"
                                 placeholder="Search by skill, topic, or certification name..."
                                 type="text"
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                             />
                         </div>
-                        <div className="flex items-center gap-2 overflow-x-auto pb-2 lg:pb-0">
+                        <div className="flex items-center gap-2 overflow-x-auto pb-2 lg:pb-0 scrollbar-hide">
                             {tags.map(t => (
                                 <motion.button
                                     {...buttonHover}
@@ -115,11 +157,12 @@ export default function CoursesPage() {
                                     onClick={() => setSelectedTag(t)}
                                     className={`relative px-5 py-2.5 rounded-xl font-semibold text-sm whitespace-nowrap transition-all ${selectedTag === t
                                         ? 'text-white shadow-lg shadow-primary/25'
-                                        : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-primary'
+                                        : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-primary/50 hover:shadow-sm'
                                         }`}
                                 >
                                     {selectedTag === t && (
                                         <motion.span
+                                            key="activeFilterTag"
                                             layoutId="activeFilterTag"
                                             className="absolute inset-0 bg-primary rounded-xl -z-10"
                                             transition={{ type: 'spring', stiffness: 380, damping: 30 }}
@@ -135,23 +178,50 @@ export default function CoursesPage() {
                 {/* Featured Highlight */}
                 {filtered.length > 0 && (
                     <motion.div
-                        variants={sectionItem}
-                        initial="hidden"
-                        whileInView="show"
-                        viewport={{ once: true, margin: "-80px" }}
-                        className="relative group overflow-hidden rounded-3xl mb-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl transition-all duration-500"
+                        initial={{ opacity: 0, y: 30, scale: 0.98 }}
+                        whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                        viewport={{ once: true, margin: "-60px" }}
+                        transition={{ duration: 0.6, ease: [0.25, 0.8, 0.25, 1] }}
+                        className="relative group overflow-hidden rounded-3xl mb-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl hover:shadow-2xl hover:shadow-primary/10 transition-all duration-700"
                     >
+                        {/* Animated gradient top accent */}
+                        <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent animate-gradient-shift z-30" />
+
                         {/* Dynamic Gradient Overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-white via-white/80 dark:from-slate-900 dark:via-slate-900/60 to-transparent z-10"></div>
+                        <div className="absolute inset-0 bg-gradient-to-r from-white via-white/90 dark:from-slate-900 dark:via-slate-900/80 to-transparent z-10"></div>
+                        {/* Hover shine sweep */}
+                        <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden">
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.06] to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out" />
+                        </div>
 
                         <div className="relative z-20 p-8 md:p-12 flex flex-col justify-center max-w-xl min-h-[320px]">
-                            <div className="flex items-center gap-2 text-primary font-black text-xs uppercase tracking-widest mb-4">
+                            <motion.div
+                                initial={{ opacity: 0, x: -10 }}
+                                whileInView={{ opacity: 1, x: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: 0.2, duration: 0.4 }}
+                                className="flex items-center gap-2 text-primary font-black text-xs uppercase tracking-widest mb-4"
+                            >
                                 <span className="material-symbols-outlined text-sm animate-pulse">auto_awesome</span>
                                 Most Popular This Month
-                            </div>
-                            <h3 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-4 tracking-tight leading-tight">{filtered[0].title}</h3>
+                            </motion.div>
+                            <motion.h3
+                                initial={{ opacity: 0, y: 16 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: 0.3, duration: 0.5 }}
+                                className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-4 tracking-tight leading-tight"
+                            >
+                                {filtered[0].title}
+                            </motion.h3>
 
-                            <div className="relative mb-8">
+                            <motion.div
+                                initial={{ opacity: 0, y: 12 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: 0.4, duration: 0.4 }}
+                                className="relative mb-8"
+                            >
                                 <p className={`text-slate-600 dark:text-slate-300 leading-relaxed font-medium transition-all duration-500 ${!isExpanded ? 'line-clamp-3' : ''}`}>
                                     {filtered[0].description || "Master the latest clinical techniques used in high-acuity environments. This comprehensive course covers advanced nursing protocols, emergency response strategies, and evidence-based patient care."}
                                 </p>
@@ -167,19 +237,33 @@ export default function CoursesPage() {
                                         )}
                                     </button>
                                 )}
-                            </div>
+                            </motion.div>
 
-                            <div className="flex flex-wrap items-center gap-6">
-                                <Link href={`/courses/${filtered[0].id}`} className="group relative isolate overflow-hidden bg-primary hover:bg-primary/95 text-white font-black py-4 px-10 rounded-2xl shadow-xl shadow-primary/30 transition-all hover:-translate-y-1 flex items-center gap-2 text-sm tracking-tight shimmer-btn">
-                                    <div className="absolute inset-0 -z-10 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                                    ENROLL NOW <span className="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
-                                </Link>
+                            <motion.div
+                                initial={{ opacity: 0, y: 12 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: 0.5, duration: 0.4 }}
+                                className="flex flex-wrap items-center gap-6"
+                            >
+                                <motion.div {...glowHover}>
+                                    <Link href={`/courses/${filtered[0].id}`} className="shimmer-btn bg-primary hover:bg-primary/95 text-white font-black py-4 px-10 rounded-2xl shadow-xl shadow-primary/30 transition-all hover:-translate-y-1 flex items-center gap-2 text-sm tracking-tight">
+                                        ENROLL NOW <span className="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                                    </Link>
+                                </motion.div>
                                 <div className="flex items-center gap-3 bg-white/50 dark:bg-slate-900/50 backdrop-blur-md px-4 py-2 rounded-2xl border border-slate-200/50 dark:border-slate-700/50">
                                     <div className="flex -space-x-2">
                                         {[1, 2, 3].map(i => (
-                                            <div key={i} className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-800 bg-slate-200 dark:bg-slate-700 flex items-center justify-center overflow-hidden z-10 transition-transform hover:scale-110 hover:z-20">
+                                            <motion.div
+                                                key={i}
+                                                initial={{ opacity: 0, scale: 0.5 }}
+                                                whileInView={{ opacity: 1, scale: 1 }}
+                                                viewport={{ once: true }}
+                                                transition={{ delay: 0.5 + i * 0.1, duration: 0.3 }}
+                                                className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-800 bg-slate-200 dark:bg-slate-700 flex items-center justify-center overflow-hidden z-10 transition-transform hover:scale-110 hover:z-20"
+                                            >
                                                 <span className="material-symbols-outlined text-xs text-slate-400">person</span>
-                                            </div>
+                                            </motion.div>
                                         ))}
                                     </div>
                                     <div className="flex flex-col">
@@ -187,19 +271,21 @@ export default function CoursesPage() {
                                         <span className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider">{courses.length * 340}+ Students</span>
                                     </div>
                                 </div>
-                            </div>
+                            </motion.div>
                         </div>
 
+                        {/* Featured background image with parallax-like hover */}
                         <motion.div
-                            {...cardHover}
                             className="absolute inset-0 w-full h-full bg-center bg-cover -z-0"
+                            whileHover={{ scale: 1.05 }}
+                            transition={{ duration: 0.8, ease: 'easeOut' }}
                             style={{
                                 backgroundImage: `url('${filtered[0].thumbnail
                                     ? getFileUrl(filtered[0].thumbnail)
                                     : FEATURED_IMAGE
                                     }')`
                             }}
-                        ></motion.div>
+                        />
                     </motion.div>
                 )}
 
@@ -207,22 +293,45 @@ export default function CoursesPage() {
                 {loading ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {[1, 2, 3, 4, 5, 6].map((i) => (
-                            <div key={i} className="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-700 animate-pulse">
-                                <div className="h-48 bg-slate-200 dark:bg-slate-700"></div>
-                                <div className="p-6 space-y-3">
-                                    <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/3"></div>
-                                    <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded w-full"></div>
-                                    <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-2/3"></div>
+                            <div key={i} className="bg-white dark:bg-slate-800 rounded-3xl overflow-hidden border border-slate-100 dark:border-slate-700">
+                                <div className="h-52 bg-slate-200 dark:bg-slate-700 relative overflow-hidden">
+                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
+                                </div>
+                                <div className="p-7 space-y-4">
+                                    <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded-full w-1/3 relative overflow-hidden">
+                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
+                                    </div>
+                                    <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded-full w-full relative overflow-hidden">
+                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
+                                    </div>
+                                    <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded-full w-2/3 relative overflow-hidden">
+                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
+                                    </div>
+                                    <div className="pt-4 border-t border-slate-100 dark:border-slate-700 flex justify-between">
+                                        <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded-full w-16" />
+                                        <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded-xl w-28" />
+                                    </div>
                                 </div>
                             </div>
                         ))}
                     </div>
                 ) : filtered.length === 0 ? (
-                    <div className="text-center py-20">
-                        <span className="material-symbols-outlined text-5xl text-slate-300 dark:text-slate-600">menu_book</span>
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.4 }}
+                        className="text-center py-20"
+                    >
+                        <motion.span
+                            animate={{ y: [0, -8, 0] }}
+                            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                            className="material-symbols-outlined text-6xl text-slate-300 dark:text-slate-600 block"
+                        >
+                            menu_book
+                        </motion.span>
                         <p className="mt-4 text-lg font-medium text-slate-500">No courses found</p>
                         <p className="text-sm text-slate-400">Try adjusting your search or check back later.</p>
-                    </div>
+                    </motion.div>
                 ) : (
                     <motion.div
                         variants={sectionContainer}
@@ -239,11 +348,19 @@ export default function CoursesPage() {
                             >
                                 <Link
                                     href={`/courses/${course.id}`}
-                                    className="group bg-white dark:bg-slate-900 rounded-3xl overflow-hidden border border-slate-200/80 dark:border-slate-800/80 transition-all hover:shadow-[0_20px_40px_-15px_rgba(13,185,242,0.15)] dark:hover:shadow-[0_20px_40px_-15px_rgba(13,185,242,0.1)] h-full flex flex-col relative z-0"
+                                    className="group bg-white dark:bg-slate-900 rounded-3xl overflow-hidden border border-slate-200/80 dark:border-slate-800/80 transition-all duration-500 hover:shadow-[0_20px_50px_-15px_rgba(13,185,242,0.2)] dark:hover:shadow-[0_20px_50px_-15px_rgba(13,185,242,0.12)] h-full flex flex-col relative z-0"
                                 >
-                                    <div className="absolute inset-0 bg-primary/20 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10"></div>
+                                    {/* Card hover glow */}
+                                    <div className="absolute inset-0 bg-primary/15 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 -z-10"></div>
+                                    {/* Card top accent on hover */}
+                                    <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-30" />
+                                    {/* Shine sweep overlay */}
+                                    <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden rounded-3xl">
+                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.07] to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out" />
+                                    </div>
+
                                     <div className="relative h-48 md:h-56 overflow-hidden">
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity z-10"></div>
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-500 z-10"></div>
                                         {/* Category tag */}
                                         <div className="absolute top-4 left-4 z-20 bg-white/90 dark:bg-slate-900/90 backdrop-blur px-3 py-1.5 rounded-lg text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-wider shadow-lg">
                                             {course.tags && course.tags.length > 0 ? course.tags[0] : (course.category || 'Course')}
@@ -254,11 +371,9 @@ export default function CoursesPage() {
                                             src={course.thumbnail ? getFileUrl(course.thumbnail) : PLACEHOLDER_IMAGES[idx % PLACEHOLDER_IMAGES.length]}
                                         />
                                     </div>
-                                    <div className="p-8 flex flex-col flex-1 relative bg-white dark:bg-slate-900 z-20">
-                                        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
+                                    <div className="p-7 flex flex-col flex-1 relative bg-white dark:bg-slate-900 z-20">
                                         <div className="flex items-center justify-between mb-4">
-                                            <div className="flex items-center text-amber-500 bg-amber-50 dark:bg-amber-500/10 px-2 py-1 rounded-md">
+                                            <div className="flex items-center text-amber-500 bg-amber-50 dark:bg-amber-500/10 px-2.5 py-1 rounded-lg">
                                                 <span className="material-symbols-outlined text-[14px]">star</span>
                                                 <span className="text-xs font-bold ml-1">4.{8 + (idx % 2)}</span>
                                             </div>
@@ -267,14 +382,14 @@ export default function CoursesPage() {
                                                 {course._count?.modules || 1} Modules
                                             </span>
                                         </div>
-                                        <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-3 leading-tight group-hover:text-primary transition-colors">{course.title}</h4>
+                                        <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-3 leading-tight group-hover:text-primary transition-colors duration-300">{course.title}</h4>
                                         <p className="text-slate-600 dark:text-slate-400 text-sm mb-8 flex-1 line-clamp-2 leading-relaxed">{course.description}</p>
-                                        <div className="flex items-center justify-between pt-6 border-t border-slate-100 dark:border-slate-800/80 mt-auto">
+                                        <div className="flex items-center justify-between pt-5 border-t border-slate-100 dark:border-slate-800/80 mt-auto">
                                             <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                                                {course.price && course.price > 0 ? `$${course.price}` : 'Free'}
+                                                {course.price && course.price > 0 ? `$${course.price}` : <span className="text-emerald-500">Free</span>}
                                             </span>
-                                            <span className="px-5 py-2.5 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl group-hover:bg-primary group-hover:text-white transition-all duration-300 font-bold text-sm shadow-sm group-hover:shadow-primary/30 flex items-center gap-2">
-                                                Enroll Now <span className="material-symbols-outlined text-sm transition-transform group-hover:translate-x-1">arrow_forward</span>
+                                            <span className="px-5 py-2.5 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl group-hover:bg-primary group-hover:text-white transition-all duration-300 font-bold text-sm shadow-sm group-hover:shadow-lg group-hover:shadow-primary/20 flex items-center gap-2">
+                                                Enroll Now <span className="material-symbols-outlined text-sm transition-transform duration-300 group-hover:translate-x-1">arrow_forward</span>
                                             </span>
                                         </div>
                                     </div>
@@ -286,25 +401,51 @@ export default function CoursesPage() {
 
                 {/* Newsletter Section */}
                 <motion.div
-                    variants={sectionItem}
-                    initial="hidden"
-                    whileInView="show"
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, margin: "-60px" }}
-                    className="mt-20 border-t border-slate-200 dark:border-slate-800 pt-16"
+                    transition={{ duration: 0.6, ease: [0.25, 0.8, 0.25, 1] }}
+                    className="mt-20 pt-16 relative"
                 >
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-                        <div>
-                            <h3 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">Stay ahead in your field.</h3>
-                            <p className="text-slate-600 dark:text-slate-400">Join 15,000+ CNAs receiving weekly updates on new courses, clinical best practices, and industry certification news.</p>
-                        </div>
-                        <div className="flex flex-col sm:flex-row gap-3">
-                            <input className="flex-1 px-4 py-4 rounded-xl bg-slate-100 dark:bg-slate-800 border-transparent focus:ring-2 focus:ring-primary text-slate-900 dark:text-white" placeholder="Enter your email address" type="email" />
-                            <motion.button
-                                {...buttonHover}
-                                className="bg-primary hover:bg-primary/90 text-white font-bold py-4 px-8 rounded-xl transition-all shadow-lg shadow-primary/20"
-                            >
-                                Subscribe Now
-                            </motion.button>
+                    {/* Separator with gradient */}
+                    <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-slate-300 dark:via-slate-700 to-transparent" />
+
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 md:p-12 shadow-lg relative overflow-hidden">
+                        {/* Background decoration */}
+                        <motion.div
+                            animate={{ y: [0, -15, 0], x: [0, 10, 0] }}
+                            transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
+                            className="absolute -right-20 -top-20 w-60 h-60 bg-primary/5 rounded-full blur-3xl pointer-events-none"
+                        />
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative">
+                            <div>
+                                <motion.span
+                                    initial={{ opacity: 0, y: 8 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: 0.1 }}
+                                    className="inline-flex items-center gap-1.5 text-primary font-bold text-xs uppercase tracking-widest mb-3"
+                                >
+                                    <span className="material-symbols-outlined text-sm">mail</span>
+                                    Newsletter
+                                </motion.span>
+                                <h3 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">Stay ahead in your field.</h3>
+                                <p className="text-slate-600 dark:text-slate-400">Join 15,000+ CNAs receiving weekly updates on new courses, clinical best practices, and industry certification news.</p>
+                            </div>
+                            <div className="flex flex-col sm:flex-row gap-3">
+                                <input
+                                    className="flex-1 px-5 py-4 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary/30 focus:border-primary/50 text-slate-900 dark:text-white transition-all duration-300 focus:shadow-[0_0_20px_rgba(13,185,242,0.1)]"
+                                    placeholder="Enter your email address"
+                                    type="email"
+                                />
+                                <motion.button
+                                    {...glowHover}
+                                    className="shimmer-btn bg-primary hover:bg-primary/90 text-white font-bold py-4 px-8 rounded-xl transition-all shadow-lg shadow-primary/20"
+                                >
+                                    Subscribe Now
+                                </motion.button>
+                            </div>
                         </div>
                     </div>
                 </motion.div>

@@ -10,13 +10,14 @@ import { usePageVariants } from '@/lib/motion';
 
 export default function ClientProviders({ children }: { children: ReactNode }) {
     const pathname = usePathname();
-    const isAdminMode = pathname?.startsWith('/admin');
+    // Routes that have their own sidebar + header layout — hide global Navbar & Footer
+    const hasDashboardLayout = pathname?.startsWith('/admin') || pathname?.startsWith('/my-courses') || pathname?.startsWith('/certificates') || pathname?.startsWith('/settings');
     const pageVariants = usePageVariants();
 
     return (
         <AuthProvider>
-            {!isAdminMode && <Navbar />}
-            <main className={!isAdminMode ? "min-h-screen" : "h-screen overflow-hidden"}>
+            {!hasDashboardLayout && <Navbar />}
+            <main className={!hasDashboardLayout ? "min-h-screen" : "h-screen overflow-hidden"}>
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={pathname}
@@ -30,7 +31,7 @@ export default function ClientProviders({ children }: { children: ReactNode }) {
                     </motion.div>
                 </AnimatePresence>
             </main>
-            {!isAdminMode && <Footer />}
+            {!hasDashboardLayout && <Footer />}
         </AuthProvider>
     );
 }

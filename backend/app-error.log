@@ -1,0 +1,16 @@
+
+UPDATE ERROR: PrismaClientUnknownRequestError: 
+Invalid `prisma.course.update()` invocation in
+C:\Users\sebon\OneDrive\Desktop\UW\backend\src\controllers\course.controller.ts:88:44
+
+  85 
+  86 const parsedPrice = price !== undefined && price !== null && price !== '' ? parseFloat(price.toString()) : undefined;
+  87 
+→ 88 const course = await prisma.course.update(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "08P01", message: "insufficient data left in message", severity: "ERROR", detail: None, column: None, hint: None }), transient: false })
+    at $n.handleRequestError (C:\Users\sebon\OneDrive\Desktop\UW\backend\node_modules\@prisma\client\runtime\library.js:121:7505)
+    at $n.handleAndLogRequestError (C:\Users\sebon\OneDrive\Desktop\UW\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\Users\sebon\OneDrive\Desktop\UW\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\Users\sebon\OneDrive\Desktop\UW\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async updateCourse (C:\Users\sebon\OneDrive\Desktop\UW\backend\src\controllers\course.controller.ts:88:24)

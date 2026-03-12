@@ -3,92 +3,133 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/lib/auth-context';
 
 const NAV_ITEMS = [
     { href: '/my-courses', icon: 'book', label: 'My Courses' },
     { href: '/certificates', icon: 'workspace_premium', label: 'Certificates' },
-    { href: '/settings', icon: 'settings', label: 'Account Settings' },
+    { href: '/courses', icon: 'explore', label: 'Browse Courses' },
+    { href: '/settings', icon: 'settings', label: 'Settings' },
 ];
 
 interface StudentSidebarProps {
     isSidebarCollapsed?: boolean;
     setIsSidebarCollapsed?: (collapsed: boolean) => void;
+    isMobileMenuOpen?: boolean;
+    setIsMobileMenuOpen?: (open: boolean) => void;
 }
 
 export default function StudentSidebar({
     isSidebarCollapsed = false,
-    setIsSidebarCollapsed
+    setIsSidebarCollapsed,
+    isMobileMenuOpen = false,
+    setIsMobileMenuOpen
 }: StudentSidebarProps) {
     const pathname = usePathname();
+    const { user } = useAuth();
 
     return (
-        <aside className={`${isSidebarCollapsed ? 'w-20' : 'w-64'} hidden lg:flex flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 gap-8 min-h-screen sticky top-0 transition-all duration-300 z-40`}>
-            <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} px-2 mb-4`}>
-                <Link href="/" className="flex items-center gap-3 overflow-hidden group">
-                    <div className="w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center shrink-0 shadow-lg shadow-primary/20">
-                        <span className="material-symbols-outlined text-lg">medical_services</span>
-                    </div>
-                    {!isSidebarCollapsed && (
-                        <span className="font-bold text-sm tracking-tight truncate dark:text-white animate-in fade-in slide-in-from-left-2 duration-300">
-                            Excelcommunity
-                        </span>
-                    )}
-                </Link>
-                <button
-                    onClick={() => setIsSidebarCollapsed?.(!isSidebarCollapsed)}
-                    className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors"
-                >
-                    <span className="material-symbols-outlined text-xl">
-                        {isSidebarCollapsed ? 'chevron_right' : 'menu_open'}
-                    </span>
-                </button>
-            </div>
+        <>
+            {/* Mobile overlay */}
+            {isMobileMenuOpen && (
+                <div
+                    className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-30 lg:hidden transition-opacity"
+                    onClick={() => setIsMobileMenuOpen?.(false)}
+                />
+            )}
 
-            <nav className="flex flex-col gap-2">
-                {NAV_ITEMS.map((item) => {
-                    const isActive = pathname === item.href;
-                    return (
-                        <Link
-                            key={item.label}
-                            href={item.href}
-                            className={`flex items-center ${isSidebarCollapsed ? 'justify-center px-0' : 'px-4'} py-3 rounded-xl transition-all duration-200 ${isActive
-                                ? 'bg-primary text-white shadow-lg shadow-primary/30'
-                                : 'text-slate-600 dark:text-slate-400 hover:bg-primary/5 hover:text-primary'
-                                }`}
-                            title={isSidebarCollapsed ? item.label : ''}
-                        >
-                            <span className="material-symbols-outlined">{item.icon}</span>
-                            {!isSidebarCollapsed && <span className="font-medium animate-in fade-in slide-in-from-left-2">{item.label}</span>}
-                        </Link>
-                    );
-                })}
-            </nav>
-            {/* Premium CTA */}
-            {!isSidebarCollapsed && (
-                <div className="mt-auto bg-primary/10 rounded-2xl p-4 flex flex-col gap-3 border border-primary/20 animate-in fade-in slide-in-from-bottom-2">
-                    <div className="flex items-center gap-2 text-primary">
-                        <span className="material-symbols-outlined text-sm">bolt</span>
-                        <span className="text-xs font-bold uppercase tracking-wider">Premium Plan</span>
-                    </div>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                        Unlock advanced clinical simulations and mock state tests.
-                    </p>
-                    <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        className="bg-primary text-white text-xs font-bold py-2 rounded-lg hover:bg-primary/90 transition-colors shadow-sm"
+            {/* Sidebar */}
+            <aside className={`
+                ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-64'}
+                fixed inset-y-0 left-0 z-40 w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800
+                transition-all duration-300 ease-in-out
+                lg:static lg:translate-x-0
+                ${isMobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}
+            `}>
+                {/* Logo area — matches AdminSidebar */}
+                <div className="h-20 flex items-center justify-between px-6 shrink-0 border-b border-transparent">
+                    <Link href="/" className="flex items-center gap-3 overflow-hidden">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-800 to-black border border-slate-700 flex items-center justify-center shadow-[0_0_15px_rgba(13,185,242,0.3)] shrink-0">
+                            <span className="material-symbols-outlined text-primary text-xl">medical_services</span>
+                        </div>
+                        {!isSidebarCollapsed && (
+                            <div className="animate-in fade-in slide-in-from-left-2 duration-300">
+                                <h1 className="font-bold text-lg tracking-tight leading-none text-slate-900 dark:text-white">Excelcommunity</h1>
+                                <p className="text-xs text-slate-500 font-medium">Student Portal</p>
+                            </div>
+                        )}
+                    </Link>
+                    <button
+                        onClick={() => setIsSidebarCollapsed?.(!isSidebarCollapsed)}
+                        className="hidden lg:flex w-8 h-8 items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors"
                     >
-                        Upgrade Now
-                    </motion.button>
+                        <span className="material-symbols-outlined text-xl">
+                            {isSidebarCollapsed ? 'chevron_right' : 'menu_open'}
+                        </span>
+                    </button>
                 </div>
-            )}
-            {isSidebarCollapsed && (
-                <div className="mt-auto flex justify-center pb-4">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center cursor-pointer" title="Upgrade Now">
-                        <span className="material-symbols-outlined text-sm">bolt</span>
+
+                {/* Navigation */}
+                <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto custom-scrollbar">
+                    {NAV_ITEMS.map((item) => {
+                        const isActive = pathname === item.href;
+                        return (
+                            <Link
+                                key={item.label}
+                                href={item.href}
+                                onClick={() => setIsMobileMenuOpen?.(false)}
+                                className={`
+                                    w-full group flex items-center gap-3 ${isSidebarCollapsed ? 'justify-center px-0' : 'px-3'} py-2.5 rounded-xl transition-all duration-200
+                                    ${isActive
+                                        ? 'bg-primary/10 border border-primary/20 text-primary shadow-[0_0_10px_rgba(13,185,242,0.1)]'
+                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white border border-transparent'
+                                    }
+                                `}
+                                title={isSidebarCollapsed ? item.label : ''}
+                            >
+                                <span className={`material-symbols-outlined text-xl transition-colors ${isActive ? 'text-primary' : 'group-hover:text-primary'}`}>
+                                    {item.icon}
+                                </span>
+                                {!isSidebarCollapsed && (
+                                    <span className="font-medium text-sm animate-in fade-in slide-in-from-left-2 duration-300">{item.label}</span>
+                                )}
+                            </Link>
+                        );
+                    })}
+                </nav>
+
+                {/* User info card at bottom */}
+                {!isSidebarCollapsed && (
+                    <div className="px-4 pb-6">
+                        <div className="bg-gradient-to-br from-primary/10 to-cyan-500/5 rounded-2xl p-4 flex flex-col gap-3 border border-primary/15 animate-in fade-in slide-in-from-bottom-2">
+                            <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-cyan-400 text-white text-sm font-bold flex items-center justify-center shadow-[0_0_12px_rgba(13,185,242,0.25)]">
+                                    {user?.name?.charAt(0)?.toUpperCase() || 'S'}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{user?.name || 'Student'}</p>
+                                    <p className="text-[10px] text-slate-500 truncate">{user?.email}</p>
+                                </div>
+                            </div>
+                            <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                className="bg-primary/15 text-primary text-xs font-bold py-2 rounded-xl hover:bg-primary/25 transition-colors flex items-center justify-center gap-1.5"
+                            >
+                                <span className="material-symbols-outlined text-sm">bolt</span>
+                                Upgrade to Premium
+                            </motion.button>
+                        </div>
                     </div>
-                </div>
-            )}
-        </aside>
+                )}
+                {isSidebarCollapsed && (
+                    <div className="pb-6 flex justify-center">
+                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-cyan-400 text-white text-xs font-bold flex items-center justify-center shadow-[0_0_12px_rgba(13,185,242,0.25)]" title={user?.name}>
+                            {user?.name?.charAt(0)?.toUpperCase() || 'S'}
+                        </div>
+                    </div>
+                )}
+            </aside>
+        </>
     );
 }

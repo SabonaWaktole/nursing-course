@@ -392,10 +392,7 @@ export default function AdminDashboard() {
     };
 
     const openQuizEdit = (quiz: any, type: 'course' | 'module') => {
-        // Fetch full quiz details to get questions if needed, or rely on what we have
-        // But getCourseById includes quizzes and their questions? No, check controller.
-        // Controller only includes _count for list. We might need to fetch the quiz.
-        // Let's assume we need to fetch it.
+        // Fetch full quiz details to get questions if needed
         api.get(`/quizzes/${quiz.id}`).then(res => {
             const q = res.data;
             setQuizForm({
@@ -407,13 +404,41 @@ export default function AdminDashboard() {
                     correctAnswer: qn.correctAnswer
                 }))
             });
-            setShowQuizForm({ id: type === 'course' ? (courseDetails?.id || '') : (quiz.moduleId || ''), type, mode: 'edit', quizId: quiz.id });
+            setShowQuizForm({ id: type === 'course' ? (courseDetails?.id || q.courseId) : (quiz.moduleId || q.moduleId), type, mode: 'edit', quizId: quiz.id });
         });
+    };
+
+    const handleCourseQuizClick = async (courseId: string, hasQuiz: boolean) => {
+        if (!hasQuiz) {
+            setShowQuizForm({ id: courseId, type: 'course', mode: 'create' });
+            return;
+        }
+        try {
+            const res = await api.get(`/courses/${courseId}`);
+            if (res.data.quizzes && res.data.quizzes.length > 0) {
+                openQuizEdit(res.data.quizzes[0], 'course');
+            } else {
+                setShowQuizForm({ id: courseId, type: 'course', mode: 'create' });
+            }
+        } catch (err) {
+            alert('Failed to load course details for editing exam');
+        }
     };
 
     if (loading) return (
         <div className="flex items-center justify-center py-20 min-h-screen bg-background-light dark:bg-background-dark">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-r-transparent"></div>
+            <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4 }}
+                className="flex flex-col items-center gap-4"
+            >
+                <div className="relative">
+                    <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-r-transparent"></div>
+                    <div className="absolute inset-0 h-10 w-10 rounded-full bg-primary/20 blur-lg animate-pulse"></div>
+                </div>
+                <p className="text-sm font-medium text-slate-500 animate-pulse">Loading dashboard...</p>
+            </motion.div>
         </div>
     );
 
@@ -440,64 +465,151 @@ export default function AdminDashboard() {
                 {/* Main Content Area */}
                 <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-background-light dark:bg-background-dark">
 
-                    {/* Header */}
-                    <header className="h-20 flex items-center justify-between px-4 sm:px-8 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/95 backdrop-blur z-10 shrink-0">
-                        <div className="flex items-center gap-4">
-                            {/* Mobile Toggle Button */}
-                            <button
+                    {/* Header — Premium glassmorphic design matching global Navbar */}
+                    <header className="h-[72px] flex items-center justify-between px-4 sm:px-6 lg:px-8 border-b border-slate-200/50 dark:border-slate-800/50 bg-white/80 dark:bg-slate-950/80 backdrop-blur-2xl shadow-[0_8px_32px_rgba(15,23,42,0.06)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.3)] z-10 shrink-0 transition-all duration-500">
+                        <div className="flex items-center gap-5">
+                            {/* Mobile Toggle */}
+                            <motion.button
+                                whileTap={{ scale: 0.9 }}
                                 onClick={() => setIsMobileMenuOpen(true)}
-                                className="lg:hidden p-2 -ml-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                                className="lg:hidden p-2.5 -ml-2 text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
                             >
-                                <span className="material-symbols-outlined">menu</span>
-                            </button>
+                                <span className="material-symbols-outlined text-2xl">menu</span>
+                            </motion.button>
 
-                            <div className="hidden sm:block">
-                                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white capitalize">
-                                    {tab === 'overview' ? 'Dashboard Overview' : `${tab} Management`}
-                                </h2>
-                                <p className="text-xs sm:text-sm text-slate-500 truncate max-w-[200px] sm:max-w-none">
-                                    {tab === 'overview' && 'Manage your certification programs and student progress.'}
-                                    {tab === 'courses' && 'View and manage all training modules.'}
-                                    {tab === 'users' && 'Manage student and staff access.'}
-                                    {tab === 'results' && 'Track quiz performance and grades.'}
-                                </p>
+                            {/* Logo glow icon + page title */}
+                            <div className="hidden sm:flex items-center gap-3">
+                                <motion.div
+                                    whileHover={{ rotate: 8, scale: 1.05 }}
+                                    transition={{ duration: 0.35, ease: 'easeInOut' }}
+                                    className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 dark:from-primary/30 dark:to-primary/10 border border-primary/20 flex items-center justify-center shadow-[0_0_20px_rgba(13,185,242,0.25)]"
+                                >
+                                    <span className="material-symbols-outlined text-primary text-xl drop-shadow-[0_0_8px_rgba(13,185,242,0.6)]">
+                                        {tab === 'overview' ? 'grid_view' : tab === 'courses' ? 'menu_book' : tab === 'users' ? 'people_alt' : tab === 'results' ? 'analytics' : tab === 'certificates' ? 'card_membership' : 'settings'}
+                                    </span>
+                                </motion.div>
+                                <div>
+                                    <h2 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white capitalize leading-tight">
+                                        {tab === 'overview' ? 'Dashboard' : `${tab}`}
+                                    </h2>
+                                    <p className="text-[11px] text-slate-400 font-medium leading-tight">
+                                        {tab === 'overview' && 'Programs & student progress'}
+                                        {tab === 'courses' && 'Training modules'}
+                                        {tab === 'users' && 'Student & staff access'}
+                                        {tab === 'results' && 'Quiz performance'}
+                                        {tab === 'certificates' && 'Certificate management'}
+                                    </p>
+                                </div>
                             </div>
+
+                            {/* Floating pill tab bar — mirrors global Navbar pill navigation */}
+                            <nav className="hidden xl:flex items-center gap-1 rounded-2xl bg-slate-900/[0.03] dark:bg-slate-900/70 px-1.5 py-1 border border-slate-200/60 dark:border-slate-800/80 backdrop-blur-2xl shadow-[0_4px_20px_rgba(15,23,42,0.08)] ml-4">
+                                {[
+                                    { id: 'overview', icon: 'grid_view', label: 'Overview' },
+                                    { id: 'courses', icon: 'menu_book', label: 'Courses' },
+                                    { id: 'users', icon: 'people_alt', label: 'Users' },
+                                    { id: 'results', icon: 'analytics', label: 'Results' },
+                                    { id: 'certificates', icon: 'card_membership', label: 'Certs' },
+                                ].map((item) => (
+                                    <motion.button
+                                        key={item.id}
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={() => {
+                                            setTab(item.id as any);
+                                            if (item.id === 'users') loadUsers();
+                                            if (item.id === 'results') loadResults();
+                                            if (item.id === 'certificates') loadCertificates();
+                                        }}
+                                        className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-semibold transition-all duration-200 ${
+                                            tab === item.id
+                                                ? 'text-primary bg-primary/10 shadow-sm'
+                                                : 'text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary'
+                                        }`}
+                                    >
+                                        <span className="material-symbols-outlined text-[16px]">{item.icon}</span>
+                                        {item.label}
+                                        {tab === item.id && (
+                                            <motion.span
+                                                layoutId="adminActiveTab"
+                                                className="absolute inset-x-1 -bottom-0.5 h-0.5 bg-primary rounded-full"
+                                                transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                                            />
+                                        )}
+                                    </motion.button>
+                                ))}
+                            </nav>
                         </div>
 
-                        <div className="flex items-center gap-2 sm:gap-4">
-                            <div className="relative hidden md:block">
-                                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+                        <div className="flex items-center gap-2 sm:gap-2.5">
+                            {/* Search — pill-shaped */}
+                            <div className="relative hidden lg:block group">
+                                <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg group-focus-within:text-primary transition-colors duration-200">search</span>
                                 <input
                                     type="text"
-                                    placeholder="Global search..."
-                                    className="pl-10 pr-4 py-2 w-64 bg-slate-100 dark:bg-slate-800 border-transparent focus:border-primary focus:bg-white dark:focus:bg-slate-900 focus:ring-0 rounded-lg text-sm transition-all"
+                                    placeholder="Search..."
+                                    className="pl-10 pr-4 py-2 w-44 xl:w-52 rounded-2xl bg-slate-50/60 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800/70 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-primary/50 focus:border-primary/30 text-sm text-slate-700 dark:text-slate-300 placeholder:text-slate-400 transition-all duration-300"
                                 />
                             </div>
-                            <div className="relative">
-                                <button
-                                    onClick={() => setShowNotifications(!showNotifications)}
-                                    className="relative p-2 text-slate-500 hover:text-primary transition-colors"
-                                >
-                                    <span className="material-symbols-outlined">notifications</span>
-                                    {notifications.some(n => !n.read) && (
-                                        <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-                                    )}
-                                </button>
 
+                            <div className="h-5 w-px bg-slate-200/60 dark:bg-slate-700/60 hidden lg:block"></div>
+
+                            {/* Upload buttons */}
+                            {(tab === 'overview' || tab === 'courses') && (
+                                <div className="hidden sm:flex gap-1.5">
+                                    <motion.button whileHover={{ y: -1 }} whileTap={{ scale: 0.95 }} onClick={() => handleUpload('video')} className="flex items-center gap-1 rounded-xl bg-primary/10 px-3 py-2 text-[11px] font-bold text-primary hover:bg-primary/20 transition-all">
+                                        <span className="material-symbols-outlined text-sm">upload</span> Video
+                                    </motion.button>
+                                    <motion.button whileHover={{ y: -1 }} whileTap={{ scale: 0.95 }} onClick={() => handleUpload('material')} className="flex items-center gap-1 rounded-xl bg-primary/10 px-3 py-2 text-[11px] font-bold text-primary hover:bg-primary/20 transition-all">
+                                        <span className="material-symbols-outlined text-sm">description</span> PDF
+                                    </motion.button>
+                                </div>
+                            )}
+
+                            {/* Notification bell */}
+                            <div className="relative">
+                                <motion.button
+                                    whileHover={{ scale: 1.08 }}
+                                    whileTap={{ scale: 0.92 }}
+                                    onClick={() => setShowNotifications(!showNotifications)}
+                                    className="relative flex items-center justify-center h-9 w-9 rounded-xl bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-primary/10 transition-all duration-200"
+                                >
+                                    <span className="material-symbols-outlined text-[20px] leading-none">notifications</span>
+                                    {notifications.some(n => !n.read) && (
+                                        <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse ring-2 ring-white dark:ring-slate-950"></span>
+                                    )}
+                                </motion.button>
+
+                                <AnimatePresence>
                                 {showNotifications && (
-                                    <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                                        transition={{ duration: 0.2, ease: [0.25, 0.8, 0.25, 1] }}
+                                        className="absolute right-0 mt-2 w-80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-slate-200/50 dark:border-slate-800/50 rounded-2xl shadow-[0_20px_50px_rgba(15,23,42,0.18)] z-50 overflow-hidden"
+                                    >
                                         <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
                                             <h4 className="font-bold text-sm">Notifications</h4>
-                                            <span className="text-[10px] font-black uppercase text-primary px-2 py-0.5 bg-primary/10 rounded">
+                                            <span className="text-[10px] font-black uppercase text-primary px-2.5 py-1 bg-primary/10 rounded-full">
                                                 {notifications.filter(n => !n.read).length} New
                                             </span>
                                         </div>
-                                        <div className="max-h-96 overflow-y-auto">
+                                        <div className="max-h-96 overflow-y-auto custom-scrollbar">
                                             {notifications.length > 0 ? (
-                                                notifications.map((n: any) => (
-                                                    <div
+                                                notifications.map((n: any, ni: number) => (
+                                                    <motion.div
                                                         key={n.id}
-                                                        onClick={() => { markRead(n.id); if (n.type === 'EXAM_COMPLETED') setTab('certificates'); setShowNotifications(false); }}
+                                                        initial={{ opacity: 0, x: -10 }}
+                                                        animate={{ opacity: 1, x: 0 }}
+                                                        transition={{ delay: ni * 0.05, duration: 0.25 }}
+                                                        onClick={() => {
+                                                            markRead(n.id);
+                                                            if (n.type === 'EXAM_COMPLETED') {
+                                                                setTab('certificates');
+                                                            }
+                                                            setShowNotifications(false);
+                                                        }}
                                                         className={`p-4 border-b border-slate-50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors ${!n.read ? 'bg-primary/5' : ''}`}
                                                     >
                                                         <div className="flex gap-3">
@@ -515,9 +627,9 @@ export default function AdminDashboard() {
                                                                     {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                                 </p>
                                                             </div>
-                                                            {!n.read && <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>}
+                                                            {!n.read && <div className="w-2 h-2 bg-primary rounded-full mt-2 animate-pulse"></div>}
                                                         </div>
-                                                    </div>
+                                                    </motion.div>
                                                 ))
                                             ) : (
                                                 <div className="p-12 text-center">
@@ -527,14 +639,19 @@ export default function AdminDashboard() {
                                             )}
                                         </div>
                                         {notifications.length > 0 && (
-                                            <div className="p-3 bg-slate-50 dark:bg-slate-800/50 text-center">
+                                            <div className="p-3 bg-slate-50/80 dark:bg-slate-800/50 text-center backdrop-blur-sm">
                                                 <button className="text-[10px] font-black uppercase text-slate-400 hover:text-primary transition-colors">Clear All</button>
                                             </div>
                                         )}
-                                    </div>
+                                    </motion.div>
                                 )}
+                                </AnimatePresence>
                             </div>
-                            <button
+
+                            {/* Theme toggle */}
+                            <motion.button
+                                whileHover={{ scale: 1.08 }}
+                                whileTap={{ scale: 0.92 }}
                                 onClick={() => {
                                     const next = !document.documentElement.classList.contains('dark');
                                     setIsDark(next);
@@ -546,35 +663,32 @@ export default function AdminDashboard() {
                                         localStorage.setItem('theme', 'light');
                                     }
                                 }}
-                                className="p-2 text-slate-500 hover:text-primary transition-colors"
+                                className="flex items-center justify-center h-9 w-9 rounded-xl bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-primary/10 transition-all duration-200"
                             >
-                                <span className="material-symbols-outlined">
+                                <span className="material-symbols-outlined text-[20px] leading-none">
                                     {isDark ? 'light_mode' : 'dark_mode'}
                                 </span>
-                            </button>
+                            </motion.button>
 
-                            {(tab === 'overview' || tab === 'courses') && (
-                                <div className="flex gap-2 ml-4 pl-4 border-l border-slate-200 dark:border-slate-700">
-                                    <button onClick={() => handleUpload('video')} className="flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-2 text-xs font-bold text-primary hover:bg-primary/20 transition">
-                                        <span className="material-symbols-outlined text-sm">upload</span> Video
-                                    </button>
-                                    <button onClick={() => handleUpload('material')} className="flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-2 text-xs font-bold text-primary hover:bg-primary/20 transition">
-                                        <span className="material-symbols-outlined text-sm">description</span> Material
-                                    </button>
-                                </div>
-                            )}
+                            {/* Admin avatar */}
+                            <motion.div
+                                whileHover={{ scale: 1.05 }}
+                                className="hidden sm:flex items-center justify-center h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-cyan-400 text-white text-sm font-bold shadow-[0_0_15px_rgba(13,185,242,0.3)]"
+                            >
+                                {user?.name?.charAt(0)?.toUpperCase() || 'A'}
+                            </motion.div>
                         </div>
-                    </header >
+                    </header>
 
                     {/* Scrollable Content */}
                     <div className="flex-1 overflow-y-auto p-8 scroll-smooth">
                         <AnimatePresence mode="wait">
                             <motion.div
                                 key={tab}
-                                initial={{ opacity: 0, y: 10 }}
+                                initial={{ opacity: 0, y: 16 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -10 }}
-                                transition={{ duration: 0.2 }}
+                                transition={{ duration: 0.35, ease: [0.25, 0.8, 0.25, 1] }}
                             >
 
                                 {/* Overview */}
@@ -588,12 +702,22 @@ export default function AdminDashboard() {
                                                     { title: 'Enrollments', value: stats.stats.totalEnrollments, icon: 'grade', color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20', shadow: 'shadow-[0_0_8px_rgba(13,185,242,0.2)]', trend: `${stats.stats.trends.enrollments >= 0 ? '+' : ''}${stats.stats.trends.enrollments}%`, trendIcon: stats.stats.trends.enrollments >= 0 ? 'trending_up' : 'trending_down', trendColor: stats.stats.trends.enrollments >= 0 ? 'text-emerald-400' : 'text-rose-400' },
                                                     { title: 'Certificates', value: stats.stats.totalCertificates, icon: 'verified', color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20', shadow: 'shadow-[0_0_8px_rgba(13,185,242,0.2)]', trend: `${stats.stats.trends.certificates >= 0 ? '+' : ''}${stats.stats.trends.certificates}%`, trendIcon: stats.stats.trends.certificates >= 0 ? 'trending_up' : 'trending_down', trendColor: stats.stats.trends.certificates >= 0 ? 'text-emerald-400' : 'text-rose-400' },
                                                 ].map((stat, i) => (
-                                                    <div key={i} className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600 transition-colors shadow-sm dark:shadow-lg">
+                                                    <motion.div
+                                                        key={i}
+                                                        initial={{ opacity: 0, y: 20, scale: 0.97 }}
+                                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                        transition={{ duration: 0.4, delay: i * 0.08, ease: [0.25, 0.8, 0.25, 1] }}
+                                                        whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                                                        className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-primary/30 dark:hover:border-primary/30 transition-colors shadow-sm dark:shadow-lg hover:shadow-xl hover:shadow-primary/5 group"
+                                                    >
                                                         <div className="flex items-center justify-between mb-4">
                                                             <span className="text-sm font-medium text-slate-500">{stat.title}</span>
-                                                            <span className={`p-2 rounded-lg material-symbols-outlined border ${stat.color} ${stat.bg} ${stat.border} ${stat.shadow}`}>
+                                                            <motion.span
+                                                                whileHover={{ rotate: 8, scale: 1.1 }}
+                                                                className={`p-2 rounded-lg material-symbols-outlined border ${stat.color} ${stat.bg} ${stat.border} ${stat.shadow}`}
+                                                            >
                                                                 {stat.icon}
-                                                            </span>
+                                                            </motion.span>
                                                         </div>
                                                         <div className="flex items-end justify-between">
                                                             <div>
@@ -603,13 +727,18 @@ export default function AdminDashboard() {
                                                                 </p>
                                                             </div>
                                                         </div>
-                                                    </div>
+                                                    </motion.div>
                                                 ))}
                                             </div>
 
                                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                                 {/* Upload Resources Quick Action */}
-                                                <div className="bg-white dark:bg-slate-900 p-8 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm dark:shadow-lg flex flex-col items-center justify-center text-center">
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 20 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ duration: 0.4, delay: 0.35 }}
+                                                    className="bg-white dark:bg-slate-900 p-8 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm dark:shadow-lg flex flex-col items-center justify-center text-center"
+                                                >
                                                     <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-slate-900 dark:text-white">
                                                         <span className="material-symbols-outlined text-primary">upload_file</span> Quick Upload
                                                     </h3>
@@ -638,10 +767,15 @@ export default function AdminDashboard() {
                                                             </>
                                                         )}
                                                     </div>
-                                                </div>
+                                                </motion.div>
 
                                                 {/* Recent Activity */}
-                                                <div className="bg-white dark:bg-slate-900 p-8 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm dark:shadow-lg">
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 20 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ duration: 0.4, delay: 0.45 }}
+                                                    className="bg-white dark:bg-slate-900 p-8 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm dark:shadow-lg"
+                                                >
                                                     <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-slate-900 dark:text-white">
                                                         <span className="material-symbols-outlined text-primary">notifications_active</span> Recent Enrollments
                                                     </h3>
@@ -664,7 +798,13 @@ export default function AdminDashboard() {
                                                             else if (diffHours > 24) timeStr = `${Math.floor(diffHours / 24)} days ago`;
 
                                                             return (
-                                                                <div key={e.id} className="flex gap-4">
+                                                                <motion.div
+                                                                    key={e.id}
+                                                                    initial={{ opacity: 0, x: -12 }}
+                                                                    animate={{ opacity: 1, x: 0 }}
+                                                                    transition={{ delay: 0.5 + i * 0.1, duration: 0.3 }}
+                                                                    className="flex gap-4"
+                                                                >
                                                                     <div className="relative">
                                                                         <div className={`w-10 h-10 rounded-full border flex items-center justify-center shrink-0 ${color.bg} shadow-[0_0_8px_currentColor]`}>
                                                                             <span className="material-symbols-outlined text-sm">{color.icon}</span>
@@ -677,7 +817,7 @@ export default function AdminDashboard() {
                                                                         </p>
                                                                         <p className="text-xs text-slate-500 mt-1">{timeStr}</p>
                                                                     </div>
-                                                                </div>
+                                                                </motion.div>
                                                             );
                                                         })}
                                                         {(!stats || stats.recentEnrollments.length === 0) && (
@@ -687,7 +827,7 @@ export default function AdminDashboard() {
                                                     <button className="w-full mt-8 py-3 border border-slate-200 dark:border-slate-800 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                                                         View All Log
                                                     </button>
-                                                </div>
+                                                </motion.div>
                                             </div>
                                         </div>
                                     )
@@ -723,8 +863,15 @@ export default function AdminDashboard() {
                                                 </button>
                                             </div>
 
+                                            <AnimatePresence>
                                             {showCourseForm && (
-                                                <div className="rounded-2xl border border-primary/20 bg-primary/5 dark:bg-slate-800/50 p-6 mb-8 shadow-sm">
+                                                <motion.div
+                                                    initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+                                                    animate={{ opacity: 1, height: 'auto', marginBottom: 32 }}
+                                                    exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                                                    transition={{ duration: 0.35, ease: [0.25, 0.8, 0.25, 1] }}
+                                                    className="rounded-2xl border border-primary/20 bg-primary/5 dark:bg-slate-800/50 p-6 shadow-sm overflow-hidden"
+                                                >
                                                     <div className="flex justify-between items-center mb-4 border-b border-primary/10 pb-2">
                                                         <h3 className="font-bold text-lg text-primary flex items-center gap-2">
                                                             <span className="material-symbols-outlined">{editingCourse ? 'edit' : 'add_circle'}</span>
@@ -841,10 +988,11 @@ export default function AdminDashboard() {
                                                             </button>
                                                         </div>
                                                     </div>
-                                                </div>
+                                                </motion.div>
                                             )}
+                                            </AnimatePresence>
 
-                                            <div className="mt-8 grid grid-cols-1 gap-8">
+                                            <div className="mt-8 grid grid-cols-1 gap-6">
                                                 {courses.map((course) => (
                                                     <motion.div
                                                         key={course.id}
@@ -853,69 +1001,114 @@ export default function AdminDashboard() {
                                                         animate={{ opacity: 1, y: 0 }}
                                                         className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-xl hover:shadow-2xl hover:border-primary/40 transition-all duration-500 group overflow-hidden"
                                                     >
-                                                        <div className="p-8">
-                                                            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-                                                                <div className="flex items-start gap-6 flex-1 min-w-0">
-                                                                    <div className="h-20 w-20 shrink-0 rounded-2xl overflow-hidden bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shadow-inner group-hover:scale-105 transition-transform duration-500">
-                                                                        {course.thumbnail ? <img src={getFileUrl(course.thumbnail)} alt={course.title} className="w-full h-full object-cover" /> : <span className="material-symbols-outlined text-4xl">school</span>}
-                                                                    </div>
-                                                                    <div className="min-w-0 flex-1">
-                                                                        <div className="flex items-center gap-2 mb-2">
-                                                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">{course.category}</span>
-                                                                            {((course as any).tags || []).slice(0, 2).map((t: string) => <span key={t} className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-primary/10 text-primary border border-primary/20">{t}</span>)}
+                                                        <div className="p-6 md:p-8 relative">
+                                                            {/* Background hover gradient */}
+                                                            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none rounded-[2rem]"></div>
+                                                            
+                                                            <div className="flex flex-col xl:flex-row gap-6 xl:gap-8 items-start relative z-10">
+                                                                {/* Premium 16:9 Thumbnail */}
+                                                                <div className="w-full xl:w-72 2xl:w-80 shrink-0 aspect-video rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 relative shadow-md group-hover:shadow-2xl group-hover:shadow-primary/20 transition-all duration-500 border border-slate-200/50 dark:border-slate-700/50">
+                                                                    {course.thumbnail ? (
+                                                                        <img src={getFileUrl(course.thumbnail)} alt={course.title} className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 ease-out" />
+                                                                    ) : (
+                                                                        <div className="w-full h-full flex flex-col items-center justify-center text-primary/40 bg-primary/5">
+                                                                            <span className="material-symbols-outlined text-5xl mb-2">school</span>
+                                                                            <span className="text-xs font-bold uppercase tracking-widest">No Image</span>
                                                                         </div>
-                                                                        <h3 className="font-black text-xl text-slate-900 dark:text-white mb-2 group-hover:text-primary transition-colors leading-tight line-clamp-1">{course.title}</h3>
-                                                                        <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed break-words line-clamp-2 max-w-2xl">{course.description}</p>
+                                                                    )}
+                                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60"></div>
+                                                                    <div className="absolute bottom-3 left-3 flex gap-2">
+                                                                        <span className="backdrop-blur-md bg-white/20 dark:bg-black/40 border border-white/20 text-white px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg">
+                                                                            {course.category}
+                                                                        </span>
                                                                     </div>
                                                                 </div>
-                                                                <div className="flex flex-wrap items-center gap-6 lg:gap-10 shrink-0">
-                                                                    <div className="flex items-center gap-4 text-left">
-                                                                        <div className="flex flex-col">
-                                                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Students</span>
-                                                                            <div className="flex items-center gap-1.5 text-sm font-bold text-slate-700 dark:text-slate-300">
-                                                                                <span className="material-symbols-outlined text-base text-primary">groups</span> {course._count?.enrollments || 0}
+
+                                                                {/* Content Details */}
+                                                                <div className="min-w-0 flex-1 flex flex-col self-stretch">
+                                                                    <div className="mb-4">
+                                                                        <div className="flex items-center gap-2 mb-3">
+                                                                            {((course as any).tags || []).slice(0, 3).map((t: string) => (
+                                                                                <span key={t} className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 transition-colors group-hover:border-primary/30 group-hover:bg-primary/5 group-hover:text-primary">
+                                                                                    {t}
+                                                                                </span>
+                                                                            ))}
+                                                                        </div>
+                                                                        <h3 className="font-black text-2xl text-slate-900 dark:text-white mb-2 group-hover:text-primary transition-colors leading-tight line-clamp-1">{course.title}</h3>
+                                                                        <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-2 max-w-3xl">{course.description}</p>
+                                                                    </div>
+
+                                                                    <div className="mt-auto pt-5 border-t border-slate-100 dark:border-slate-800/60 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                                                        {/* Advanced Stats Row */}
+                                                                        <div className="flex items-center gap-6 xl:gap-8">
+                                                                            <div className="flex items-center gap-3">
+                                                                                <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-500 flex items-center justify-center border border-blue-100 dark:border-blue-800/30">
+                                                                                    <span className="material-symbols-outlined text-lg">groups</span>
+                                                                                </div>
+                                                                                <div>
+                                                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Students</p>
+                                                                                    <p className="text-sm font-black text-slate-700 dark:text-slate-200">{course._count?.enrollments || 0}</p>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="w-px h-8 bg-slate-200 dark:bg-slate-800"></div>
+                                                                            <div className="flex items-center gap-3">
+                                                                                <div className="w-10 h-10 rounded-full bg-purple-50 dark:bg-purple-900/20 text-purple-500 flex items-center justify-center border border-purple-100 dark:border-purple-800/30">
+                                                                                    <span className="material-symbols-outlined text-lg">view_module</span>
+                                                                                </div>
+                                                                                <div>
+                                                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Modules</p>
+                                                                                    <p className="text-sm font-black text-slate-700 dark:text-slate-200">{course._count?.modules || 0}</p>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="w-px h-8 bg-slate-200 dark:bg-slate-800 hidden sm:block"></div>
+                                                                            <div className="hidden sm:flex items-center gap-3">
+                                                                                <div className="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500 flex items-center justify-center border border-emerald-100 dark:border-emerald-800/30">
+                                                                                    <span className="material-symbols-outlined text-lg">payments</span>
+                                                                                </div>
+                                                                                <div>
+                                                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Price</p>
+                                                                                    <p className="text-sm font-black text-slate-700 dark:text-slate-200">${Number(course.price).toFixed(2)}</p>
+                                                                                </div>
                                                                             </div>
                                                                         </div>
-                                                                        <div className="flex flex-col">
-                                                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Modules</span>
-                                                                            <div className="flex items-center gap-1.5 text-sm font-bold text-slate-700 dark:text-slate-300">
-                                                                                <span className="material-symbols-outlined text-base text-primary">layers</span> {course._count?.modules || 0}
+
+                                                                        {/* Premium Action Bar */}
+                                                                        <div className="flex items-center gap-2">
+                                                                            <div className="flex items-center bg-slate-50 dark:bg-slate-800/40 p-1 rounded-xl border border-slate-200/60 dark:border-slate-700/50">
+                                                                                <button onClick={() => handleEditCourseInfo(course)} className="p-2.5 rounded-lg text-slate-400 hover:text-primary hover:bg-white dark:hover:bg-slate-700 transition-all shadow-sm hover:shadow-md" title="Edit Info">
+                                                                                    <span className="material-symbols-outlined text-lg">edit</span>
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={() => {
+                                                                                        if (expandedCourse !== course.id) {
+                                                                                            setExpandedCourse(course.id);
+                                                                                            loadCourseDetail(course.id);
+                                                                                        }
+                                                                                        setShowModuleForm(showModuleForm === course.id ? null : course.id);
+                                                                                    }}
+                                                                                    className="p-2.5 rounded-lg text-slate-400 hover:text-primary hover:bg-white dark:hover:bg-slate-700 transition-all shadow-sm hover:shadow-md"
+                                                                                    title="Add Module"
+                                                                                >
+                                                                                    <span className="material-symbols-outlined text-lg">create_new_folder</span>
+                                                                                </button>
+                                                                                <button onClick={() => handleCourseQuizClick(course.id, course._count?.quizzes > 0)} className="p-2.5 rounded-lg text-slate-400 hover:text-emerald-500 hover:bg-white dark:hover:bg-slate-700 transition-all shadow-sm hover:shadow-md" title={course._count?.quizzes > 0 ? "Edit Final Exam" : "Add Final Exam"}>
+                                                                                    <span className="material-symbols-outlined text-lg">quiz</span>
+                                                                                </button>
+                                                                                <button onClick={() => handleDeleteCourse(course.id)} className="p-2.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-white dark:hover:bg-slate-700 transition-all shadow-sm hover:shadow-md" title="Delete Course">
+                                                                                    <span className="material-symbols-outlined text-lg">delete</span>
+                                                                                </button>
                                                                             </div>
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    if (expandedCourse === course.id) { setExpandedCourse(null); setCourseDetails(null); }
+                                                                                    else { setExpandedCourse(course.id); loadCourseDetail(course.id); }
+                                                                                }}
+                                                                                className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm border ${expandedCourse === course.id ? 'bg-primary border-primary text-white shadow-primary/30 hover:bg-primary/90' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-primary/50 hover:text-primary hover:shadow-md'}`}
+                                                                            >
+                                                                                <span className="material-symbols-outlined text-lg">{expandedCourse === course.id ? 'expand_less' : 'stream'}</span>
+                                                                                <span className="hidden sm:inline">{expandedCourse === course.id ? 'Close' : 'Manage Content'}</span>
+                                                                            </button>
                                                                         </div>
-                                                                    </div>
-                                                                    <div className="flex flex-col items-end">
-                                                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Price</span>
-                                                                        <div className="text-xl font-black text-slate-900 dark:text-white">${Number(course.price).toFixed(2)}</div>
-                                                                    </div>
-                                                                </div>
-                                                                <div className="flex items-center gap-2 pt-4 lg:pt-0 border-t lg:border-t-0 border-slate-100 dark:border-slate-800">
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            if (expandedCourse === course.id) { setExpandedCourse(null); setCourseDetails(null); }
-                                                                            else { setExpandedCourse(course.id); loadCourseDetail(course.id); }
-                                                                        }}
-                                                                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${expandedCourse === course.id ? 'bg-primary text-white shadow-lg shadow-primary/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-primary/10 hover:text-primary'}`}
-                                                                    >
-                                                                        <span className="material-symbols-outlined text-lg">{expandedCourse === course.id ? 'expand_less' : 'view_list'}</span>
-                                                                        {expandedCourse === course.id ? 'Close' : 'Manage Content'}
-                                                                    </button>
-                                                                    <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800/50 p-1 rounded-xl border border-slate-100 dark:border-slate-700">
-                                                                        <button onClick={() => handleEditCourseInfo(course)} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-lg text-slate-500 dark:text-slate-400 hover:text-primary transition-colors" title="Edit Info"><span className="material-symbols-outlined text-lg">edit</span></button>
-                                                                        <button
-                                                                            onClick={() => {
-                                                                                if (expandedCourse !== course.id) {
-                                                                                    setExpandedCourse(course.id);
-                                                                                    loadCourseDetail(course.id);
-                                                                                }
-                                                                                setShowModuleForm(showModuleForm === course.id ? null : course.id);
-                                                                            }}
-                                                                            className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-lg text-slate-500 dark:text-slate-400 hover:text-primary transition-colors"
-                                                                            title="Add Module"
-                                                                        >
-                                                                            <span className="material-symbols-outlined text-lg">create_new_folder</span>
-                                                                        </button>
-                                                                        <button onClick={() => setShowQuizForm({ id: course.id, type: 'course', mode: 'create' })} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-lg text-slate-500 dark:text-slate-400 hover:text-emerald-500 transition-colors" title="Add Final Exam"><span className="material-symbols-outlined text-lg">quiz</span></button>
-                                                                        <button onClick={() => handleDeleteCourse(course.id)} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-lg text-slate-500 dark:text-slate-400 hover:text-red-500 transition-colors" title="Delete Course"><span className="material-symbols-outlined text-lg">delete</span></button>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -945,7 +1138,13 @@ export default function AdminDashboard() {
                                                                                         </div>
                                                                                         <div className="flex gap-1">
                                                                                             <button onClick={() => setShowLessonForm(showLessonForm === mod.id ? null : mod.id)} className="p-1 hover:text-primary transition-colors"><span className="material-symbols-outlined text-lg">add_circle</span></button>
-                                                                                            <button onClick={() => setShowQuizForm({ id: mod.id, type: 'module', mode: mod.quizzes?.length > 0 ? 'edit' : 'create', quizId: mod.quizzes?.[0]?.id })} className="p-1 hover:text-emerald-500 transition-colors"><span className="material-symbols-outlined text-lg">quiz</span></button>
+                                                                                            <button onClick={() => {
+                                                                                                if (mod.quizzes && mod.quizzes.length > 0) {
+                                                                                                    openQuizEdit(mod.quizzes[0], 'module');
+                                                                                                } else {
+                                                                                                    setShowQuizForm({ id: mod.id, type: 'module', mode: 'create' });
+                                                                                                }
+                                                                                            }} className="p-1 hover:text-emerald-500 transition-colors"><span className="material-symbols-outlined text-lg">quiz</span></button>
                                                                                             <button onClick={() => handleDeleteModule(mod.id, course.id)} className="p-1 hover:text-red-500 transition-colors"><span className="material-symbols-outlined text-lg">delete</span></button>
                                                                                         </div>
                                                                                     </div>
@@ -1276,48 +1475,35 @@ export default function AdminDashboard() {
                                         <div className="flex-1 overflow-y-auto p-4 sm:p-8 scroll-smooth">
                                             {/* Analytics Cards */}
                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                                                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                                                    <div className="flex justify-between items-start mb-2">
-                                                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Avg. Pass Rate</p>
-                                                        <span className="text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded text-xs font-medium">Real-time</span>
-                                                    </div>
-                                                    <h3 className="text-3xl font-bold text-slate-900 dark:text-white">{stats.stats.analytics.passRate}%</h3>
-                                                    <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 mt-4 overflow-hidden">
-                                                        <div className="bg-primary h-1.5 rounded-full" style={{ width: `${stats.stats.analytics.passRate}%` }}></div>
-                                                    </div>
-                                                </div>
-                                                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                                                    <div className="flex justify-between items-start mb-2">
-                                                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Exams Taken</p>
-                                                        <span className="text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded text-xs font-medium">Real-time</span>
-                                                    </div>
-                                                    <h3 className="text-3xl font-bold text-slate-900 dark:text-white">{stats.stats.analytics.totalExams}</h3>
-                                                    <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 mt-4 overflow-hidden">
-                                                        <div className="bg-blue-400 h-1.5 rounded-full" style={{ width: '100%' }}></div>
-                                                    </div>
-                                                </div>
-                                                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                                                    <div className="flex justify-between items-start mb-2">
-                                                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Average Score</p>
-                                                        <span className="text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded text-xs font-medium">Real-time</span>
-                                                    </div>
-                                                    <h3 className="text-3xl font-bold text-slate-900 dark:text-white">
-                                                        {stats.stats.analytics.avgScore}/100
-                                                    </h3>
-                                                    <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 mt-4 overflow-hidden">
-                                                        <div className="bg-purple-500 h-1.5 rounded-full" style={{ width: `${stats.stats.analytics.avgScore}%` }}></div>
-                                                    </div>
-                                                </div>
-                                                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                                                    <div className="flex justify-between items-start mb-2">
-                                                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Passed Exams</p>
-                                                        <span className="text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded text-xs font-medium">Real-time</span>
-                                                    </div>
-                                                    <h3 className="text-3xl font-bold text-slate-900 dark:text-white">{stats.stats.analytics.passedExams}</h3>
-                                                    <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 mt-4 overflow-hidden">
-                                                        <div className="bg-amber-500 h-1.5 rounded-full" style={{ width: `${stats.stats.analytics.totalExams > 0 ? (stats.stats.analytics.passedExams / stats.stats.analytics.totalExams) * 100 : 0}%` }}></div>
-                                                    </div>
-                                                </div>
+                                                {[
+                                                    { label: 'Avg. Pass Rate', value: `${stats.stats.analytics.passRate}%`, barColor: 'bg-primary', barWidth: stats.stats.analytics.passRate },
+                                                    { label: 'Total Exams Taken', value: stats.stats.analytics.totalExams, barColor: 'bg-blue-400', barWidth: 100 },
+                                                    { label: 'Average Score', value: `${stats.stats.analytics.avgScore}/100`, barColor: 'bg-purple-500', barWidth: stats.stats.analytics.avgScore },
+                                                    { label: 'Passed Exams', value: stats.stats.analytics.passedExams, barColor: 'bg-amber-500', barWidth: stats.stats.analytics.totalExams > 0 ? (stats.stats.analytics.passedExams / stats.stats.analytics.totalExams) * 100 : 0 },
+                                                ].map((card, ci) => (
+                                                    <motion.div
+                                                        key={ci}
+                                                        initial={{ opacity: 0, y: 20 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        transition={{ delay: ci * 0.08, duration: 0.4, ease: [0.25, 0.8, 0.25, 1] }}
+                                                        whileHover={{ y: -3 }}
+                                                        className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-lg hover:border-primary/20 transition-all"
+                                                    >
+                                                        <div className="flex justify-between items-start mb-2">
+                                                            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{card.label}</p>
+                                                            <span className="text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded text-xs font-medium">Real-time</span>
+                                                        </div>
+                                                        <h3 className="text-3xl font-bold text-slate-900 dark:text-white">{card.value}</h3>
+                                                        <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 mt-4 overflow-hidden">
+                                                            <motion.div
+                                                                initial={{ width: 0 }}
+                                                                animate={{ width: `${card.barWidth}%` }}
+                                                                transition={{ delay: 0.3 + ci * 0.1, duration: 0.8, ease: 'easeOut' }}
+                                                                className={`${card.barColor} h-1.5 rounded-full`}
+                                                            />
+                                                        </div>
+                                                    </motion.div>
+                                                ))}
                                             </div>
                                         </div>
                                     )
@@ -1331,7 +1517,13 @@ export default function AdminDashboard() {
                                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                                                 {/* Summary Cards */}
                                                 <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between group hover:border-emerald-500/30 transition-colors">
+                                                    <motion.div
+                                                        initial={{ opacity: 0, y: 16 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        transition={{ delay: 0.05, duration: 0.4 }}
+                                                        whileHover={{ y: -3 }}
+                                                        className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between group hover:border-emerald-500/30 hover:shadow-lg transition-all"
+                                                    >
                                                         <div>
                                                             <div className="flex items-center gap-2 mb-2">
                                                                 <div className="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
@@ -1341,8 +1533,14 @@ export default function AdminDashboard() {
                                                             </div>
                                                             <span className="text-2xl font-bold text-slate-900 dark:text-white">{certificates.length}</span>
                                                         </div>
-                                                    </div>
-                                                    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center group hover:border-amber-500/30 transition-colors">
+                                                    </motion.div>
+                                                    <motion.div
+                                                        initial={{ opacity: 0, y: 16 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        transition={{ delay: 0.12, duration: 0.4 }}
+                                                        whileHover={{ y: -3 }}
+                                                        className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center group hover:border-amber-500/30 hover:shadow-lg transition-all"
+                                                    >
                                                         <div>
                                                             <div className="flex items-center gap-2 mb-2">
                                                                 <div className="w-8 h-8 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center">
@@ -1352,18 +1550,27 @@ export default function AdminDashboard() {
                                                             </div>
                                                             <span className="text-2xl font-bold text-slate-900 dark:text-white">{stats.stats.totalUsers}</span>
                                                         </div>
-                                                    </div>
+                                                    </motion.div>
                                                 </div>
-                                                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center">
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 16 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ delay: 0.2, duration: 0.4 }}
+                                                    className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-center"
+                                                >
                                                     <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-2">Quick Verification</h3>
                                                     <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">Enter certificate ID to verify authenticity instantly.</p>
                                                     <div className="flex gap-2">
                                                         <input className="flex-1 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white text-sm rounded-lg focus:ring-primary focus:border-primary block p-2.5 transition-colors" placeholder="Cert ID (e.g. CERT-123)" type="text" />
-                                                        <button className="bg-slate-800 hover:bg-slate-700 text-white p-2.5 rounded-lg transition-colors flex items-center justify-center">
+                                                        <motion.button
+                                                            whileHover={{ scale: 1.05 }}
+                                                            whileTap={{ scale: 0.95 }}
+                                                            className="bg-slate-800 hover:bg-slate-700 text-white p-2.5 rounded-lg transition-colors flex items-center justify-center"
+                                                        >
                                                             <span className="material-symbols-outlined">search</span>
-                                                        </button>
+                                                        </motion.button>
                                                     </div>
-                                                </div>
+                                                </motion.div>
                                             </div>
 
                                             {/* Certificates Table */}

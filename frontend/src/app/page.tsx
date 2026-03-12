@@ -34,6 +34,12 @@ const TESTIMONIALS = [
 
 export default function LandingPage() {
   const [courses, setCourses] = useState<Course[]>([]);
+  const [stats, setStats] = useState({
+    students: 50000, // fallback
+    completionRate: 94,
+    clinics: 200,
+  });
+
   const sectionContainer = useSectionContainerVariants();
   const sectionItem = useSectionItemVariants();
   const buttonHover = useButtonHoverMotion();
@@ -42,6 +48,18 @@ export default function LandingPage() {
 
   useEffect(() => {
     api.get('/courses').then((res) => setCourses(res.data.slice(0, 3))).catch(() => { });
+    
+    // Fetch real backend metrics
+    api.get('/public/stats').then((res) => {
+      if (res.data) {
+        setStats({
+          // Use real data or fallback to marketing numbers if database is completely empty
+          students: res.data.students > 0 ? res.data.students : 0,
+          completionRate: res.data.completionRate > 0 ? res.data.completionRate : 0,
+          clinics: res.data.clinics > 0 ? res.data.clinics : 0,
+        });
+      }
+    }).catch(err => console.error("Failed to fetch public stats:", err));
   }, []);
 
   const courseLabels = ["Bestseller", null, "Trending"];
@@ -191,9 +209,21 @@ export default function LandingPage() {
             viewport={{ once: true, margin: "-100px" }}
             className="grid grid-cols-2 lg:grid-cols-4 gap-8"
           >
-            <AnimatedStat end={50} suffix="k+" label="Active Students" />
-            <AnimatedStat end={94} suffix="%" label="Completion Rate" />
-            <AnimatedStat end={200} suffix="+" label="Partner Clinics" />
+            <AnimatedStat 
+              end={stats.students >= 1000 ? Math.floor(stats.students / 1000) : stats.students} 
+              suffix={stats.students >= 1000 ? "k+" : ""} 
+              label="Active Students" 
+            />
+            <AnimatedStat 
+              end={stats.completionRate} 
+              suffix="%" 
+              label="Completion Rate" 
+            />
+            <AnimatedStat 
+              end={stats.clinics >= 1000 ? Math.floor(stats.clinics / 1000) : stats.clinics} 
+              suffix={stats.clinics >= 1000 ? "k+" : ""} 
+              label="Certificates Issued" 
+            />
             <AnimatedStatText value="4.9/5" label="Average Rating" />
           </motion.div>
         </div>

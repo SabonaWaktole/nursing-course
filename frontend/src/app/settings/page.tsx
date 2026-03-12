@@ -121,12 +121,14 @@ export default function SettingsPage() {
                     <StudentSidebar
                         isSidebarCollapsed={isSidebarCollapsed}
                         setIsSidebarCollapsed={setIsSidebarCollapsed}
+                        isMobileMenuOpen={isMobileMenuOpen}
+                        setIsMobileMenuOpen={setIsMobileMenuOpen}
                     />
                 )}
 
                 <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                     {user?.role !== 'ADMIN' && (
-                        <StudentHeader title="Account Settings" subtitle="Manage your profile and preferences." />
+                        <StudentHeader title="Account Settings" subtitle="Manage your profile and preferences." icon="settings" onMobileMenuOpen={() => setIsMobileMenuOpen(true)} />
                     )}
                     <main className="flex-1 p-6 lg:p-10 overflow-y-auto custom-scrollbar">
                         <motion.div
