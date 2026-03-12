@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { GraduationCap, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { MOTION, useButtonHoverMotion } from '@/lib/motion';
+import { MOTION, useButtonHoverMotion, useGlowHoverMotion, formContainerVariants, formItemVariants } from '@/lib/motion';
 
 export default function RegisterPage() {
     const { register } = useAuth();
@@ -18,6 +18,7 @@ export default function RegisterPage() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const buttonHover = useButtonHoverMotion();
+    const glowHover = useGlowHoverMotion();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -41,8 +42,16 @@ export default function RegisterPage() {
         <div className="min-h-screen bg-[#f8fafc] dark:bg-[#0f172a] flex items-center justify-center p-4 relative overflow-hidden">
             {/* Background Decorative Elements */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[120px] animate-pulse"></div>
-                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/10 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '2s' }}></div>
+                <motion.div
+                    animate={{ y: [0, -30, 0], x: [0, 25, 0], scale: [1, 1.1, 1] }}
+                    transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
+                    className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[120px]"
+                />
+                <motion.div
+                    animate={{ y: [0, 35, 0], x: [0, -20, 0], scale: [1, 1.12, 1] }}
+                    transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+                    className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/10 rounded-full blur-[120px]"
+                />
             </div>
 
             <motion.div
@@ -65,7 +74,13 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-200 dark:border-slate-800 shadow-[0_20px_50px_rgba(0,0,0,0.1)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden">
-                    <form onSubmit={handleSubmit} className="p-8 space-y-5">
+                    <motion.form
+                        onSubmit={handleSubmit}
+                        variants={formContainerVariants}
+                        initial="hidden"
+                        animate="show"
+                        className="p-8 space-y-5"
+                    >
                         {error && (
                             <motion.div 
                                 initial={{ opacity: 0, height: 0 }}
@@ -77,9 +92,9 @@ export default function RegisterPage() {
                             </motion.div>
                         )}
 
-                        <div className="space-y-2">
+                        <motion.div variants={formItemVariants} className="space-y-2">
                             <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 ml-1">Full Name</label>
-                            <div className="relative group">
+                            <div className="relative group focus-glow rounded-2xl">
                                 <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 group-focus-within:text-primary transition-colors">person</span>
                                 <input
                                     type="text"
@@ -90,11 +105,11 @@ export default function RegisterPage() {
                                     required
                                 />
                             </div>
-                        </div>
+                        </motion.div>
 
-                        <div className="space-y-2">
+                        <motion.div variants={formItemVariants} className="space-y-2">
                             <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 ml-1">Email Address</label>
-                            <div className="relative group">
+                            <div className="relative group focus-glow rounded-2xl">
                                 <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 group-focus-within:text-primary transition-colors">mail</span>
                                 <input
                                     type="email"
@@ -105,11 +120,11 @@ export default function RegisterPage() {
                                     required
                                 />
                             </div>
-                        </div>
+                        </motion.div>
 
-                        <div className="space-y-2">
+                        <motion.div variants={formItemVariants} className="space-y-2">
                             <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 ml-1">Password</label>
-                            <div className="relative group">
+                            <div className="relative group focus-glow rounded-2xl">
                                 <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 group-focus-within:text-primary transition-colors">lock</span>
                                 <input
                                     type={showPw ? 'text' : 'password'}
@@ -123,10 +138,12 @@ export default function RegisterPage() {
                                     {showPw ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                                 </button>
                             </div>
-                        </div>
+                        </motion.div>
+
+                        <motion.div variants={formItemVariants}>
 
                         <motion.button
-                            {...buttonHover}
+                            {...glowHover}
                             type="submit"
                             disabled={loading}
                             className="w-full bg-primary hover:bg-primary/90 text-white py-4 rounded-2xl text-sm font-black shadow-lg shadow-primary/25 transition-all disabled:opacity-70 flex items-center justify-center gap-2 mt-4"
@@ -143,7 +160,8 @@ export default function RegisterPage() {
                                 </>
                             )}
                         </motion.button>
-                    </form>
+                        </motion.div>
+                    </motion.form>
 
                     <div className="px-8 py-6 bg-slate-50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 text-center">
                         <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">

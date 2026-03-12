@@ -1,16 +1,18 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import api from '@/lib/api';
 import { Course } from '@/lib/types';
-import { motion } from 'framer-motion';
+import { motion, useInView } from 'framer-motion';
 import { getFileUrl } from '@/lib/url-utils';
 import {
   useSectionContainerVariants,
   useSectionItemVariants,
   useButtonHoverMotion,
   useCardHoverMotion,
+  useGlowHoverMotion,
+  useCounterAnimation,
 } from '@/lib/motion';
 
 const HERO_IMAGE = "https://lh3.googleusercontent.com/aida-public/AB6AXuDL3Ct44XGGczsC3PgCH88mGoarkOnfGqO5yGNDimM3qDhIrSmMljtkwyBxg60rnV-szI55fdbZKDM8oVetYU7ZJdpAieBJboQWzpk1XaoIBNzAbjI-wLJVlGOKPPdHpWKF2EfsflwbmSY9bkWfbMDeaXNk8HiHIdVsi48QHKuhQeZ6Kf6nkz1yjTfCkLvCi6HqBf1gpkjyswXnw9aR9krjnmHHH2L9WFU7Aa29LuTa-8IFbraOD5LvQbGxu7f9x7CqhIzkfa58g7A";
@@ -36,6 +38,7 @@ export default function LandingPage() {
   const sectionItem = useSectionItemVariants();
   const buttonHover = useButtonHoverMotion();
   const cardHover = useCardHoverMotion();
+  const glowHover = useGlowHoverMotion();
 
   useEffect(() => {
     api.get('/courses').then((res) => setCourses(res.data.slice(0, 3))).catch(() => { });
@@ -101,26 +104,39 @@ export default function LandingPage() {
                 Industry-leading SaaS platform for Excelcommunity Living Inc professional development. Access state-approved courses, expert-led training, and career advancement tools designed for the modern healthcare professional.
               </motion.p>
               <div className="flex flex-col sm:flex-row gap-4 sm:justify-center lg:justify-start">
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Link href="/courses" className="px-8 py-4 bg-primary text-white font-bold rounded-xl shadow-xl shadow-primary/30 hover:-translate-y-0.5 transition-all text-lg flex items-center justify-center gap-2">
+                <motion.div {...glowHover}>
+                  <Link href="/courses" className="shimmer-btn px-8 py-4 bg-primary text-white font-bold rounded-xl shadow-xl shadow-primary/30 hover:-translate-y-0.5 transition-all text-lg flex items-center justify-center gap-2">
                     Browse Courses <span className="material-symbols-outlined">arrow_forward</span>
                   </Link>
                 </motion.div>
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <motion.div whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>
                   <Link href="/register" className="px-8 py-4 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 transition-all text-lg text-center h-full block leading-none flex items-center justify-center">
                     View Demo
                   </Link>
                 </motion.div>
               </div>
               {/* Social proof */}
-              <div className="mt-8 flex items-center gap-4 text-sm text-slate-500 sm:justify-center lg:justify-start">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ type: 'spring', damping: 20, stiffness: 100, delay: 0.5 }}
+                className="mt-8 flex items-center gap-4 text-sm text-slate-500 sm:justify-center lg:justify-start"
+              >
                 <div className="flex -space-x-2">
                   {AVATARS.map((src, i) => (
-                    <img key={i} alt="User" className="h-8 w-8 rounded-full border-2 border-white dark:border-background-dark object-cover" src={src} />
+                    <motion.img
+                      key={i}
+                      alt="User"
+                      initial={{ opacity: 0, scale: 0.5 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.6 + i * 0.1, duration: 0.3, ease: 'easeOut' }}
+                      className="h-8 w-8 rounded-full border-2 border-white dark:border-background-dark object-cover"
+                      src={src}
+                    />
                   ))}
                 </div>
                 <span>Joined by <strong className="text-slate-900 dark:text-white">12,000+</strong> CNAs this month</span>
-              </div>
+              </motion.div>
             </motion.div>
 
             {/* Right Image */}
@@ -175,21 +191,10 @@ export default function LandingPage() {
             viewport={{ once: true, margin: "-100px" }}
             className="grid grid-cols-2 lg:grid-cols-4 gap-8"
           >
-            {[
-              { value: "50k+", label: "Active Students" },
-              { value: "94%", label: "Completion Rate" },
-              { value: "200+", label: "Partner Clinics" },
-              { value: "4.9/5", label: "Average Rating" },
-            ].map((stat) => (
-              <motion.div
-                key={stat.label}
-                variants={sectionItem}
-                className="text-center"
-              >
-                <p className="text-4xl font-black text-slate-900 dark:text-white">{stat.value}</p>
-                <p className="text-sm font-medium text-slate-500 uppercase tracking-widest mt-1">{stat.label}</p>
-              </motion.div>
-            ))}
+            <AnimatedStat end={50} suffix="k+" label="Active Students" />
+            <AnimatedStat end={94} suffix="%" label="Completion Rate" />
+            <AnimatedStat end={200} suffix="+" label="Partner Clinics" />
+            <AnimatedStatText value="4.9/5" label="Average Rating" />
           </motion.div>
         </div>
       </section>
@@ -343,16 +348,31 @@ export default function LandingPage() {
           className="max-w-6xl mx-auto bg-primary rounded-[2rem] p-10 md:p-14 text-white relative overflow-hidden shadow-2xl shadow-primary/40"
         >
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent)]" />
-          <div className="absolute -left-24 -bottom-24 w-72 h-72 rounded-full bg-white/5 blur-3xl" />
+          <motion.div
+            animate={{ y: [0, -20, 0], x: [0, 15, 0] }}
+            transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+            className="absolute -left-24 -bottom-24 w-72 h-72 rounded-full bg-white/8 blur-3xl"
+          />
+          <motion.div
+            animate={{ y: [0, 15, 0], x: [0, -10, 0] }}
+            transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
+            className="absolute -right-16 -top-16 w-56 h-56 rounded-full bg-white/5 blur-3xl"
+          />
           <div className="relative flex flex-col md:flex-row items-center md:items-start gap-10">
             <div className="flex-1 text-center md:text-left space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-xs font-bold uppercase tracking-[0.2em]">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.1, duration: 0.4 }}
+                className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-xs font-bold uppercase tracking-[0.2em]"
+              >
                 <span className="relative flex h-2 w-2">
                   <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-70 blur-[2px]" />
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
                 </span>
                 Enrollment Open
-              </div>
+              </motion.div>
               <h2 className="text-3xl md:text-4xl lg:text-5xl font-black leading-tight">
                 Ready to advance your{" "}
                 <span className="relative whitespace-nowrap">
@@ -366,10 +386,10 @@ export default function LandingPage() {
             </div>
 
             <div className="w-full md:w-auto flex flex-col sm:flex-row md:flex-col gap-3 md:gap-4 justify-center md:justify-start">
-              <motion.div {...buttonHover} className="w-full sm:w-auto">
+              <motion.div {...glowHover} className="w-full sm:w-auto">
                 <Link
                   href="/register"
-                  className="flex items-center justify-center gap-2 px-10 py-3.5 bg-white text-primary font-bold rounded-xl hover:bg-slate-50 transition-all shadow-lg shadow-primary/40 text-sm md:text-base"
+                  className="shimmer-btn flex items-center justify-center gap-2 px-10 py-3.5 bg-white text-primary font-bold rounded-xl hover:bg-slate-50 transition-all shadow-lg shadow-primary/40 text-sm md:text-base"
                 >
                   Create free account
                   <span className="material-symbols-outlined text-base md:text-lg">arrow_forward</span>
@@ -392,5 +412,28 @@ export default function LandingPage() {
         </motion.div>
       </section>
     </div>
+  );
+}
+
+/* ─── Animated Stat Counter Component ──────────────────────────────────────── */
+
+function AnimatedStat({ end, suffix, label }: { end: number; suffix: string; label: string }) {
+  const { count, ref } = useCounterAnimation(end, 2);
+  return (
+    <motion.div variants={{ hidden: { opacity: 0, y: 24 }, show: { opacity: 1, y: 0, transition: { duration: 0.38, ease: [0.25, 0.8, 0.25, 1] } } }} className="text-center">
+      <p ref={ref as React.Ref<HTMLParagraphElement>} className="text-4xl font-black text-slate-900 dark:text-white tabular-nums">
+        {count}{suffix}
+      </p>
+      <p className="text-sm font-medium text-slate-500 uppercase tracking-widest mt-1">{label}</p>
+    </motion.div>
+  );
+}
+
+function AnimatedStatText({ value, label }: { value: string; label: string }) {
+  return (
+    <motion.div variants={{ hidden: { opacity: 0, y: 24 }, show: { opacity: 1, y: 0, transition: { duration: 0.38, ease: [0.25, 0.8, 0.25, 1] } } }} className="text-center">
+      <p className="text-4xl font-black text-slate-900 dark:text-white">{value}</p>
+      <p className="text-sm font-medium text-slate-500 uppercase tracking-widest mt-1">{label}</p>
+    </motion.div>
   );
 }

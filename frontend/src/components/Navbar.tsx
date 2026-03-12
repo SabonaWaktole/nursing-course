@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import ThemeToggle from './ThemeToggle';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { mobileMenuContainerVariants, mobileMenuItemVariants } from '@/lib/motion';
 
 export default function Navbar() {
     const { user, logout } = useAuth();
@@ -155,6 +156,7 @@ export default function Navbar() {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3, ease: [0.25, 0.8, 0.25, 1] }}
                         className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-6 md:hidden shadow-2xl overflow-hidden mt-4 rounded-b-3xl"
                     >
                         <form onSubmit={handleSearch} className="relative mb-6">
@@ -168,16 +170,22 @@ export default function Navbar() {
                             />
                         </form>
 
-                        <div className="flex flex-col gap-2">
-                            <Link href="/" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-primary bg-primary/10" onClick={() => setMobileOpen(false)}>
-                                <span className="material-symbols-outlined text-[20px]">home</span> Home
-                            </Link>
-                            <Link href="/courses" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800" onClick={() => setMobileOpen(false)}>
-                                <span className="material-symbols-outlined text-[20px]">menu_book</span> Courses
-                            </Link>
-                            <Link href="/certificates" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800" onClick={() => setMobileOpen(false)}>
-                                <span className="material-symbols-outlined text-[20px]">workspace_premium</span> Certifications
-                            </Link>
+                        <motion.div variants={mobileMenuContainerVariants} initial="hidden" animate="show" className="flex flex-col gap-2">
+                            <motion.div variants={mobileMenuItemVariants}>
+                                <Link href="/" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-primary bg-primary/10" onClick={() => setMobileOpen(false)}>
+                                    <span className="material-symbols-outlined text-[20px]">home</span> Home
+                                </Link>
+                            </motion.div>
+                            <motion.div variants={mobileMenuItemVariants}>
+                                <Link href="/courses" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800" onClick={() => setMobileOpen(false)}>
+                                    <span className="material-symbols-outlined text-[20px]">menu_book</span> Courses
+                                </Link>
+                            </motion.div>
+                            <motion.div variants={mobileMenuItemVariants}>
+                                <Link href="/certificates" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800" onClick={() => setMobileOpen(false)}>
+                                    <span className="material-symbols-outlined text-[20px]">workspace_premium</span> Certifications
+                                </Link>
+                            </motion.div>
 
                             {user && (
                                 <div className="border-t border-slate-100 dark:border-slate-800 mt-4 pt-4">
@@ -208,7 +216,7 @@ export default function Navbar() {
                                     <Link href="/register" className="flex items-center justify-center rounded-xl bg-primary px-4 py-3.5 text-sm font-bold text-white hover:bg-primary/90 shadow-lg shadow-primary/25" onClick={() => setMobileOpen(false)}>Start Learning</Link>
                                 </div>
                             )}
-                        </div>
+                        </motion.div>
                     </motion.div>
                 )}
             </AnimatePresence>

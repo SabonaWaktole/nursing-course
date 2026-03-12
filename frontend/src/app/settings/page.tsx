@@ -147,7 +147,7 @@ export default function SettingsPage() {
                                     hidden: { opacity: 0 },
                                     show: {
                                         opacity: 1,
-                                        transition: { staggerChildren: 0.15 }
+                                        transition: { staggerChildren: 0.12 }
                                     }
                                 }}
                                 className="space-y-8"
@@ -210,7 +210,7 @@ export default function SettingsPage() {
                                                 <div className="flex flex-col gap-2">
                                                     <label className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">First Name</label>
                                                     <input
-                                                        className="bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-border-muted text-slate-900 dark:text-white text-sm rounded-xl focus:ring-primary focus:border-primary block w-full p-3.5 transition-all outline-none"
+                                                        className="bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-border-muted text-slate-900 dark:text-white text-sm rounded-xl focus:ring-primary focus:border-primary block w-full p-3.5 transition-all outline-none focus-glow"
                                                         type="text"
                                                         value={firstName}
                                                         onChange={(e) => setFirstName(e.target.value)}

@@ -24,6 +24,12 @@ body {
   body {
     scroll-behavior: auto;
   }
+  .animate-shimmer,
+  .animate-glow-pulse,
+  .animate-gradient-shift,
+  .animate-float {
+    animation: none !important;
+  }
 }
 
 body {
@@ -37,14 +43,180 @@ body {
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
-/* Hero gradient overlay for landing page */
+/* ─── Hero gradient overlay for landing page ────────────────────────────── */
 .hero-gradient {
   background: radial-gradient(circle at top right, rgba(13, 185, 242, 0.15), transparent),
     radial-gradient(circle at bottom left, rgba(13, 185, 242, 0.05), transparent);
 }
 
-/* Prose dark mode overrides */
+/* ─── Prose dark mode overrides ─────────────────────────────────────────── */
 .dark .prose-invert {
   --tw-prose-body: #94a3b8;
   --tw-prose-headings: #f1f5f9;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PREMIUM ANIMATION KEYFRAMES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Shimmer sweep – horizontal light pass */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Glow pulse – subtle pulsing box-shadow */
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(13, 185, 242, 0.2), 0 0 30px rgba(13, 185, 242, 0.08);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(13, 185, 242, 0.35), 0 0 50px rgba(13, 185, 242, 0.15);
+  }
+}
+
+/* Gradient shift – slow-moving animated gradient */
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Float – gentle vertical oscillation */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+/* Spin slow – for decorative elements */
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   UTILITY CLASSES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.animate-shimmer {
+  animation: shimmer 2.5s infinite;
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+.animate-gradient-shift {
+  background-size: 200% 200%;
+  animation: gradient-shift 8s ease infinite;
+}
+
+.animate-float {
+  animation: float 5s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 20s linear infinite;
+}
+
+/* ─── Glass Card ────────────────────────────────────────────────────────── */
+.glass-card {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dark .glass-card {
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(148, 163, 184, 0.08);
+}
+
+/* ─── Shimmer Button ────────────────────────────────────────────────────── */
+.shimmer-btn {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.shimmer-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.15),
+    transparent
+  );
+  animation: shimmer 3s infinite;
+}
+
+/* ─── Focus Glow Ring ───────────────────────────────────────────────────── */
+.focus-glow:focus-within {
+  box-shadow: 0 0 0 3px rgba(13, 185, 242, 0.15), 0 0 20px rgba(13, 185, 242, 0.08);
+  border-color: rgba(13, 185, 242, 0.5);
+  transition: box-shadow 0.4s ease, border-color 0.3s ease;
+}
+
+/* ─── Link Underline Animation ──────────────────────────────────────────── */
+.link-animated {
+  position: relative;
+}
+
+.link-animated::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0%;
+  height: 1.5px;
+  background: currentColor;
+  transition: width 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.link-animated:hover::after {
+  width: 100%;
+}
+
+/* ─── Progress Bar Glow ─────────────────────────────────────────────────── */
+.progress-bar-glow {
+  box-shadow: 0 0 12px rgba(13, 185, 242, 0.4), 0 0 4px rgba(13, 185, 242, 0.6);
+}
+
+/* ─── Custom Scrollbar ──────────────────────────────────────────────────── */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.2);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.4);
 }
