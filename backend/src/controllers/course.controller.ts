@@ -64,14 +64,18 @@ export const createCourse = async (req: Request, res: Response) => {
                 price: parseFloat(price) || 0,
                 thumbnail,
                 category,
-                tags: Array.isArray(tags) ? tags : [],
+                // TEMPORARY FIX: Prisma 5 + Supabase JSON array bug (08P01)
+                // tags: Array.isArray(tags) ? tags : [],
                 instructorId,
             },
         });
         res.status(201).json(course);
     } catch (error: any) {
-        console.error('createCourse error:', error);
-        res.status(500).json({ message: 'Error creating course' });
+        require('fs').appendFileSync('app-error.log', '\nCREATE ERROR: ' + (error?.stack || error?.message || error) + '\n');
+        console.error('======== CREATE COURSE FATAL ERROR ========');
+        console.error(error);
+        console.error('===========================================');
+        res.status(500).json({ message: 'Error creating course', details: error?.message || String(error) });
     }
 };
 
@@ -80,14 +84,27 @@ export const updateCourse = async (req: Request, res: Response) => {
         const id = req.params.id as string;
         const { title, description, price, thumbnail, category, tags } = req.body;
 
+        const parsedPrice = price !== undefined && price !== null && price !== '' ? parseFloat(price.toString()) : undefined;
+
         const course = await prisma.course.update({
             where: { id },
-            data: { title, description, price: price ? parseFloat(price) : undefined, thumbnail, category, tags: Array.isArray(tags) ? tags : undefined },
+            data: { 
+                title, 
+                description, 
+                price: parsedPrice, 
+                thumbnail, 
+                category,
+                // TEMPORARY FIX: Prisma 5 + Supabase JSON array bug (08P01) 
+                // tags: Array.isArray(tags) ? tags : undefined 
+            },
         });
         res.json(course);
     } catch (error: any) {
-        console.error('updateCourse error:', error);
-        res.status(500).json({ message: 'Error updating course' });
+        require('fs').appendFileSync('app-error.log', '\nUPDATE ERROR: ' + (error?.stack || error?.message || error) + '\n');
+        console.error('======== UPDATE COURSE FATAL ERROR ========');
+        console.error(error);
+        console.error('===========================================');
+        res.status(500).json({ message: 'Error updating course', details: error?.message || String(error) });
     }
 };
 
