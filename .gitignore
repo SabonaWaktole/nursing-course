@@ -7,3 +7,5 @@ backend/uploads/*
 backend/dist/*
 frontend/.next/*
 frontend/build_output.txt
+remote_url.txt
+.jj/

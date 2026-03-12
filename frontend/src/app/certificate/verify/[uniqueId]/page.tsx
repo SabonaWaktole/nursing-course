@@ -1,24 +1,9 @@
 import VerifyClient from './VerifyClient';
 
-export default async function VerifyCertificatePage({ params }: { params: Promise<{ uniqueId: string }> }) {
-    const { uniqueId } = await params;
+export function generateStaticParams() {
+    return [{ uniqueId: 'dummy' }];
+}
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-
-    try {
-        const res = await fetch(`${API_URL}/api/certificates/verify/${uniqueId}`, {
-            cache: 'no-store' // We don't want to permanently cache verification results
-        });
-
-        if (!res.ok) {
-            return <VerifyClient result={{ valid: false }} />;
-        }
-
-        const data = await res.json();
-        return <VerifyClient result={data} />;
-
-    } catch (error) {
-        console.error("Error verifying certificate:", error);
-        return <VerifyClient result={{ valid: false }} />;
-    }
+export default function VerifyCertificatePage({ params }: { params: { uniqueId: string } }) {
+    return <VerifyClient uniqueId={params.uniqueId} />;
 }

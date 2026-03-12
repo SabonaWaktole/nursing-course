@@ -5,6 +5,13 @@ import Link from 'next/link';
 import api from '@/lib/api';
 import { Course } from '@/lib/types';
 import { motion } from 'framer-motion';
+import { getFileUrl } from '@/lib/url-utils';
+import {
+    useSectionContainerVariants,
+    useSectionItemVariants,
+    useButtonHoverMotion,
+    useCardHoverMotion,
+} from '@/lib/motion';
 
 const PLACEHOLDER_IMAGES = [
     "https://lh3.googleusercontent.com/aida-public/AB6AXuCx8O0XAYxQEfXeLfRH-6FfKX-9Z25q3IW2LEzqB3vq2Gjsi19mvFXdUV6eATG3m2EWGewTGxSWwZzZXOXhFNxiJGchZ1X7Ngn3ziO1W125d4PgRVqSLp30uM7ytxTK6mtU312iAhNc30w8kysWGRCCo23qNaFSvHITxKvRUlzopPkUReQMbvlGci6rk0oe9mu3vr9DRmMtZA_iAIhN1kR6zQSUXKhDrjd-2_Dc271nGTlZfm3brlEaniNbZg1m-EsYIoN4rqNGht0",
@@ -23,6 +30,10 @@ export default function CoursesPage() {
     const [loading, setLoading] = useState(true);
     const [tags, setTags] = useState<string[]>(['All']);
     const [isExpanded, setIsExpanded] = useState(false);
+    const sectionContainer = useSectionContainerVariants();
+    const sectionItem = useSectionItemVariants();
+    const buttonHover = useButtonHoverMotion();
+    const cardHover = useCardHoverMotion();
     useEffect(() => {
         api.get('/courses').then((res) => {
             setCourses(res.data);
@@ -45,14 +56,15 @@ export default function CoursesPage() {
 
     return (
         <div className="min-h-screen bg-background-light dark:bg-background-dark overflow-x-hidden">
-            <motion.main
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8"
-            >
+            <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
                 {/* Hero Header */}
-                <div className="mb-10">
+                <motion.div
+                    variants={sectionItem}
+                    initial="hidden"
+                    whileInView="show"
+                    viewport={{ once: true, margin: "-80px" }}
+                    className="mb-10"
+                >
                     <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                         <div className="max-w-2xl">
                             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase bg-primary/10 text-primary mb-4">
@@ -70,10 +82,16 @@ export default function CoursesPage() {
                             {courses.length} Courses Available Today
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
                 {/* Filters & Search */}
-                <div className="sticky top-20 z-40 bg-background-light/95 dark:bg-background-dark/95 py-4 mb-8 backdrop-blur-sm">
+                <motion.div
+                    variants={sectionItem}
+                    initial="hidden"
+                    whileInView="show"
+                    viewport={{ once: true, margin: "-60px" }}
+                    className="sticky top-20 z-40 bg-background-light/95 dark:bg-background-dark/95 py-4 mb-8 backdrop-blur-sm"
+                >
                     <div className="flex flex-col lg:flex-row gap-4">
                         <div className="relative flex-1">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -90,8 +108,7 @@ export default function CoursesPage() {
                         <div className="flex items-center gap-2 overflow-x-auto pb-2 lg:pb-0">
                             {tags.map(t => (
                                 <motion.button
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
+                                    {...buttonHover}
                                     key={t}
                                     onClick={() => setSelectedTag(t)}
                                     className={`px-5 py-2.5 rounded-xl font-semibold text-sm whitespace-nowrap transition-all ${selectedTag === t
@@ -104,11 +121,17 @@ export default function CoursesPage() {
                             ))}
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
                 {/* Featured Highlight */}
                 {filtered.length > 0 && (
-                    <div className="relative group overflow-hidden rounded-3xl mb-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl transition-all duration-500">
+                    <motion.div
+                        variants={sectionItem}
+                        initial="hidden"
+                        whileInView="show"
+                        viewport={{ once: true, margin: "-80px" }}
+                        className="relative group overflow-hidden rounded-3xl mb-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl transition-all duration-500"
+                    >
                         {/* Dynamic Gradient Overlay */}
                         <div className="absolute inset-0 bg-gradient-to-r from-white via-white/80 dark:from-slate-900 dark:via-slate-900/60 to-transparent z-10"></div>
 
@@ -138,13 +161,14 @@ export default function CoursesPage() {
                             </div>
 
                             <div className="flex flex-wrap items-center gap-6">
-                                <Link href={`/courses/${filtered[0].id}`} className="bg-primary hover:bg-primary/90 text-white font-black py-4 px-10 rounded-2xl shadow-lg shadow-primary/30 transition-all hover:-translate-y-1 flex items-center gap-2 text-sm tracking-tight">
-                                    ENROLL NOW <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                                <Link href={`/courses/${filtered[0].id}`} className="group relative isolate overflow-hidden bg-primary hover:bg-primary/95 text-white font-black py-4 px-10 rounded-2xl shadow-xl shadow-primary/30 transition-all hover:-translate-y-1 flex items-center gap-2 text-sm tracking-tight">
+                                    <div className="absolute inset-0 -z-10 translate-x-[-100%] bg-gradient-to-r from-transparent via-white/20 to-transparent group-hover:animate-[shimmer_2s_infinite]"></div>
+                                    ENROLL NOW <span className="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
                                 </Link>
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-3 bg-white/50 dark:bg-slate-900/50 backdrop-blur-md px-4 py-2 rounded-2xl border border-slate-200/50 dark:border-slate-700/50">
                                     <div className="flex -space-x-2">
                                         {[1, 2, 3].map(i => (
-                                            <div key={i} className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-900 bg-slate-200 dark:bg-slate-700 flex items-center justify-center overflow-hidden">
+                                            <div key={i} className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-800 bg-slate-200 dark:bg-slate-700 flex items-center justify-center overflow-hidden z-10 transition-transform hover:scale-110 hover:z-20">
                                                 <span className="material-symbols-outlined text-xs text-slate-400">person</span>
                                             </div>
                                         ))}
@@ -158,17 +182,16 @@ export default function CoursesPage() {
                         </div>
 
                         <motion.div
-                            whileHover={{ scale: 1.05 }}
-                            transition={{ duration: 0.8 }}
+                            {...cardHover}
                             className="absolute inset-0 w-full h-full bg-center bg-cover -z-0"
                             style={{
                                 backgroundImage: `url('${filtered[0].thumbnail
-                                    ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}${filtered[0].thumbnail}`
+                                    ? getFileUrl(filtered[0].thumbnail)
                                     : FEATURED_IMAGE
                                     }')`
                             }}
                         ></motion.div>
-                    </div>
+                    </motion.div>
                 )}
 
                 {/* Course Grid */}
@@ -193,63 +216,56 @@ export default function CoursesPage() {
                     </div>
                 ) : (
                     <motion.div
+                        variants={sectionContainer}
                         initial="hidden"
                         whileInView="show"
                         viewport={{ once: true, margin: "-50px" }}
-                        variants={{
-                            hidden: { opacity: 0 },
-                            show: {
-                                opacity: 1,
-                                transition: { staggerChildren: 0.1 }
-                            }
-                        }}
                         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
                     >
                         {filtered.map((course, idx) => (
                             <motion.div
                                 key={course.id}
-                                variants={{
-                                    hidden: { opacity: 0, y: 30 },
-                                    show: { opacity: 1, y: 0 }
-                                }}
-                                whileHover={{ y: -10 }}
-                                transition={{ duration: 0.3 }}
+                                variants={sectionItem}
+                                {...cardHover}
                             >
                                 <Link
                                     href={`/courses/${course.id}`}
-                                    className="group bg-white dark:bg-slate-800 rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col h-full"
+                                    className="group bg-white dark:bg-slate-900 rounded-3xl overflow-hidden border border-slate-200/80 dark:border-slate-800/80 transition-all hover:shadow-[0_20px_40px_-15px_rgba(13,185,242,0.15)] dark:hover:shadow-[0_20px_40px_-15px_rgba(13,185,242,0.1)] h-full flex flex-col relative z-0"
                                 >
-                                    <div className="relative h-48 overflow-hidden">
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10"></div>
+                                    <div className="absolute inset-0 bg-primary/20 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10"></div>
+                                    <div className="relative h-48 md:h-56 overflow-hidden">
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity z-10"></div>
                                         {/* Category tag */}
-                                        <div className="absolute top-4 left-4 z-20 bg-white/90 dark:bg-slate-900/90 backdrop-blur px-2 py-1 rounded-lg text-[10px] font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                                        <div className="absolute top-4 left-4 z-20 bg-white/90 dark:bg-slate-900/90 backdrop-blur px-3 py-1.5 rounded-lg text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-wider shadow-lg">
                                             {course.tags && course.tags.length > 0 ? course.tags[0] : (course.category || 'Course')}
                                         </div>
                                         <img
                                             alt={course.title}
-                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                            src={course.thumbnail ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}${course.thumbnail}` : PLACEHOLDER_IMAGES[idx % PLACEHOLDER_IMAGES.length]}
+                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+                                            src={course.thumbnail ? getFileUrl(course.thumbnail) : PLACEHOLDER_IMAGES[idx % PLACEHOLDER_IMAGES.length]}
                                         />
                                     </div>
-                                    <div className="p-6 flex flex-col flex-1">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <span className="flex items-center gap-1 text-amber-500 font-bold text-sm">
-                                                <span className="material-symbols-outlined text-[18px]">star</span>
-                                                4.{8 + (idx % 2)}
-                                            </span>
-                                            <span className="text-slate-400 text-xs font-medium flex items-center gap-1">
-                                                <span className="material-symbols-outlined text-[16px]">schedule</span>
+                                    <div className="p-8 flex flex-col flex-1 relative bg-white dark:bg-slate-900 z-20">
+                                        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="flex items-center text-amber-500 bg-amber-50 dark:bg-amber-500/10 px-2 py-1 rounded-md">
+                                                <span className="material-symbols-outlined text-[14px]">star</span>
+                                                <span className="text-xs font-bold ml-1">4.{8 + (idx % 2)}</span>
+                                            </div>
+                                            <span className="text-slate-500 dark:text-slate-400 text-xs font-semibold flex items-center gap-1.5">
+                                                <span className="material-symbols-outlined text-[14px]">schedule</span>
                                                 {course._count?.modules || 1} Modules
                                             </span>
                                         </div>
-                                        <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-2 leading-snug">{course.title}</h4>
-                                        <p className="text-slate-500 dark:text-slate-400 text-sm mb-6 flex-1 line-clamp-2">{course.description}</p>
-                                        <div className="flex items-center justify-between pt-4 border-t border-slate-50 dark:border-slate-700/50">
-                                            <span className="text-lg font-black text-slate-900 dark:text-white">
+                                        <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-3 leading-tight group-hover:text-primary transition-colors">{course.title}</h4>
+                                        <p className="text-slate-600 dark:text-slate-400 text-sm mb-8 flex-1 line-clamp-2 leading-relaxed">{course.description}</p>
+                                        <div className="flex items-center justify-between pt-6 border-t border-slate-100 dark:border-slate-800/80 mt-auto">
+                                            <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
                                                 {course.price && course.price > 0 ? `$${course.price}` : 'Free'}
                                             </span>
-                                            <span className="bg-primary/10 hover:bg-primary text-primary hover:text-white font-bold py-2 px-5 rounded-lg transition-colors text-sm">
-                                                Enroll Now
+                                            <span className="px-5 py-2.5 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl group-hover:bg-primary group-hover:text-white transition-all duration-300 font-bold text-sm shadow-sm group-hover:shadow-primary/30 flex items-center gap-2">
+                                                Enroll Now <span className="material-symbols-outlined text-sm transition-transform group-hover:translate-x-1">arrow_forward</span>
                                             </span>
                                         </div>
                                     </div>
@@ -260,7 +276,13 @@ export default function CoursesPage() {
                 )}
 
                 {/* Newsletter Section */}
-                <div className="mt-20 border-t border-slate-200 dark:border-slate-800 pt-16">
+                <motion.div
+                    variants={sectionItem}
+                    initial="hidden"
+                    whileInView="show"
+                    viewport={{ once: true, margin: "-60px" }}
+                    className="mt-20 border-t border-slate-200 dark:border-slate-800 pt-16"
+                >
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                         <div>
                             <h3 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">Stay ahead in your field.</h3>
@@ -269,16 +291,15 @@ export default function CoursesPage() {
                         <div className="flex flex-col sm:flex-row gap-3">
                             <input className="flex-1 px-4 py-4 rounded-xl bg-slate-100 dark:bg-slate-800 border-transparent focus:ring-2 focus:ring-primary text-slate-900 dark:text-white" placeholder="Enter your email address" type="email" />
                             <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
+                                {...buttonHover}
                                 className="bg-primary hover:bg-primary/90 text-white font-bold py-4 px-8 rounded-xl transition-all shadow-lg shadow-primary/20"
                             >
                                 Subscribe Now
                             </motion.button>
                         </div>
                     </div>
-                </div>
-            </motion.main>
+                </motion.div>
+            </main>
         </div>
     );
 }

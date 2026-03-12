@@ -4,16 +4,48 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 
-export default function VerifyClient({ result }: { result: any }) {
-    const handlePrint = () => {
-        window.print();
-    };
-
+export default function VerifyClient({ uniqueId }: { uniqueId: string }) {
+    const [result, setResult] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
     const [currentUrl, setCurrentUrl] = useState('');
 
     useEffect(() => {
         setCurrentUrl(window.location.href);
-    }, []);
+
+        async function verify() {
+            if (!uniqueId) return;
+
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+            try {
+                const res = await fetch(`${API_URL}/api/certificates/verify/${uniqueId}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setResult(data);
+                } else {
+                    setResult({ valid: false });
+                }
+            } catch (error) {
+                console.error("Error verifying certificate:", error);
+                setResult({ valid: false });
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        verify();
+    }, [uniqueId]);
+
+    const handlePrint = () => {
+        window.print();
+    };
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-background-light dark:bg-background-dark px-4">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+            </div>
+        );
+    }
 
     if (!result?.valid) {
         return (
