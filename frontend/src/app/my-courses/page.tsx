@@ -11,6 +11,7 @@ import RoleGuard from '@/components/RoleGuard';
 import StudentSidebar from '@/components/StudentSidebar';
 import StudentHeader from '@/components/StudentHeader';
 import { getFileUrl } from '@/lib/url-utils';
+import { useSectionContainerVariants, useSectionItemVariants, useCardHoverMotion, useButtonHoverMotion, imageInViewVariants, viewportOnce } from '@/lib/motion';
 
 const COURSE_IMAGES = [
     "https://lh3.googleusercontent.com/aida-public/AB6AXuCu-zYmikqqgWp7XL195teqe8TOODyvoboA8HIQmeON3V97MwR-VD5-AxiKyfAPHRYrvXuAX694m8rSKhNDf6Z_e6V1vX809P1f4QmT-DCvV66SOC_ZlAphWkaice6oJ8b9QHPjclKgcJH8q66s9rAFnwymE5hWSi5zsHFnBr-emaAYkjl-6gSxwd6uT1kNx3pDvF1rbUfNE9xLspdMXfQ0AI7IlP1VVqS0aZayH1lszHnmXHDC2uqC0N03CL8FKph-CzKArx9A_-Q",
@@ -25,6 +26,10 @@ export default function MyCoursesPage() {
     const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
     const [loading, setLoading] = useState(true);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const sectionContainer = useSectionContainerVariants();
+    const sectionItem = useSectionItemVariants();
+    const cardHover = useCardHoverMotion();
+    const buttonHover = useButtonHoverMotion();
 
     useEffect(() => {
         if (!user) return;
@@ -49,9 +54,9 @@ export default function MyCoursesPage() {
     return (
         <RoleGuard allowedRoles={['STUDENT']}>
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
+                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
                 className="min-h-screen bg-background-light dark:bg-background-dark overflow-x-hidden"
             >
                 <div className="flex h-screen overflow-hidden">
@@ -66,7 +71,12 @@ export default function MyCoursesPage() {
                         <main className="flex-1 overflow-y-auto p-6 lg:p-10">
                             <div className="max-w-6xl mx-auto flex flex-col gap-8">
                                 {/* Welcome Header */}
-                                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                <motion.div
+                                    variants={sectionItem}
+                                    initial="hidden"
+                                    animate="show"
+                                    className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
+                                >
                                     <div className="flex flex-col gap-1">
                                         <h1 className="text-3xl font-black tracking-tight lg:text-4xl text-slate-900 dark:text-white">
                                             Welcome back, {user?.name?.split(' ')[0] || 'Student'}! 👋
@@ -86,57 +96,71 @@ export default function MyCoursesPage() {
                                             <span className="material-symbols-outlined text-primary">analytics</span>
                                         </div>
                                     </div>
-                                </div>
+                                </motion.div>
 
                                 {enrollments.length === 0 ? (
-                                    <div className="text-center py-20 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                                    <motion.div
+                                        variants={sectionItem}
+                                        initial="hidden"
+                                        animate="show"
+                                        className="text-center py-20 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
+                                    >
                                         <span className="material-symbols-outlined text-5xl text-slate-300 dark:text-slate-600">menu_book</span>
                                         <p className="mt-4 text-lg font-medium text-slate-500">No courses yet</p>
                                         <p className="text-sm text-slate-400 mb-6">Start your learning journey by enrolling in a course.</p>
-                                        <Link href="/courses" className="rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white hover:bg-primary/90 transition shadow-lg shadow-primary/25">
-                                            Browse Courses
-                                        </Link>
-                                    </div>
+                                        <motion.span {...buttonHover}>
+                                            <Link href="/courses" className="inline-flex rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white hover:bg-primary/90 transition shadow-lg shadow-primary/25">
+                                                Browse Courses
+                                            </Link>
+                                        </motion.span>
+                                    </motion.div>
                                 ) : (
                                     <>
                                         {/* Continue Learning Hero + Stats */}
-                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                        <motion.div
+                                            variants={sectionContainer}
+                                            initial="hidden"
+                                            whileInView="show"
+                                            viewport={viewportOnce}
+                                            className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+                                        >
                                             {activeEnrollment && (
-                                                <motion.div
-                                                    initial={{ opacity: 0, x: -20 }}
-                                                    animate={{ opacity: 1, x: 0 }}
-                                                    transition={{ delay: 0.3 }}
-                                                    className="lg:col-span-2"
-                                                >
-                                                    <Link href={`/courses/${activeEnrollment.course.id}`} className="relative overflow-hidden rounded-3xl bg-slate-900 p-8 text-white min-h-[220px] flex flex-col justify-end group block">
-                                                        <div className="absolute inset-0 opacity-40 bg-center bg-cover" style={{
+                                                <motion.div variants={sectionItem} className="lg:col-span-2">
+                                                    <motion.div
+                                                        initial="hidden"
+                                                        whileInView="show"
+                                                        viewport={viewportOnce}
+                                                        variants={imageInViewVariants}
+                                                        className="h-full"
+                                                    >
+                                                        <Link href={`/courses/${activeEnrollment.course.id}`} className="relative overflow-hidden rounded-3xl bg-slate-900 p-8 text-white min-h-[220px] flex flex-col justify-end group block shadow-lg hover:shadow-xl transition-shadow duration-200 hover:-translate-y-0.5 transition-transform duration-200">
+                                                            <div className="absolute inset-0 opacity-40 bg-center bg-cover group-hover:scale-105 transition-transform duration-500" style={{
                                                             backgroundImage: `url('${activeEnrollment.course.thumbnail
                                                                 ? getFileUrl(activeEnrollment.course.thumbnail)
                                                                 : HERO_BG
                                                                 }')`
                                                         }}></div>
-                                                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent"></div>
-                                                        <div className="relative z-10 flex flex-col gap-3">
-                                                            <span className="bg-primary/20 backdrop-blur-md text-primary px-3 py-1 rounded-full text-xs font-bold self-start border border-primary/30">CURRENTLY ACTIVE</span>
-                                                            <h2 className="text-2xl font-bold">{activeEnrollment.course.title}</h2>
-                                                            <p className="text-slate-300 text-sm max-w-md line-clamp-2">{activeEnrollment.course.description}</p>
-                                                            <div className="flex items-center gap-4 mt-2">
-                                                                <motion.span whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="bg-primary hover:bg-primary/90 text-white font-bold px-6 py-2.5 rounded-xl flex items-center gap-2">
-                                                                    Continue Learning <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                                                                </motion.span>
-                                                                <span className="text-sm font-medium text-slate-300">{activeEnrollment.progress}% complete</span>
+                                                            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent"></div>
+                                                            <div className="relative z-10 flex flex-col gap-3">
+                                                                <span className="bg-primary/20 backdrop-blur-md text-primary px-3 py-1 rounded-full text-xs font-bold self-start border border-primary/30">CURRENTLY ACTIVE</span>
+                                                                <h2 className="text-2xl font-bold">{activeEnrollment.course.title}</h2>
+                                                                <p className="text-slate-300 text-sm max-w-md line-clamp-2">{activeEnrollment.course.description}</p>
+                                                                <div className="flex items-center gap-4 mt-2">
+                                                                    <motion.span {...buttonHover} className="bg-primary hover:bg-primary/90 text-white font-bold px-6 py-2.5 rounded-xl flex items-center gap-2 w-fit">
+                                                                        Continue Learning <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                                                                    </motion.span>
+                                                                    <span className="text-sm font-medium text-slate-300">{activeEnrollment.progress}% complete</span>
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    </Link>
+                                                        </Link>
+                                                    </motion.div>
                                                 </motion.div>
                                             )}
 
                                             {/* Weekly Activity Card */}
                                             <motion.div
-                                                initial={{ opacity: 0, x: 20 }}
-                                                animate={{ opacity: 1, x: 0 }}
-                                                transition={{ delay: 0.4 }}
-                                                className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 flex flex-col gap-6"
+                                                variants={sectionItem}
+                                                className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 flex flex-col gap-6 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
                                             >
                                                 <h3 className="font-bold text-lg text-slate-900 dark:text-white">Weekly Activity</h3>
                                                 <div className="flex items-end justify-between h-24 px-2">
@@ -155,31 +179,39 @@ export default function MyCoursesPage() {
                                                     <span className="material-symbols-outlined text-orange-500 text-3xl">local_fire_department</span>
                                                 </div>
                                             </motion.div>
-                                        </div>
+                                        </motion.div>
 
                                         {/* Active Courses Grid */}
-                                        <div className="flex flex-col gap-6">
-                                            <div className="flex items-center justify-between">
+                                        <motion.div
+                                            variants={sectionContainer}
+                                            initial="hidden"
+                                            whileInView="show"
+                                            viewport={viewportOnce}
+                                            className="flex flex-col gap-6"
+                                        >
+                                            <motion.div variants={sectionItem} className="flex items-center justify-between">
                                                 <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Active Courses</h2>
                                                 <Link href="/courses" className="text-primary font-bold text-sm flex items-center gap-1 hover:underline">
                                                     View All <span className="material-symbols-outlined text-sm">open_in_new</span>
                                                 </Link>
-                                            </div>
+                                            </motion.div>
                                             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                                                 {enrollments.map((enrollment, idx) => (
                                                     <motion.div
                                                         key={enrollment.id}
-                                                        initial={{ opacity: 0, y: 20 }}
-                                                        whileInView={{ opacity: 1, y: 0 }}
-                                                        viewport={{ once: true }}
-                                                        transition={{ delay: idx * 0.1 }}
+                                                        variants={sectionItem}
+                                                        {...cardHover}
                                                     >
                                                         <Link
                                                             href={`/courses/${enrollment.course.id}`}
-                                                            className="bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 group shadow-sm hover:shadow-md transition-shadow block h-full"
+                                                            className="bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 group shadow-sm hover:shadow-md transition-shadow duration-200 block h-full"
                                                         >
                                                             <div className="relative h-40 overflow-hidden">
-                                                                <div
+                                                                <motion.div
+                                                                    initial="hidden"
+                                                                    whileInView="show"
+                                                                    viewport={viewportOnce}
+                                                                    variants={imageInViewVariants}
                                                                     className="absolute inset-0 bg-center bg-cover group-hover:scale-105 transition-transform duration-500"
                                                                     style={{
                                                                         backgroundImage: `url('${enrollment.course.thumbnail
@@ -187,7 +219,7 @@ export default function MyCoursesPage() {
                                                                             : COURSE_IMAGES[idx % COURSE_IMAGES.length]
                                                                             }')`
                                                                     }}
-                                                                ></div>
+                                                                />
                                                                 <div className="absolute top-4 left-4">
                                                                     <span className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm text-xs font-bold px-3 py-1 rounded-full text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700">
                                                                         {enrollment.course.tags?.[0] || enrollment.course.category || 'COURSE'}
@@ -225,15 +257,21 @@ export default function MyCoursesPage() {
                                                     </motion.div>
                                                 ))}
                                             </div>
-                                        </div>
+                                        </motion.div>
 
                                         {/* Recently Earned Certificates */}
                                         {enrollments.some(e => e.completed) && (
-                                            <div className="flex flex-col gap-6">
-                                                <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Recently Earned Certificates</h2>
+                                            <motion.div
+                                                variants={sectionContainer}
+                                                initial="hidden"
+                                                whileInView="show"
+                                                viewport={viewportOnce}
+                                                className="flex flex-col gap-6"
+                                            >
+                                                <motion.h2 variants={sectionItem} className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Recently Earned Certificates</motion.h2>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                     {enrollments.filter(e => e.completed).map((enrollment) => (
-                                                        <div key={enrollment.id} className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+                                                        <motion.div key={enrollment.id} variants={sectionItem} {...cardHover} className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
                                                             <div className="flex items-center gap-4">
                                                                 <div className="size-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                                                                     <span className="material-symbols-outlined text-2xl">verified</span>
@@ -243,14 +281,16 @@ export default function MyCoursesPage() {
                                                                     <span className="text-xs text-slate-500">Completed</span>
                                                                 </div>
                                                             </div>
-                                                            <Link href="/certificates" className="flex items-center gap-2 text-primary font-bold text-sm bg-primary/5 px-4 py-2 rounded-lg hover:bg-primary/10 transition-colors">
-                                                                <span className="material-symbols-outlined text-sm">picture_as_pdf</span>
-                                                                View
-                                                            </Link>
-                                                        </div>
+                                                            <motion.span {...buttonHover}>
+                                                                <Link href="/certificates" className="flex items-center gap-2 text-primary font-bold text-sm bg-primary/5 px-4 py-2 rounded-lg hover:bg-primary/10 transition-colors">
+                                                                    <span className="material-symbols-outlined text-sm">picture_as_pdf</span>
+                                                                    View
+                                                                </Link>
+                                                            </motion.span>
+                                                        </motion.div>
                                                     ))}
                                                 </div>
-                                            </div>
+                                            </motion.div>
                                         )}
                                     </>
                                 )}

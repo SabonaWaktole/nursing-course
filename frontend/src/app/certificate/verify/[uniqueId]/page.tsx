@@ -1,11 +1,9 @@
-'use client';
-
-import { useParams } from 'next/navigation';
 import VerifyClient from './VerifyClient';
 
-export default function VerifyCertificatePage() {
-    const params = useParams();
-    const uniqueId = params.uniqueId as string;
+export function generateStaticParams() {
+    return [{ uniqueId: 'dummy' }];
+}
 
-    return <VerifyClient uniqueId={uniqueId} />;
+export default function VerifyCertificatePage({ params }: { params: { uniqueId: string } }) {
+    return <VerifyClient uniqueId={params.uniqueId} />;
 }

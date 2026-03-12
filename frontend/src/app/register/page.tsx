@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { GraduationCap, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { MOTION, useButtonHoverMotion } from '@/lib/motion';
 
 export default function RegisterPage() {
     const { register } = useAuth();
@@ -16,6 +17,7 @@ export default function RegisterPage() {
     const [showPw, setShowPw] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const buttonHover = useButtonHoverMotion();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -44,15 +46,16 @@ export default function RegisterPage() {
             </div>
 
             <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, ease: "easeOut" }}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
                 className="w-full max-w-[440px] z-10"
             >
                 <div className="text-center mb-8">
-                    <motion.div 
-                        initial={{ y: -20 }}
-                        animate={{ y: 0 }}
+                    <motion.div
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: MOTION.durationMedium, delay: 0.08, ease: MOTION.easeSoft }}
                         className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-white dark:bg-slate-900 shadow-xl border border-slate-200 dark:border-slate-800 mb-6"
                     >
                         <GraduationCap className="h-10 w-10 text-primary" />
@@ -123,8 +126,7 @@ export default function RegisterPage() {
                         </div>
 
                         <motion.button
-                            whileHover={{ scale: 1.01, translateY: -2 }}
-                            whileTap={{ scale: 0.98 }}
+                            {...buttonHover}
                             type="submit"
                             disabled={loading}
                             className="w-full bg-primary hover:bg-primary/90 text-white py-4 rounded-2xl text-sm font-black shadow-lg shadow-primary/25 transition-all disabled:opacity-70 flex items-center justify-center gap-2 mt-4"

@@ -22,16 +22,27 @@ app.set('trust proxy', 1);
 const allowedOrigins = [
   'https://cnaceus.excelcommunityliving.website',
   'http://localhost:3000',
-  'http://localhost:3001'
+  'http://localhost:3001',
 ];
+
+const isDev = process.env.NODE_ENV !== 'production';
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
+    // In development, allow all origins to avoid CORS blocking local testing.
+    if (isDev) {
+      return callback(null, true);
     }
+
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error('Not allowed by CORS'));
   },
   credentials: true
 }));

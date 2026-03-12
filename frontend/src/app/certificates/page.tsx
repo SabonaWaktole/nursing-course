@@ -10,6 +10,7 @@ import RoleGuard from '@/components/RoleGuard';
 import { motion, AnimatePresence } from 'framer-motion';
 import StudentSidebar from '@/components/StudentSidebar';
 import StudentHeader from '@/components/StudentHeader';
+import { useSectionContainerVariants, useSectionItemVariants, useCardHoverMotion, useButtonHoverMotion, viewportOnce } from '@/lib/motion';
 
 export default function CertificatesPage() {
     const { user } = useAuth();
@@ -17,6 +18,10 @@ export default function CertificatesPage() {
     const [certificates, setCertificates] = useState<Certificate[]>([]);
     const [loading, setLoading] = useState(true);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const sectionContainer = useSectionContainerVariants();
+    const sectionItem = useSectionItemVariants();
+    const cardHover = useCardHoverMotion();
+    const buttonHover = useButtonHoverMotion();
 
     useEffect(() => {
         if (!user) return;
@@ -34,7 +39,12 @@ export default function CertificatesPage() {
 
     return (
         <RoleGuard allowedRoles={['STUDENT']}>
-            <div className={`flex h-screen overflow-hidden bg-background-light dark:bg-background-dark text-slate-900 dark:text-white transition-colors duration-200 relative`}>
+            <motion.div
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+                className="flex h-screen overflow-hidden bg-background-light dark:bg-background-dark text-slate-900 dark:text-white transition-colors duration-200 relative"
+            >
                 <StudentSidebar
                     isSidebarCollapsed={isSidebarCollapsed}
                     setIsSidebarCollapsed={setIsSidebarCollapsed}
@@ -42,38 +52,49 @@ export default function CertificatesPage() {
                 <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                     <StudentHeader title="My Certifications" subtitle="Official training records and credentials." />
                     <main className="flex-1 p-6 lg:p-10 overflow-y-auto">
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.5 }}
-                            className="max-w-6xl mx-auto"
-                        >
-                            <header className="mb-10">
+                        <div className="max-w-6xl mx-auto">
+                            <motion.header
+                                variants={sectionItem}
+                                initial="hidden"
+                                animate="show"
+                                className="mb-10"
+                            >
                                 <h1 className="text-4xl font-black tracking-tight text-slate-900 dark:text-white mb-2">My Certifications</h1>
                                 <p className="text-slate-500 dark:text-slate-400 text-lg">Official training records and credentials earned through Excelcommunity Living Inc.</p>
-                            </header>
+                            </motion.header>
 
                             {certificates.length === 0 ? (
-                                <div className="text-center py-24 rounded-3xl border-2 border-dashed border-slate-200 bg-white shadow-sm">
+                                <motion.div
+                                    variants={sectionItem}
+                                    initial="hidden"
+                                    animate="show"
+                                    className="text-center py-24 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm"
+                                >
                                     <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-slate-50 mb-6 text-slate-300">
                                         <span className="material-symbols-outlined text-5xl">workspace_premium</span>
                                     </div>
                                     <p className="text-xl font-bold text-slate-800">No certificates yet</p>
                                     <p className="mt-2 text-slate-500 max-w-sm mx-auto">Complete course modules and pass your final exams to earn official nursing credentials.</p>
-                                    <Link href="/courses" className="mt-8 inline-flex items-center gap-2 text-blue-900 font-bold hover:underline">
-                                        Browse Courses <span className="material-symbols-outlined">arrow_forward</span>
-                                    </Link>
-                                </div>
+                                    <motion.span {...buttonHover}>
+                                        <Link href="/courses" className="mt-8 inline-flex items-center gap-2 text-primary font-bold hover:underline">
+                                            Browse Courses <span className="material-symbols-outlined">arrow_forward</span>
+                                        </Link>
+                                    </motion.span>
+                                </motion.div>
                             ) : (
-                                <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-                                    {certificates.map((cert, idx) => (
+                                <motion.div
+                                    variants={sectionContainer}
+                                    initial="hidden"
+                                    whileInView="show"
+                                    viewport={viewportOnce}
+                                    className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3"
+                                >
+                                    {certificates.map((cert) => (
                                         <motion.div
                                             key={cert.id}
-                                            initial={{ opacity: 0, y: 20 }}
-                                            whileInView={{ opacity: 1, y: 0 }}
-                                            viewport={{ once: true }}
-                                            transition={{ delay: idx * 0.1 }}
-                                            className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-7 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                                            variants={sectionItem}
+                                            {...cardHover}
+                                            className="group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-7 shadow-sm hover:shadow-lg transition-shadow duration-200"
                                         >
                                             <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-600 to-blue-400"></div>
 
@@ -116,20 +137,23 @@ export default function CertificatesPage() {
                                             <div className="mt-8 flex gap-3">
                                                 {cert.status === 'APPROVED' ? (
                                                     <>
-                                                        <Link
-                                                            href={`/certificate/verify/${cert.uniqueId}`}
-                                                            className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-blue-900 px-4 py-3 text-sm font-bold text-white hover:bg-blue-800 shadow-md shadow-blue-100 transition-all"
-                                                        >
-                                                            <span className="material-symbols-outlined text-[18px]">visibility</span>
-                                                            View & Print
-                                                        </Link>
-                                                        <button
+                                                        <motion.span {...buttonHover} className="flex-1">
+                                                            <Link
+                                                                href={`/certificate/verify/${cert.uniqueId}`}
+                                                                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white hover:bg-primary/90 shadow-md shadow-primary/20 transition-colors duration-200"
+                                                            >
+                                                                <span className="material-symbols-outlined text-[18px]">visibility</span>
+                                                                View & Print
+                                                            </Link>
+                                                        </motion.span>
+                                                        <motion.button
+                                                            {...buttonHover}
                                                             onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL}/api/certificates/download/${cert.id}`)}
-                                                            className="flex items-center justify-center size-12 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-500 hover:text-blue-900 transition-all"
+                                                            className="flex items-center justify-center size-12 rounded-xl border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 hover:text-primary transition-colors duration-200"
                                                             title="Download PDF"
                                                         >
                                                             <span className="material-symbols-outlined">download</span>
-                                                        </button>
+                                                        </motion.button>
                                                     </>
                                                 ) : (
                                                     <div className="flex-1 text-center py-3 bg-slate-50 rounded-xl text-slate-400 text-xs font-bold border border-slate-100 italic">
@@ -139,12 +163,12 @@ export default function CertificatesPage() {
                                             </div>
                                         </motion.div>
                                     ))}
-                                </div>
+                                </motion.div>
                             )}
-                        </motion.div>
+                        </div>
                     </main>
                 </div>
-            </div>
+            </motion.div>
         </RoleGuard>
     );
 }
