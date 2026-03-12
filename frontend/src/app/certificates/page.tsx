@@ -18,6 +18,7 @@ export default function CertificatesPage() {
     const [certificates, setCertificates] = useState<Certificate[]>([]);
     const [loading, setLoading] = useState(true);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const sectionContainer = useSectionContainerVariants();
     const sectionItem = useSectionItemVariants();
     const cardHover = useCardHoverMotion();
@@ -48,9 +49,11 @@ export default function CertificatesPage() {
                 <StudentSidebar
                     isSidebarCollapsed={isSidebarCollapsed}
                     setIsSidebarCollapsed={setIsSidebarCollapsed}
+                    isMobileMenuOpen={isMobileMenuOpen}
+                    setIsMobileMenuOpen={setIsMobileMenuOpen}
                 />
                 <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-                    <StudentHeader title="My Certifications" subtitle="Official training records and credentials." />
+                    <StudentHeader title="My Certifications" subtitle="Official training records and credentials." icon="workspace_premium" onMobileMenuOpen={() => setIsMobileMenuOpen(true)} />
                     <main className="flex-1 p-6 lg:p-10 overflow-y-auto">
                         <div className="max-w-6xl mx-auto">
                             <motion.header
