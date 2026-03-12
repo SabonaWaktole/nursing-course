@@ -11,6 +11,7 @@ import {
     useSectionItemVariants,
     useButtonHoverMotion,
     useCardHoverMotion,
+    useGlowHoverMotion,
 } from '@/lib/motion';
 
 const PLACEHOLDER_IMAGES = [
@@ -34,6 +35,7 @@ export default function CoursesPage() {
     const sectionItem = useSectionItemVariants();
     const buttonHover = useButtonHoverMotion();
     const cardHover = useCardHoverMotion();
+    const glowHover = useGlowHoverMotion();
     useEffect(() => {
         api.get('/courses').then((res) => {
             setCourses(res.data);
@@ -111,11 +113,18 @@ export default function CoursesPage() {
                                     {...buttonHover}
                                     key={t}
                                     onClick={() => setSelectedTag(t)}
-                                    className={`px-5 py-2.5 rounded-xl font-semibold text-sm whitespace-nowrap transition-all ${selectedTag === t
-                                        ? 'bg-primary text-white shadow-lg shadow-primary/25'
+                                    className={`relative px-5 py-2.5 rounded-xl font-semibold text-sm whitespace-nowrap transition-all ${selectedTag === t
+                                        ? 'text-white shadow-lg shadow-primary/25'
                                         : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-primary'
                                         }`}
                                 >
+                                    {selectedTag === t && (
+                                        <motion.span
+                                            layoutId="activeFilterTag"
+                                            className="absolute inset-0 bg-primary rounded-xl -z-10"
+                                            transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                                        />
+                                    )}
                                     {t}
                                 </motion.button>
                             ))}
@@ -161,8 +170,8 @@ export default function CoursesPage() {
                             </div>
 
                             <div className="flex flex-wrap items-center gap-6">
-                                <Link href={`/courses/${filtered[0].id}`} className="group relative isolate overflow-hidden bg-primary hover:bg-primary/95 text-white font-black py-4 px-10 rounded-2xl shadow-xl shadow-primary/30 transition-all hover:-translate-y-1 flex items-center gap-2 text-sm tracking-tight">
-                                    <div className="absolute inset-0 -z-10 translate-x-[-100%] bg-gradient-to-r from-transparent via-white/20 to-transparent group-hover:animate-[shimmer_2s_infinite]"></div>
+                                <Link href={`/courses/${filtered[0].id}`} className="group relative isolate overflow-hidden bg-primary hover:bg-primary/95 text-white font-black py-4 px-10 rounded-2xl shadow-xl shadow-primary/30 transition-all hover:-translate-y-1 flex items-center gap-2 text-sm tracking-tight shimmer-btn">
+                                    <div className="absolute inset-0 -z-10 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
                                     ENROLL NOW <span className="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
                                 </Link>
                                 <div className="flex items-center gap-3 bg-white/50 dark:bg-slate-900/50 backdrop-blur-md px-4 py-2 rounded-2xl border border-slate-200/50 dark:border-slate-700/50">

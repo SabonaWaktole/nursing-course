@@ -96,6 +96,10 @@ export default function CertificatesPage() {
                                             {...cardHover}
                                             className="group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-7 shadow-sm hover:shadow-lg transition-shadow duration-200"
                                         >
+                                            {/* Shimmer shine overlay */}
+                                            <div className="absolute inset-0 -z-0 pointer-events-none overflow-hidden rounded-2xl">
+                                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out" />
+                                            </div>
                                             <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-600 to-blue-400"></div>
 
                                             <div className="flex items-start gap-5 mb-6">
@@ -124,11 +128,15 @@ export default function CertificatesPage() {
                                                         cert.status === 'REJECTED' ? 'text-rose-600' :
                                                             'text-amber-600'
                                                         }`}>
-                                                        <span className="material-symbols-outlined text-[14px]">
+                                                        <motion.span
+                                                            animate={cert.status === 'APPROVED' ? { scale: [1, 1.15, 1] } : {}}
+                                                            transition={cert.status === 'APPROVED' ? { duration: 2, repeat: Infinity, ease: 'easeInOut' } : {}}
+                                                            className="material-symbols-outlined text-[14px]"
+                                                        >
                                                             {cert.status === 'APPROVED' ? 'check_circle' :
                                                                 cert.status === 'REJECTED' ? 'cancel' :
                                                                     'pending'}
-                                                        </span>
+                                                        </motion.span>
                                                         {cert.status || 'PENDING'}
                                                     </span>
                                                 </div>

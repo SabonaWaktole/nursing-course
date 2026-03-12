@@ -165,7 +165,14 @@ export default function MyCoursesPage() {
                                                 <h3 className="font-bold text-lg text-slate-900 dark:text-white">Weekly Activity</h3>
                                                 <div className="flex items-end justify-between h-24 px-2">
                                                     {[40, 60, 30, 90, 70, 85, 45].map((h, i) => (
-                                                        <div key={i} className={`w-4 rounded-t-full ${i >= 3 && i <= 5 ? 'bg-primary' : 'bg-primary/20'}`} style={{ height: `${h}%` }}></div>
+                                                        <motion.div
+                                                            key={i}
+                                                            initial={{ height: 0 }}
+                                                            whileInView={{ height: `${h}%` }}
+                                                            viewport={{ once: true }}
+                                                            transition={{ duration: 0.6, delay: i * 0.08, ease: [0.25, 0.8, 0.25, 1] }}
+                                                            className={`w-4 rounded-t-full ${i >= 3 && i <= 5 ? 'bg-primary' : 'bg-primary/20'}`}
+                                                        />
                                                     ))}
                                                 </div>
                                                 <div className="flex justify-between text-[10px] text-slate-400 font-bold uppercase">
@@ -237,7 +244,13 @@ export default function MyCoursesPage() {
                                                                         <span className="text-primary">{enrollment.progress}%</span>
                                                                     </div>
                                                                     <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                                                                        <div className="bg-primary h-full rounded-full transition-all" style={{ width: `${enrollment.progress}%` }}></div>
+                                                                        <motion.div
+                                                                            initial={{ width: 0 }}
+                                                                            whileInView={{ width: `${enrollment.progress}%` }}
+                                                                            viewport={{ once: true }}
+                                                                            transition={{ duration: 1, delay: 0.3, ease: [0.25, 0.8, 0.25, 1] }}
+                                                                            className="bg-primary h-full rounded-full progress-bar-glow"
+                                                                        />
                                                                     </div>
                                                                     <div className="flex justify-between items-center text-xs text-slate-500 mt-1">
                                                                         <span>{enrollment.course._count?.modules || 0} Modules</span>
