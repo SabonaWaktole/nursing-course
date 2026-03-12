@@ -1,1 +1,0 @@
-# Remote mysql url="mysql://u176387188_excel:excelDatabase1@srv1300.hstgr.io:3306/u176387188_exceldb"
