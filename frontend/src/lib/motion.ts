@@ -260,14 +260,13 @@ export function useCounterAnimation(
   const [count, setCount] = useState(0);
   const ref = useRef<HTMLElement>(null);
   const isInView = useInView(ref, { once: true, margin: '-80px' });
-  const hasStarted = useRef(false);
 
   useEffect(() => {
     if (startOnView && !isInView) return;
-    if (hasStarted.current) return;
-    hasStarted.current = true;
 
+    let animationFrameId: number;
     const startTime = performance.now();
+    
     const step = (currentTime: number) => {
       const elapsed = (currentTime - startTime) / 1000;
       const progress = Math.min(elapsed / duration, 1);
@@ -275,10 +274,17 @@ export function useCounterAnimation(
       const eased = 1 - Math.pow(1 - progress, 3);
       setCount(Math.round(eased * end));
       if (progress < 1) {
-        requestAnimationFrame(step);
+        animationFrameId = requestAnimationFrame(step);
       }
     };
-    requestAnimationFrame(step);
+    
+    animationFrameId = requestAnimationFrame(step);
+    
+    return () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
   }, [end, duration, isInView, startOnView]);
 
   return { count, ref };

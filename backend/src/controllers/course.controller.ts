@@ -271,7 +271,7 @@ export const updateProgress = async (req: Request, res: Response) => {
 
         // Log activity
         try {
-            await prisma.activityLog.create({
+            await (prisma as any).activityLog.create({
                 data: { userId, type: 'PROGRESS_UPDATE', courseId },
             });
         } catch {}
@@ -299,7 +299,7 @@ export const getMyActivity = async (req: Request, res: Response) => {
         weekEnd.setDate(weekStart.getDate() + 7);
 
         // Fetch this week's activity logs
-        const logs = await prisma.activityLog.findMany({
+        const logs = await (prisma as any).activityLog.findMany({
             where: {
                 userId,
                 createdAt: { gte: weekStart, lt: weekEnd },
@@ -330,7 +330,7 @@ export const getMyActivity = async (req: Request, res: Response) => {
         const todayEnd = new Date(checkDate);
         todayEnd.setDate(todayEnd.getDate() + 1);
 
-        const todayCount = await prisma.activityLog.count({
+        const todayCount = await (prisma as any).activityLog.count({
             where: {
                 userId,
                 createdAt: { gte: checkDate, lt: todayEnd },
@@ -347,7 +347,7 @@ export const getMyActivity = async (req: Request, res: Response) => {
                 const dayEnd = new Date(prevDate);
                 dayEnd.setDate(dayEnd.getDate() + 1);
 
-                const count = await prisma.activityLog.count({
+                const count = await (prisma as any).activityLog.count({
                     where: {
                         userId,
                         createdAt: { gte: prevDate, lt: dayEnd },

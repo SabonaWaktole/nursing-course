@@ -100,7 +100,7 @@ export const submitQuiz = async (req: Request, res: Response) => {
 
         // Log activity for weekly stats & streak
         try {
-            await prisma.activityLog.create({
+            await (prisma as any).activityLog.create({
                 data: { userId, type: 'QUIZ_SUBMIT', courseId: quiz.courseId },
             });
         } catch {}

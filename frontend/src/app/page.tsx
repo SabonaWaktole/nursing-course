@@ -35,9 +35,9 @@ const TESTIMONIALS = [
 export default function LandingPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [stats, setStats] = useState({
-    students: 50000, // fallback
-    completionRate: 94,
-    clinics: 200,
+    students: 0,
+    completionRate: 0,
+    clinics: 0,
   });
 
   const sectionContainer = useSectionContainerVariants();
