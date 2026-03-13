@@ -27,6 +27,8 @@ export default function MyCoursesPage() {
     const [loading, setLoading] = useState(true);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [weeklyActivity, setWeeklyActivity] = useState<number[]>([0, 0, 0, 0, 0, 0, 0]);
+    const [streak, setStreak] = useState(0);
     const sectionContainer = useSectionContainerVariants();
     const sectionItem = useSectionItemVariants();
     const cardHover = useCardHoverMotion();
@@ -38,6 +40,10 @@ export default function MyCoursesPage() {
             setEnrollments(res.data);
             setLoading(false);
         }).catch(() => setLoading(false));
+        api.get('/courses/my/activity').then((res) => {
+            setWeeklyActivity(res.data.weeklyActivity);
+            setStreak(res.data.streak);
+        }).catch(() => {});
     }, [user, router]);
 
     const overallProgress = enrollments.length > 0
@@ -194,14 +200,14 @@ export default function MyCoursesPage() {
                                                     </div>
                                                 </div>
                                                 <div className="flex items-end justify-between h-24 px-1">
-                                                    {[40, 60, 30, 90, 70, 85, 45].map((h, i) => (
+                                                    {weeklyActivity.map((h, i) => (
                                                         <motion.div
                                                             key={i}
                                                             initial={{ height: 0 }}
                                                             whileInView={{ height: `${h}%` }}
                                                             viewport={{ once: true }}
                                                             transition={{ duration: 0.6, delay: i * 0.08, ease: [0.25, 0.8, 0.25, 1] }}
-                                                            className={`w-5 rounded-lg ${i >= 3 && i <= 5 ? 'bg-gradient-to-t from-primary to-cyan-400 shadow-[0_0_8px_rgba(13,185,242,0.3)]' : 'bg-primary/15'}`}
+                                                            className={`w-5 rounded-lg ${h > 0 ? 'bg-gradient-to-t from-primary to-cyan-400 shadow-[0_0_8px_rgba(13,185,242,0.3)]' : 'bg-primary/15'}`}
                                                         />
                                                     ))}
                                                 </div>
@@ -211,7 +217,7 @@ export default function MyCoursesPage() {
                                                 <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                                                     <div className="flex flex-col">
                                                         <span className="text-[11px] text-slate-400 font-medium">Learning Streak</span>
-                                                        <span className="text-lg font-bold text-slate-900 dark:text-white">12 Days</span>
+                                                        <span className="text-lg font-bold text-slate-900 dark:text-white">{streak} {streak === 1 ? 'Day' : 'Days'}</span>
                                                     </div>
                                                     <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center">
                                                         <span className="material-symbols-outlined text-orange-500 text-2xl">local_fire_department</span>

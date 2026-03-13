@@ -44,7 +44,7 @@ export default function CertificationsPage() {
             />
 
             {/* Main Content */}
-            <main className="flex-grow flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 py-16 relative z-10">
+            <main className="flex-grow flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 pt-24 pb-16 relative z-10">
                 {/* Header */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
