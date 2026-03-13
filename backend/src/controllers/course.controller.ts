@@ -268,8 +268,104 @@ export const updateProgress = async (req: Request, res: Response) => {
                 completed: parseInt(progress) >= 100,
             },
         });
+
+        // Log activity
+        try {
+            await prisma.activityLog.create({
+                data: { userId, type: 'PROGRESS_UPDATE', courseId },
+            });
+        } catch {}
+
         res.json(enrollment);
     } catch (error: any) {
         res.status(500).json({ message: 'Error updating progress' });
+    }
+};
+
+// Weekly activity + learning streak
+export const getMyActivity = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user.userId;
+
+        // Get the start of the current week (Monday)
+        const now = new Date();
+        const dayOfWeek = now.getDay(); // 0=Sun, 1=Mon, ...
+        const diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        const weekStart = new Date(now);
+        weekStart.setDate(now.getDate() - diffToMonday);
+        weekStart.setHours(0, 0, 0, 0);
+
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 7);
+
+        // Fetch this week's activity logs
+        const logs = await prisma.activityLog.findMany({
+            where: {
+                userId,
+                createdAt: { gte: weekStart, lt: weekEnd },
+            },
+            select: { createdAt: true },
+        });
+
+        // Count events per day-of-week (Mon=0 .. Sun=6)
+        const dayCounts = [0, 0, 0, 0, 0, 0, 0];
+        logs.forEach((log) => {
+            const d = log.createdAt.getDay(); // 0=Sun
+            const idx = d === 0 ? 6 : d - 1; // Map to Mon=0 .. Sun=6
+            dayCounts[idx]++;
+        });
+
+        // Normalize to percentages (0-100) relative to max day
+        const maxCount = Math.max(...dayCounts, 1);
+        const weeklyActivity = dayCounts.map((c) =>
+            Math.round((c / maxCount) * 100)
+        );
+
+        // Calculate streak: consecutive days with >= 1 activity going backwards from today
+        let streak = 0;
+        const checkDate = new Date(now);
+        checkDate.setHours(0, 0, 0, 0);
+
+        // Check if there's any activity today first
+        const todayEnd = new Date(checkDate);
+        todayEnd.setDate(todayEnd.getDate() + 1);
+
+        const todayCount = await prisma.activityLog.count({
+            where: {
+                userId,
+                createdAt: { gte: checkDate, lt: todayEnd },
+            },
+        });
+
+        if (todayCount > 0) {
+            streak = 1;
+            // Now check previous days
+            let prevDate = new Date(checkDate);
+            prevDate.setDate(prevDate.getDate() - 1);
+
+            for (let i = 0; i < 365; i++) {
+                const dayEnd = new Date(prevDate);
+                dayEnd.setDate(dayEnd.getDate() + 1);
+
+                const count = await prisma.activityLog.count({
+                    where: {
+                        userId,
+                        createdAt: { gte: prevDate, lt: dayEnd },
+                    },
+                });
+
+                if (count > 0) {
+                    streak++;
+                    prevDate.setDate(prevDate.getDate() - 1);
+                } else {
+                    break;
+                }
+            }
+        }
+
+        res.json({ weeklyActivity, streak });
+    } catch (error: any) {
+        console.error('getMyActivity error:', error);
+        res.status(500).json({ message: 'Error fetching activity' });
     }
 };

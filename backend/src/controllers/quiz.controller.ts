@@ -98,6 +98,13 @@ export const submitQuiz = async (req: Request, res: Response) => {
             },
         });
 
+        // Log activity for weekly stats & streak
+        try {
+            await prisma.activityLog.create({
+                data: { userId, type: 'QUIZ_SUBMIT', courseId: quiz.courseId },
+            });
+        } catch {}
+
         // Check if course is fully completed (passed all final exams)
         let courseCompleted = false;
         let nextExamId: string | undefined = undefined;

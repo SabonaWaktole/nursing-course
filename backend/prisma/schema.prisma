@@ -20,6 +20,7 @@ model User {
   enrollments Enrollment[]
   results     Result[]
   certificates Certificate[]
+  activityLogs ActivityLog[]
   teachingCourses Course[] // Relation for instructors/admin
 }
 
@@ -144,4 +145,15 @@ model Enrollment {
   createdAt DateTime @default(now())
   
   @@unique([userId, courseId])
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // 'LESSON_VIEW', 'QUIZ_SUBMIT', 'PROGRESS_UPDATE'
+  courseId  String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
 }

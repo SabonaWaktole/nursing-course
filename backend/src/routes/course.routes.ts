@@ -13,6 +13,7 @@ import {
     enrollInCourse,
     getMyEnrollments,
     updateProgress,
+    getMyActivity,
 } from '../controllers/course.controller';
 import { authenticate, requireAdmin } from '../middleware/auth.middleware';
 
@@ -23,6 +24,7 @@ router.get('/', getAllCourses);
 
 // Student (must be before /:id to prevent "my" matching as courseId)
 router.get('/my/enrollments', authenticate, getMyEnrollments);
+router.get('/my/activity', authenticate, getMyActivity);
 
 router.get('/:id', getCourseById);
 router.post('/:courseId/enroll', authenticate, enrollInCourse);
