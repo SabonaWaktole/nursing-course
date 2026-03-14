@@ -9,3 +9,4 @@ frontend/.next/*
 frontend/build_output.txt
 remote_url.txt
 .jj/
+old_db_backup/*

@@ -200,6 +200,23 @@ export const revokeCertificate = async (req: Request, res: Response) => {
     }
 };
 
+export const updateCertificate = async (req: Request, res: Response) => {
+    try {
+        const id = req.params.id as string;
+        const { certificateNumber } = req.body;
+
+        const cert = await prisma.certificate.update({
+            where: { id },
+            data: { certificateNumber }
+        });
+
+        res.json(cert);
+    } catch (error: any) {
+        console.error('updateCertificate error:', error);
+        res.status(500).json({ message: 'Error updating certificate' });
+    }
+};
+
 export const getNotifications = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user?.userId;

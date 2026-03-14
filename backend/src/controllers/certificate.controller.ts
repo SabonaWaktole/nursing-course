@@ -46,9 +46,27 @@ export const generateCertificate = async (req: Request, res: Response) => {
             return res.json(existing);
         }
 
+        // Fetch course details and admin settings for a snapshot
+        const course = await prisma.course.findUnique({ where: { id: courseId } });
+        let settings = await prisma.adminSettings.findUnique({ where: { id: 'singleton' } });
+        if (!settings) {
+            settings = await prisma.adminSettings.create({ data: { id: 'singleton' } });
+        }
+
         // Create certificate record
         const certificate = await prisma.certificate.create({
-            data: { userId, courseId: courseId },
+            data: { 
+                userId, 
+                courseId: courseId,
+                hoursAttended: course?.hours || 0,
+                courseTitle: course?.title,
+                organizationName: settings.organizationName,
+                organizationAddress: settings.organizationAddress,
+                organizationPhone: settings.organizationPhone,
+                directorName: settings.directorName,
+                directorTitle: settings.directorTitle,
+                providerId: settings.providerId
+            },
         });
 
         res.status(201).json(certificate);
@@ -104,6 +122,32 @@ export const downloadCertificate = async (req: Request, res: Response) => {
         const badgeBg = '#f0f9ff';     // primary/5 equivalent
         const badgeBorder = '#bae6fd';  // primary/20 equivalent
 
+        // Fallback info for old certificates without snapshot data
+        const title = certificate.courseTitle || certificate.course.title;
+        let orgName = certificate.organizationName;
+        let orgAddress = certificate.organizationAddress;
+        let orgPhone = certificate.organizationPhone;
+        let dirName = certificate.directorName;
+        let dirTitle = certificate.directorTitle;
+        let provId = certificate.providerId;
+
+        if (!orgName) {
+            // Try to fetch live settings for fallback
+            const liveSettings = await prisma.adminSettings.findUnique({ where: { id: 'singleton' } });
+            if (liveSettings) {
+                orgName = liveSettings.organizationName;
+                orgAddress = liveSettings.organizationAddress;
+                orgPhone = liveSettings.organizationPhone;
+                dirName = liveSettings.directorName;
+                dirTitle = liveSettings.directorTitle;
+                provId = liveSettings.providerId;
+            } else {
+                orgName = 'Excelcommunity Living Inc';
+                dirName = 'Administrator';
+                dirTitle = 'Program Director';
+            }
+        }
+
         // ============ BACKGROUND ============
         doc.rect(0, 0, W, H).fill('#ffffff');
 
@@ -125,19 +169,32 @@ export const downloadCertificate = async (req: Request, res: Response) => {
         doc.moveTo(W - 18, H - 18).lineTo(W - 150, H - 18).lineTo(W - 18, H - 150).closePath().fill(primary);
         doc.restore();
 
-        // ============ HEADER: BRANDING ============
-        const topY = 52;
+        // ============ HEADER: BRANDING & ORG INFO ============
+        const topY = 40;
         doc.font('Helvetica-Bold').fontSize(14).fillColor(primary)
-            .text('✚  Excelcommunity Living Inc', 0, topY, { align: 'center' });
+            .text(`✚  ${orgName}`, 0, topY, { align: 'center' });
+        
+        let orgDetails = '';
+        if (orgAddress) orgDetails += orgAddress;
+        if (orgPhone) orgDetails += orgDetails ? ` | ${orgPhone}` : orgPhone;
+        if (provId) orgDetails += orgDetails ? ` | ID: ${provId}` : `ID: ${provId}`;
+        
+        if (orgDetails) {
+            doc.font('Helvetica').fontSize(9).fillColor(slate500)
+                .text(orgDetails, 0, topY + 18, { align: 'center' });
+        }
 
         // ============ TITLE ============
         doc.font('Times-Bold').fontSize(26).fillColor(dark)
-            .text('Certificate of Completion', 0, topY + 30, { align: 'center' });
-        doc.font('Times-Roman').fontSize(17).fillColor(slate700)
-            .text('Professional Training Program', 0, topY + 60, { align: 'center' });
+            .text('Certificate of Completion', 0, topY + 40, { align: 'center' });
+        
+        if (certificate.certificateNumber) {
+            doc.font('Times-Roman').fontSize(14).fillColor(primaryDark)
+                .text(`Certificate No: ${certificate.certificateNumber}`, 0, topY + 70, { align: 'center' });
+        }
 
         // ============ DECORATIVE LINE ============
-        const lineY = topY + 88;
+        const lineY = topY + 95;
         doc.save();
         doc.roundedRect(W / 2 - 48, lineY, 96, 4, 2).fill(primary);
         doc.restore();
@@ -149,40 +206,46 @@ export const downloadCertificate = async (req: Request, res: Response) => {
             });
 
         // ============ STUDENT NAME ============
-        doc.font('GreatVibes').fontSize(48).fillColor(dark)
-            .text(certificate.user.name || 'Student', 0, lineY + 46, { align: 'center' });
+        doc.font('GreatVibes').fontSize(40).fillColor(dark)
+            .text(certificate.user.name || 'Student', 0, lineY + 42, { align: 'center' });
 
         // ============ UNDERLINE BELOW NAME ============
-        const nameUnderY = lineY + 102;
+        const nameUnderY = lineY + 95;
         doc.moveTo(W / 2 - 120, nameUnderY).lineTo(W / 2 + 120, nameUnderY)
             .lineWidth(0.5).stroke(borderLight);
 
         // ============ "HAS SUCCESSFULLY COMPLETED..." ============
         doc.font('Helvetica').fontSize(10).fillColor(slate500)
-            .text('HAS SUCCESSFULLY COMPLETED THE APPROVED TRAINING PROGRAM FOR', 0, nameUnderY + 14, {
+            .text('HAS SUCCESSFULLY COMPLETED THE TRAINING PROGRAM FOR', 0, nameUnderY + 12, {
                 align: 'center', characterSpacing: 2,
             });
 
         // ============ COURSE TITLE ============
-        doc.font('Helvetica-Bold').fontSize(22).fillColor(primary)
-            .text(certificate.course.title, 80, nameUnderY + 38, {
+        doc.font('Helvetica-Bold').fontSize(20).fillColor(primary)
+            .text(title, 80, nameUnderY + 30, {
                 align: 'center', width: W - 160,
             });
+            
+        // ============ HOURS ============
+        if (certificate.hoursAttended) {
+            doc.font('Helvetica').fontSize(10).fillColor(slate700)
+                .text(`Total Hours: ${certificate.hoursAttended}`, 0, nameUnderY + 58, { align: 'center' });
+        }
 
         // ============ AUTHENTICATED BADGE ============
-        const badgeY = nameUnderY + 76;
-        const badgeW = 220;
-        const badgeH = 26;
+        const badgeY = nameUnderY + 75;
+        const badgeW = 200;
+        const badgeH = 24;
         const badgeX = W / 2 - badgeW / 2;
         doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 6).fill(badgeBg);
         doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 6).lineWidth(0.5).stroke(badgeBorder);
-        doc.font('Helvetica-Bold').fontSize(10).fillColor(primaryDark)
-            .text('✓  Authenticated Record', badgeX, badgeY + 8, {
+        doc.font('Helvetica-Bold').fontSize(9).fillColor(primaryDark)
+            .text('✓  Authenticated Record', badgeX, badgeY + 7, {
                 width: badgeW, align: 'center',
             });
 
         // ============ BOTTOM SECTION: DATE | SEAL | SIGNATURE ============
-        const bottomY = H - 120;
+        const bottomY = H - 125;
 
         // --- Date (left) ---
         const dateStr = certificate.issuedAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
@@ -196,35 +259,35 @@ export const downloadCertificate = async (req: Request, res: Response) => {
 
         // --- Seal (center) ---
         const baseUrl = process.env.NODE_ENV === 'production'
-            ? process.env.FRONTEND_URL
+            ? process.env.FRONTEND_URL || 'https://cnaceus.excelcommunityliving.website'
             : 'http://localhost:3000';
 
-        if (!baseUrl) {
-            console.warn("FRONTEND_URL is not set in environment variables! QR code will not resolve correctly.");
-        }
-
         const verifyUrl = `${baseUrl}/certificate/verify/${certificate.uniqueId}`;
-        const qrCodeDataUrl = await QRCode.toDataURL(verifyUrl, { margin: 1, width: 90, color: { dark: primaryDark, light: '#ffffff' } });
+        const qrCodeDataUrl = await QRCode.toDataURL(verifyUrl, { margin: 1, width: 80, color: { dark: primaryDark, light: '#ffffff' } });
 
         const cx = W / 2;
         const cy = bottomY;
-        doc.image(qrCodeDataUrl, cx - 45, cy - 20, { width: 90 });
-        doc.font('Helvetica-Bold').fontSize(8).fillColor(primaryDark)
-            .text('SCAN TO VERIFY', cx - 50, cy + 75, { width: 100, align: 'center', characterSpacing: 1 });
+        doc.image(qrCodeDataUrl, cx - 40, cy - 20, { width: 80 });
+        doc.font('Helvetica-Bold').fontSize(7).fillColor(primaryDark)
+            .text('SCAN TO VERIFY', cx - 50, cy + 65, { width: 100, align: 'center', characterSpacing: 1 });
 
         // --- Signature (right) ---
         doc.font('GreatVibes').fontSize(22).fillColor(dark)
-            .text('Administrator', W - 280, bottomY - 5, { width: 220, align: 'center' });
+            .text(dirName || 'Administrator', W - 280, bottomY - 5, { width: 220, align: 'center' });
         doc.moveTo(W - 280, bottomY + 20).lineTo(W - 60, bottomY + 20).lineWidth(0.5).stroke('#cbd5e1');
         doc.font('Helvetica').fontSize(7).fillColor(slate500)
-            .text('PROGRAM DIRECTOR', W - 280, bottomY + 26, {
+            .text((dirTitle || 'PROGRAM DIRECTOR').toUpperCase(), W - 280, bottomY + 26, {
                 width: 220, align: 'center', characterSpacing: 2,
             });
 
-        // ============ FOOTER: CREDENTIAL ID ============
+        // ============ FOOTER: RETENTION & CREDENTIAL ID ============
+        const footerText = "This record shall be retained by CNA or HHA for period of four (4) years starting from the date of enrollment.";
+        doc.font('Helvetica-Oblique').fontSize(8).fillColor(primaryDark)
+            .text(footerText, 0, H - 55, { align: 'center', width: W });
+
         doc.font('Courier').fontSize(8).fillColor(slate400)
-            .text(`Credential ID: ${certificate.uniqueId}  •  Excelcommunity Living Inc`,
-                0, H - 42, { align: 'center', width: W });
+            .text(`Credential ID: ${certificate.uniqueId}  •  ${orgName}`,
+                0, H - 40, { align: 'center', width: W });
 
         doc.end();
     } catch (error: any) {
@@ -260,7 +323,7 @@ export const verifyCertificate = async (req: Request, res: Response) => {
             where: { uniqueId },
             include: {
                 user: { select: { name: true } },
-                course: { select: { title: true } },
+                course: { select: { title: true, hours: true } },
             },
         });
         const certificate = cert as any;
@@ -269,13 +332,44 @@ export const verifyCertificate = async (req: Request, res: Response) => {
             return res.status(404).json({ valid: false, message: 'Certificate not found' });
         }
 
+        let orgName = certificate.organizationName;
+        let orgAddress = certificate.organizationAddress;
+        let orgPhone = certificate.organizationPhone;
+        let dirName = certificate.directorName;
+        let dirTitle = certificate.directorTitle;
+        let provId = certificate.providerId;
+
+        if (!orgName) {
+            const liveSettings = await prisma.adminSettings.findUnique({ where: { id: 'singleton' } });
+            if (liveSettings) {
+                orgName = liveSettings.organizationName;
+                orgAddress = liveSettings.organizationAddress;
+                orgPhone = liveSettings.organizationPhone;
+                dirName = liveSettings.directorName;
+                dirTitle = liveSettings.directorTitle;
+                provId = liveSettings.providerId;
+            } else {
+                orgName = 'Excelcommunity Living Inc';
+                dirName = 'Administrator';
+                dirTitle = 'Program Director';
+            }
+        }
+
         res.json({
             valid: true,
             certificate: {
                 uniqueId: certificate.uniqueId,
                 studentName: certificate.user.name,
-                courseName: certificate.course.title,
+                courseName: certificate.courseTitle || certificate.course?.title,
                 issuedAt: certificate.issuedAt,
+                certificateNumber: certificate.certificateNumber,
+                hoursAttended: certificate.hoursAttended || certificate.course?.hours,
+                organizationName: orgName,
+                organizationAddress: orgAddress,
+                organizationPhone: orgPhone,
+                directorName: dirName,
+                directorTitle: dirTitle,
+                providerId: provId
             },
         });
     } catch (error: any) {

@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import RoleGuard from '@/components/RoleGuard';
 import AdminSidebar from '@/components/AdminSidebar';
+import AdminSettingsTab from '@/components/AdminSettingsTab';
 import { getFileUrl } from '@/lib/url-utils';
 
 export default function AdminDashboard() {
@@ -18,8 +19,10 @@ export default function AdminDashboard() {
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [courses, setCourses] = useState<Course[]>([]);
     const [loading, setLoading] = useState(true);
-    const [tab, setTab] = useState<'overview' | 'courses' | 'users' | 'results' | 'certificates'>('overview');
+    const [tab, setTab] = useState<'overview' | 'courses' | 'users' | 'results' | 'certificates' | 'settings'>('overview');
     const [certificates, setCertificates] = useState<any[]>([]);
+    const [editingCertId, setEditingCertId] = useState<string | null>(null);
+    const [certNumInput, setCertNumInput] = useState('');
 
     // Course form
     const [showCourseForm, setShowCourseForm] = useState(false);
@@ -185,6 +188,16 @@ export default function AdminDashboard() {
             setNotifications(notifsRes.data);
         } catch (error: any) {
             alert(error.response?.data?.message || 'Error revoking certificate');
+        }
+    };
+
+    const handleUpdateCertificateNumber = async (certId: string) => {
+        try {
+            await api.put(`/admin/certificates/${certId}`, { certificateNumber: certNumInput });
+            setEditingCertId(null);
+            loadCertificates();
+        } catch (error: any) {
+            alert(error.response?.data?.message || 'Error updating certificate number');
         }
     };
 
@@ -1597,6 +1610,7 @@ export default function AdminDashboard() {
                                                                 <th className="px-6 py-4 font-semibold shrink-0" scope="col">Certificate ID</th>
                                                                 <th className="px-6 py-4 font-semibold min-w-[200px]" scope="col">Student Name</th>
                                                                 <th className="px-0 py-4 font-semibold min-w-[200px]" scope="col">Course</th>
+                                                                <th className="px-6 py-4 font-semibold" scope="col">Certificate No.</th>
                                                                 <th className="px-6 py-4 font-semibold shrink-0" scope="col">Date Submitted</th>
                                                                 <th className="px-6 py-4 font-semibold shrink-0" scope="col">Status</th>
                                                                 <th className="px-6 py-4 font-semibold shrink-0 text-right" scope="col">Actions</th>
@@ -1620,6 +1634,37 @@ export default function AdminDashboard() {
                                                                             <span className="truncate">{c.user?.name || '—'}</span>
                                                                         </td>
                                                                         <td className="px-0 py-4 truncate max-w-xs">{c.course?.title}</td>
+                                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                                            {editingCertId === c.id ? (
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <input 
+                                                                                        type="text" 
+                                                                                        value={certNumInput} 
+                                                                                        onChange={(e) => setCertNumInput(e.target.value)} 
+                                                                                        className="w-24 px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-primary outline-none text-slate-900 dark:text-white dark:bg-slate-800"
+                                                                                        placeholder="Cert No."
+                                                                                    />
+                                                                                    <button onClick={() => handleUpdateCertificateNumber(c.id)} className="text-emerald-500 hover:text-emerald-700">
+                                                                                        <span className="material-symbols-outlined text-[16px]">check</span>
+                                                                                    </button>
+                                                                                    <button onClick={() => setEditingCertId(null)} className="text-slate-400 hover:text-slate-600">
+                                                                                        <span className="material-symbols-outlined text-[16px]">close</span>
+                                                                                    </button>
+                                                                                </div>
+                                                                            ) : (
+                                                                                <div className="flex items-center gap-2 group/edit">
+                                                                                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                                                                                        {c.certificateNumber || <span className="text-slate-400 italic font-normal">Unassigned</span>}
+                                                                                    </span>
+                                                                                    <button 
+                                                                                        onClick={() => { setEditingCertId(c.id); setCertNumInput(c.certificateNumber || ''); }}
+                                                                                        className="opacity-0 group-hover/edit:opacity-100 text-primary hover:text-primary/80 transition-opacity"
+                                                                                    >
+                                                                                        <span className="material-symbols-outlined text-[14px]">edit</span>
+                                                                                    </button>
+                                                                                </div>
+                                                                            )}
+                                                                        </td>
                                                                         <td className="px-6 py-4 whitespace-nowrap">{new Date(c.issuedAt).toLocaleDateString()}</td>
                                                                         <td className="px-6 py-4 whitespace-nowrap">
                                                                             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${c.status === 'APPROVED' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' :
@@ -1659,7 +1704,12 @@ export default function AdminDashboard() {
                                                                                         <button className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md text-slate-400 hover:text-primary transition-colors" title="View Details">
                                                                                             <span className="material-symbols-outlined text-lg">visibility</span>
                                                                                         </button>
-                                                                                        <button className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md text-slate-400 hover:text-primary transition-colors" title="Download PDF">
+                                                                                        <button 
+                                                                                            onClick={() => {
+                                                                                                window.open(`${getFileUrl(`/api/public/certificates/${c.uniqueId}/download`)}`, '_blank');
+                                                                                            }}
+                                                                                            className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md text-slate-400 hover:text-primary transition-colors" title="Download PDF"
+                                                                                        >
                                                                                             <span className="material-symbols-outlined text-lg">download</span>
                                                                                         </button>
                                                                                     </div>
@@ -1685,6 +1735,15 @@ export default function AdminDashboard() {
                                                     </span>
                                                 </div>
                                             </div>
+                                        </div>
+                                    )
+                                }
+
+                                {/* Settings Tab */}
+                                {
+                                    tab === 'settings' && (
+                                        <div className="flex-1 overflow-y-auto p-4 sm:p-8 scroll-smooth max-w-5xl mx-auto">
+                                            <AdminSettingsTab />
                                         </div>
                                     )
                                 }
