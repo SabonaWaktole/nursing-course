@@ -9,3 +9,9 @@ frontend/.next/*
 frontend/build_output.txt
 remote_url.txt
 .jj/
+old_db_backup/*
+*.txt
+test_mysql.js
+test_quiz.js
+test_update.js
+test2.js

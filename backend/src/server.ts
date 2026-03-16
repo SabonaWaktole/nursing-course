@@ -12,6 +12,7 @@ import certificateRoutes from './routes/certificate.routes';
 import adminRoutes from './routes/admin.routes';
 import uploadRoutes from './routes/upload.routes';
 import publicRoutes from './routes/public.routes';
+import settingRoutes from './routes/setting.routes';
 import prisma from './utils/prisma';
 
 const app = express();
@@ -66,6 +67,7 @@ app.use('/api/certificates', certificateRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/public', publicRoutes);
+app.use('/api/settings', settingRoutes);
 
 // Error handling
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

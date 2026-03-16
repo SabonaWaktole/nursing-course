@@ -37,6 +37,7 @@ model Course {
   category    String?
   tags        Json?
   price       Float?   @default(0)
+  hours       Int?     @default(0)
   instructorId String
   instructor  User     @relation(fields: [instructorId], references: [id])
   
@@ -115,6 +116,19 @@ model Certificate {
   user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   courseId  String
   course    Course            @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  
+  // New Fields for Redesign
+  certificateNumber    String?
+  hoursAttended        Int?
+  
+  // Snapshot data at the time of issuance
+  courseTitle          String?
+  organizationName     String?
+  organizationAddress  String?
+  organizationPhone    String?
+  directorName         String?
+  directorTitle        String?
+  providerId           String?
 }
 
 enum CertificateStatus {
@@ -156,4 +170,16 @@ model ActivityLog {
   createdAt DateTime @default(now())
 
   @@index([userId, createdAt])
+}
+
+model AdminSettings {
+  id                  String   @id @default("singleton")
+  organizationName    String   @default("Excelcommunity Living Inc")
+  organizationAddress String   @default("")
+  organizationPhone   String   @default("")
+  directorName        String   @default("Administrator")
+  directorTitle       String   @default("Program Director")
+  providerId          String   @default("")
+  
+  updatedAt           DateTime @updatedAt
 }

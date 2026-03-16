@@ -3,3 +3,5 @@ node_modules
 .env
 
 /generated/prisma
+old_db_backup/*
+*.txt

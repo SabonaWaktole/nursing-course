@@ -54,7 +54,7 @@ export const getCourseById = async (req: Request, res: Response) => {
 
 export const createCourse = async (req: Request, res: Response) => {
     try {
-        const { title, description, price, thumbnail, category, tags } = req.body;
+        const { title, description, price, hours, thumbnail, category, tags } = req.body;
         const instructorId = (req as any).user.userId;
 
         const course = await prisma.course.create({
@@ -62,6 +62,7 @@ export const createCourse = async (req: Request, res: Response) => {
                 title,
                 description,
                 price: parseFloat(price) || 0,
+                hours: parseInt(hours) || 0,
                 thumbnail,
                 category,
                 // TEMPORARY FIX: Prisma 5 + Supabase JSON array bug (08P01)
@@ -82,9 +83,10 @@ export const createCourse = async (req: Request, res: Response) => {
 export const updateCourse = async (req: Request, res: Response) => {
     try {
         const id = req.params.id as string;
-        const { title, description, price, thumbnail, category, tags } = req.body;
+        const { title, description, price, hours, thumbnail, category, tags } = req.body;
 
         const parsedPrice = price !== undefined && price !== null && price !== '' ? parseFloat(price.toString()) : undefined;
+        const parsedHours = hours !== undefined && hours !== null && hours !== '' ? parseInt(hours.toString()) : undefined;
 
         const course = await prisma.course.update({
             where: { id },
@@ -92,6 +94,7 @@ export const updateCourse = async (req: Request, res: Response) => {
                 title, 
                 description, 
                 price: parsedPrice, 
+                hours: parsedHours,
                 thumbnail, 
                 category,
                 // TEMPORARY FIX: Prisma 5 + Supabase JSON array bug (08P01) 

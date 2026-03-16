@@ -50,6 +50,21 @@ export default function StudentHeader({ title, subtitle, icon, onMobileMenuOpen 
         } catch { }
     };
 
+    const markAllRead = async () => {
+        try {
+            await api.patch('/admin/notifications/read-all');
+            setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+        } catch { }
+    };
+
+    const clearAll = async () => {
+        try {
+            await api.delete('/admin/notifications');
+            setNotifications([]);
+            setShowNotifications(false);
+        } catch { }
+    };
+
     const NAV_LINKS = [
         { href: '/my-courses', label: 'My Courses', icon: 'school' },
         { href: '/courses', label: 'Courses', icon: 'explore' },
@@ -199,6 +214,17 @@ export default function StudentHeader({ title, subtitle, icon, onMobileMenuOpen 
                                             </div>
                                         )}
                                     </div>
+                                    {notifications.length > 0 && (
+                                        <div className="p-3 bg-slate-50/80 dark:bg-slate-800/50 flex items-center justify-between backdrop-blur-sm border-t border-slate-100 dark:border-slate-800">
+                                            {unreadCount > 0 ? (
+                                                <button onClick={markAllRead} className="text-[10px] font-bold text-slate-500 hover:text-primary transition-colors flex items-center gap-1">
+                                                    <span className="material-symbols-outlined text-[12px]">done_all</span>
+                                                    Mark all as read
+                                                </button>
+                                            ) : <div></div>}
+                                            <button onClick={clearAll} className="text-[10px] font-black uppercase text-slate-400 hover:text-red-500 transition-colors">Clear All</button>
+                                        </div>
+                                    )}
                                 </motion.div>
                             </>
                         )}

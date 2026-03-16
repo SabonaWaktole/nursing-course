@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import RoleGuard from '@/components/RoleGuard';
 import AdminSidebar from '@/components/AdminSidebar';
+import AdminSettingsTab from '@/components/AdminSettingsTab';
 import { getFileUrl } from '@/lib/url-utils';
 
 export default function AdminDashboard() {
@@ -18,8 +19,10 @@ export default function AdminDashboard() {
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [courses, setCourses] = useState<Course[]>([]);
     const [loading, setLoading] = useState(true);
-    const [tab, setTab] = useState<'overview' | 'courses' | 'users' | 'results' | 'certificates'>('overview');
+    const [tab, setTab] = useState<'overview' | 'courses' | 'users' | 'results' | 'certificates' | 'settings'>('overview');
     const [certificates, setCertificates] = useState<any[]>([]);
+    const [editingCertId, setEditingCertId] = useState<string | null>(null);
+    const [certNumInput, setCertNumInput] = useState('');
 
     // Course form
     const [showCourseForm, setShowCourseForm] = useState(false);
@@ -62,6 +65,39 @@ export default function AdminDashboard() {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isDark, setIsDark] = useState(false);
 
+    // Search & filter state
+    const [adminSearch, setAdminSearch] = useState('');
+    const [courseFilter, setCourseFilter] = useState('');
+    const [courseCategoryFilter, setCourseCategoryFilter] = useState('All');
+    const [userSearch, setUserSearch] = useState('');
+    const [userRoleFilter, setUserRoleFilter] = useState('');
+    const [certCourseFilter, setCertCourseFilter] = useState('All');
+
+    // Computed filtered lists
+    const filteredCourses = courses.filter((c) => {
+        const searchTerm = (tab === 'courses' && adminSearch) ? adminSearch : courseFilter;
+        const matchesSearch = !searchTerm || c.title.toLowerCase().includes(searchTerm.toLowerCase()) || c.description.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesCategory = courseCategoryFilter === 'All' || c.category === courseCategoryFilter;
+        return matchesSearch && matchesCategory;
+    });
+
+    const filteredUsers = users.filter((u: any) => {
+        const searchTerm = (tab === 'users' && adminSearch) ? adminSearch : userSearch;
+        const matchesSearch = !searchTerm || (u.name && u.name.toLowerCase().includes(searchTerm.toLowerCase())) || u.email.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesRole = !userRoleFilter || u.role === userRoleFilter;
+        return matchesSearch && matchesRole;
+    });
+
+    const filteredCertificates = certificates.filter((c: any) => {
+        const searchTerm = (tab === 'certificates' && adminSearch) ? adminSearch : '';
+        const matchesCourse = certCourseFilter === 'All' || c.course?.title === certCourseFilter;
+        const matchesSearch = !searchTerm || (c.user?.name && c.user.name.toLowerCase().includes(searchTerm.toLowerCase())) || c.course?.title?.toLowerCase().includes(searchTerm.toLowerCase());
+        return matchesCourse && matchesSearch;
+    });
+
+    const uniqueCourseCategories = ['All', ...Array.from(new Set(courses.map(c => c.category).filter(Boolean)))] as string[];
+    const uniqueCertCourseTitles = ['All', ...Array.from(new Set(certificates.map((c: any) => c.course?.title).filter(Boolean)))] as string[];
+
     useEffect(() => {
         // Initialize theme state
         setIsDark(document.documentElement.classList.contains('dark'));
@@ -74,21 +110,25 @@ export default function AdminDashboard() {
 
     const loadData = async () => {
         try {
-            const [statsRes, coursesRes, usersRes, resultsRes, notifsRes] = await Promise.all([
+            const results = await Promise.allSettled([
                 api.get('/admin/dashboard'),
                 api.get('/courses'),
                 api.get('/admin/users'),
                 api.get('/quizzes/results/all'),
                 api.get('/admin/notifications')
             ]);
-            setStats(statsRes.data);
-            setCourses(coursesRes.data);
-            setUsers(usersRes.data);
-            setResults(resultsRes.data);
-            setNotifications(notifsRes.data);
-            setLoading(false);
+            if (results[0].status === 'fulfilled') setStats(results[0].value.data);
+            if (results[1].status === 'fulfilled') setCourses(results[1].value.data);
+            if (results[2].status === 'fulfilled') setUsers(results[2].value.data);
+            if (results[3].status === 'fulfilled') setResults(results[3].value.data);
+            if (results[4].status === 'fulfilled') setNotifications(results[4].value.data);
+            // Log any failed endpoints
+            results.forEach((r, i) => {
+                if (r.status === 'rejected') console.warn(`Admin endpoint ${i} failed:`, r.reason?.message);
+            });
         } catch (error) {
             console.error('Failed to load admin data', error);
+        } finally {
             setLoading(false);
         }
     };
@@ -188,11 +228,42 @@ export default function AdminDashboard() {
         }
     };
 
+    const handleUpdateCertificateNumber = async (certId: string) => {
+        try {
+            await api.put(`/admin/certificates/${certId}`, { certificateNumber: certNumInput });
+            setEditingCertId(null);
+            loadCertificates();
+        } catch (error: any) {
+            alert(error.response?.data?.message || 'Error updating certificate number');
+        }
+    };
+
     const markRead = async (id: string) => {
         try {
             await api.patch(`/admin/notifications/${id}/read`);
             setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-        } catch { }
+        } catch (err) {
+            console.error('Failed to mark notification rad', err);
+        }
+    };
+
+    const markAllRead = async () => {
+        try {
+            await api.patch('/admin/notifications/read-all');
+            setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+        } catch (err) {
+            console.error('Failed to mark all notifications read', err);
+        }
+    };
+
+    const clearAll = async () => {
+        try {
+            await api.delete('/admin/notifications');
+            setNotifications([]);
+            setShowNotifications(false);
+        } catch (err) {
+            console.error('Failed to clear notifications', err);
+        }
     };
 
     const handleEditCourseInfo = (course: any) => {
@@ -548,6 +619,8 @@ export default function AdminDashboard() {
                                 <input
                                     type="text"
                                     placeholder="Search..."
+                                    value={adminSearch}
+                                    onChange={(e) => setAdminSearch(e.target.value)}
                                     className="pl-10 pr-4 py-2 w-44 xl:w-52 rounded-2xl bg-slate-50/60 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800/70 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-primary/50 focus:border-primary/30 text-sm text-slate-700 dark:text-slate-300 placeholder:text-slate-400 transition-all duration-300"
                                 />
                             </div>
@@ -639,8 +712,14 @@ export default function AdminDashboard() {
                                             )}
                                         </div>
                                         {notifications.length > 0 && (
-                                            <div className="p-3 bg-slate-50/80 dark:bg-slate-800/50 text-center backdrop-blur-sm">
-                                                <button className="text-[10px] font-black uppercase text-slate-400 hover:text-primary transition-colors">Clear All</button>
+                                            <div className="p-3 bg-slate-50/80 dark:bg-slate-800/50 flex items-center justify-between backdrop-blur-sm border-t border-slate-100 dark:border-slate-800">
+                                                {notifications.some(n => !n.read) ? (
+                                                    <button onClick={markAllRead} className="text-[10px] font-bold text-slate-500 hover:text-primary transition-colors flex items-center gap-1">
+                                                        <span className="material-symbols-outlined text-[12px]">done_all</span>
+                                                        Mark all as read
+                                                    </button>
+                                                ) : <div></div>}
+                                                <button onClick={clearAll} className="text-[10px] font-black uppercase text-slate-400 hover:text-red-500 transition-colors">Clear All</button>
                                             </div>
                                         )}
                                     </motion.div>
@@ -841,13 +920,12 @@ export default function AdminDashboard() {
                                                 <div className="flex gap-3">
                                                     <div className="relative">
                                                         <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">filter_list</span>
-                                                        <input className="pl-9 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-500 w-64 transition-all" placeholder="Filter courses..." type="text" />
+                                                        <input value={courseFilter} onChange={(e) => setCourseFilter(e.target.value)} className="pl-9 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-500 w-64 transition-all" placeholder="Filter courses..." type="text" />
                                                     </div>
-                                                    <select className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-sm rounded-lg focus:ring-primary focus:border-primary block p-2 transition-all">
-                                                        <option>All Categories</option>
-                                                        <option>Nursing</option>
-                                                        <option>CNA Prep</option>
-                                                        <option>Clinical Skills</option>
+                                                    <select value={courseCategoryFilter} onChange={(e) => setCourseCategoryFilter(e.target.value)} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-sm rounded-lg focus:ring-primary focus:border-primary block p-2 transition-all">
+                                                        {uniqueCourseCategories.map(cat => (
+                                                            <option key={cat} value={cat}>{cat === 'All' ? 'All Categories' : cat}</option>
+                                                        ))}
                                                     </select>
                                                 </div>
                                                 <button
@@ -993,7 +1071,7 @@ export default function AdminDashboard() {
                                             </AnimatePresence>
 
                                             <div className="mt-8 grid grid-cols-1 gap-6">
-                                                {courses.map((course) => (
+                                                {filteredCourses.map((course) => (
                                                     <motion.div
                                                         key={course.id}
                                                         layout
@@ -1292,11 +1370,11 @@ export default function AdminDashboard() {
                                                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                                                     <div className="relative w-full sm:w-64">
                                                         <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
-                                                        <input className="pl-10 pr-4 py-2.5 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary rounded-lg text-sm text-slate-900 dark:text-slate-200 transition-all shadow-sm" placeholder="Search users..." type="text" />
+                                                        <input value={userSearch} onChange={(e) => setUserSearch(e.target.value)} className="pl-10 pr-4 py-2.5 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary rounded-lg text-sm text-slate-900 dark:text-slate-200 transition-all shadow-sm" placeholder="Search users..." type="text" />
                                                     </div>
                                                     <div className="relative w-full sm:w-48">
                                                         <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">filter_list</span>
-                                                        <select className="pl-10 pr-8 py-2.5 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary rounded-lg text-sm text-slate-900 dark:text-slate-200 transition-all shadow-sm appearance-none">
+                                                        <select value={userRoleFilter} onChange={(e) => setUserRoleFilter(e.target.value)} className="pl-10 pr-8 py-2.5 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-1 focus:ring-primary rounded-lg text-sm text-slate-900 dark:text-slate-200 transition-all shadow-sm appearance-none">
                                                             <option value="">All Roles</option>
                                                             <option value="STUDENT">Student</option>
                                                             <option value="ADMIN">Administrator</option>
@@ -1402,7 +1480,7 @@ export default function AdminDashboard() {
                                                             </tr>
                                                         </thead>
                                                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                                                            {users.map((u: any, idx: number) => {
+                                                            {filteredUsers.map((u: any, idx: number) => {
                                                                 // Generate a deterministic color based on index
                                                                 const colors = [
                                                                     'bg-blue-600', 'bg-purple-600', 'bg-pink-600', 'bg-emerald-600', 'bg-amber-600'
@@ -1461,7 +1539,7 @@ export default function AdminDashboard() {
                                                 </div>
                                                 <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
                                                     <p className="text-sm text-slate-500">
-                                                        Showing <span className="font-medium text-slate-900 dark:text-white">{users.length}</span> user{users.length !== 1 ? 's' : ''}
+                                                        Showing <span className="font-medium text-slate-900 dark:text-white">{filteredUsers.length}</span> of {users.length} user{users.length !== 1 ? 's' : ''}
                                                     </p>
                                                 </div>
                                             </div>
@@ -1580,8 +1658,10 @@ export default function AdminDashboard() {
                                                     <div className="flex gap-3">
                                                         <div className="relative">
                                                             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">filter_list</span>
-                                                            <select className="pl-9 pr-8 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-sm rounded-lg focus:ring-primary focus:border-primary block cursor-pointer transition-colors">
-                                                                <option>All Courses</option>
+                                                            <select value={certCourseFilter} onChange={(e) => setCertCourseFilter(e.target.value)} className="pl-9 pr-8 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-sm rounded-lg focus:ring-primary focus:border-primary block cursor-pointer transition-colors">
+                                                                {uniqueCertCourseTitles.map(t => (
+                                                                    <option key={t} value={t}>{t === 'All' ? 'All Courses' : t}</option>
+                                                                ))}
                                                             </select>
                                                             <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-sm">expand_more</span>
                                                         </div>
@@ -1597,13 +1677,14 @@ export default function AdminDashboard() {
                                                                 <th className="px-6 py-4 font-semibold shrink-0" scope="col">Certificate ID</th>
                                                                 <th className="px-6 py-4 font-semibold min-w-[200px]" scope="col">Student Name</th>
                                                                 <th className="px-0 py-4 font-semibold min-w-[200px]" scope="col">Course</th>
+                                                                <th className="px-6 py-4 font-semibold" scope="col">Certificate No.</th>
                                                                 <th className="px-6 py-4 font-semibold shrink-0" scope="col">Date Submitted</th>
                                                                 <th className="px-6 py-4 font-semibold shrink-0" scope="col">Status</th>
                                                                 <th className="px-6 py-4 font-semibold shrink-0 text-right" scope="col">Actions</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                                            {certificates.map((c: any, idx: number) => {
+                                                            {filteredCertificates.map((c: any, idx: number) => {
                                                                 const colors = ['bg-blue-500', 'bg-purple-500', 'bg-pink-500', 'bg-emerald-500', 'bg-amber-500'];
                                                                 const colorClass = colors[idx % colors.length];
                                                                 const initials = c.user?.name ? c.user.name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() : 'U';
@@ -1620,6 +1701,37 @@ export default function AdminDashboard() {
                                                                             <span className="truncate">{c.user?.name || '—'}</span>
                                                                         </td>
                                                                         <td className="px-0 py-4 truncate max-w-xs">{c.course?.title}</td>
+                                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                                            {editingCertId === c.id ? (
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <input 
+                                                                                        type="text" 
+                                                                                        value={certNumInput} 
+                                                                                        onChange={(e) => setCertNumInput(e.target.value)} 
+                                                                                        className="w-24 px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-primary outline-none text-slate-900 dark:text-white dark:bg-slate-800"
+                                                                                        placeholder="Cert No."
+                                                                                    />
+                                                                                    <button onClick={() => handleUpdateCertificateNumber(c.id)} className="text-emerald-500 hover:text-emerald-700">
+                                                                                        <span className="material-symbols-outlined text-[16px]">check</span>
+                                                                                    </button>
+                                                                                    <button onClick={() => setEditingCertId(null)} className="text-slate-400 hover:text-slate-600">
+                                                                                        <span className="material-symbols-outlined text-[16px]">close</span>
+                                                                                    </button>
+                                                                                </div>
+                                                                            ) : (
+                                                                                <div className="flex items-center gap-2 group/edit">
+                                                                                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                                                                                        {c.certificateNumber || <span className="text-slate-400 italic font-normal">Unassigned</span>}
+                                                                                    </span>
+                                                                                    <button 
+                                                                                        onClick={() => { setEditingCertId(c.id); setCertNumInput(c.certificateNumber || ''); }}
+                                                                                        className="opacity-0 group-hover/edit:opacity-100 text-primary hover:text-primary/80 transition-opacity"
+                                                                                    >
+                                                                                        <span className="material-symbols-outlined text-[14px]">edit</span>
+                                                                                    </button>
+                                                                                </div>
+                                                                            )}
+                                                                        </td>
                                                                         <td className="px-6 py-4 whitespace-nowrap">{new Date(c.issuedAt).toLocaleDateString()}</td>
                                                                         <td className="px-6 py-4 whitespace-nowrap">
                                                                             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${c.status === 'APPROVED' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' :
@@ -1656,10 +1768,23 @@ export default function AdminDashboard() {
                                                                                                 Revoke
                                                                                             </button>
                                                                                         )}
+                                                                                        {c.status === 'REJECTED' && (
+                                                                                            <button
+                                                                                                onClick={() => handleApproveCertificate(c.id, 'APPROVED')}
+                                                                                                className="px-3 py-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 border border-emerald-200 dark:border-emerald-500/20 text-[10px] font-bold rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors shadow-sm mr-2"
+                                                                                            >
+                                                                                                Re-Approve
+                                                                                            </button>
+                                                                                        )}
                                                                                         <button className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md text-slate-400 hover:text-primary transition-colors" title="View Details">
                                                                                             <span className="material-symbols-outlined text-lg">visibility</span>
                                                                                         </button>
-                                                                                        <button className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md text-slate-400 hover:text-primary transition-colors" title="Download PDF">
+                                                                                        <button 
+                                                                                            onClick={() => {
+                                                                                                window.open(`${getFileUrl(`/api/public/certificates/${c.uniqueId}/download`)}`, '_blank');
+                                                                                            }}
+                                                                                            className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md text-slate-400 hover:text-primary transition-colors" title="Download PDF"
+                                                                                        >
                                                                                             <span className="material-symbols-outlined text-lg">download</span>
                                                                                         </button>
                                                                                     </div>
@@ -1681,10 +1806,19 @@ export default function AdminDashboard() {
                                                 </div>
                                                 <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
                                                     <span className="text-sm text-slate-500 dark:text-slate-400">
-                                                        Showing <span className="font-medium text-slate-900 dark:text-white">{certificates.length}</span> entries
+                                                        Showing <span className="font-medium text-slate-900 dark:text-white">{filteredCertificates.length}</span> of {certificates.length} entries
                                                     </span>
                                                 </div>
                                             </div>
+                                        </div>
+                                    )
+                                }
+
+                                {/* Settings Tab */}
+                                {
+                                    tab === 'settings' && (
+                                        <div className="flex-1 overflow-y-auto p-4 sm:p-8 scroll-smooth max-w-5xl mx-auto">
+                                            <AdminSettingsTab />
                                         </div>
                                     )
                                 }

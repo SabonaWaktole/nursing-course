@@ -132,20 +132,23 @@ export default function AdminSidebar({
                 </nav>
 
                 <div className="p-4 border-t border-slate-200 dark:border-slate-800 shrink-0">
-                    <Link
-                        href="/settings"
-                        className={`flex items-center gap-3 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors ${isSidebarCollapsed ? 'justify-center' : ''} ${tab === 'settings' ? 'bg-primary/10 border border-primary/20 text-primary' : ''}`}
+                    <button
+                        onClick={() => {
+                            setTab?.('settings');
+                            if (window.innerWidth < 1024) setIsMobileMenuOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-3 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors ${isSidebarCollapsed ? 'justify-center' : ''} ${tab === 'settings' ? 'bg-primary/10 border border-primary/20 text-primary' : ''}`}
                     >
                         <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm shrink-0">
                             {user?.name?.charAt(0) || 'A'}
                         </div>
                         {!isSidebarCollapsed && (
-                            <div className="flex-1 min-w-0 animate-in fade-in slide-in-from-left-2 duration-300">
+                            <div className="flex-1 min-w-0 animate-in fade-in slide-in-from-left-2 duration-300 text-left">
                                 <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{user?.name || 'Administrator'}</p>
                                 <p className="text-xs text-slate-500 truncate">{user?.email || 'admin@excelcommunity.com'}</p>
                             </div>
                         )}
-                    </Link>
+                    </button>
                 </div>
             </aside>
         </>
