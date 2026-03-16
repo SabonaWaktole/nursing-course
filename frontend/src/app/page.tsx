@@ -268,8 +268,7 @@ export default function LandingPage() {
           <motion.div
             variants={sectionContainer}
             initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: "-100px" }}
+            animate={!loading && courses.length > 0 ? "show" : "hidden"}
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
           >
             {loading ? (

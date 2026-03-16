@@ -25,6 +25,7 @@ const allowedOrigins = [
   'https://cnaceus.excelcommunityliving.website',
   'http://localhost:3000',
   'http://localhost:3001',
+  'https://nursing-course.vercel.app'
 ];
 
 const isDev = process.env.NODE_ENV !== 'production';
