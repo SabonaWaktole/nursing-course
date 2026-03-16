@@ -12,12 +12,15 @@ export default function ClientProviders({ children }: { children: ReactNode }) {
     const pathname = usePathname();
     // Routes that have their own sidebar + header layout — hide global Navbar & Footer
     const hasDashboardLayout = pathname?.startsWith('/admin') || pathname?.startsWith('/my-courses') || pathname?.startsWith('/certificates') || pathname?.startsWith('/settings');
+    // Routes that have their own header but still need normal scrolling (not fixed height)
+    const hasOwnNav = pathname?.startsWith('/quiz');
+    const hideGlobalNav = hasDashboardLayout || hasOwnNav;
     const pageVariants = usePageVariants();
 
     return (
         <AuthProvider>
-            {!hasDashboardLayout && <Navbar />}
-            <main className={!hasDashboardLayout ? "min-h-screen" : "h-screen overflow-hidden"}>
+            {!hideGlobalNav && <Navbar />}
+            <main className={hasDashboardLayout ? "h-screen overflow-hidden" : "min-h-screen"}>
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={pathname}
@@ -31,7 +34,7 @@ export default function ClientProviders({ children }: { children: ReactNode }) {
                     </motion.div>
                 </AnimatePresence>
             </main>
-            {!hasDashboardLayout && <Footer />}
+            {!hideGlobalNav && <Footer />}
         </AuthProvider>
     );
 }

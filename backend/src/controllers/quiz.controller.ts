@@ -145,6 +145,7 @@ export const submitQuiz = async (req: Request, res: Response) => {
         // Auto-generate certificate if course is fully completed
         let certificateId: string | undefined = undefined;
         let certificateUniqueId: string | undefined = undefined;
+        let certificateStatus: string | undefined = undefined;
 
         if (courseCompleted) {
             // Check if certificate already exists
@@ -154,6 +155,27 @@ export const submitQuiz = async (req: Request, res: Response) => {
             if (existingCert) {
                 certificateId = existingCert.id;
                 certificateUniqueId = existingCert.uniqueId;
+                certificateStatus = existingCert.status;
+                
+                // If it was rejected/revoked, resetting it to PENDING for re-approval
+                if (existingCert.status === 'REJECTED') {
+                    await prisma.certificate.update({
+                        where: { id: existingCert.id },
+                        data: { status: 'PENDING' }
+                    });
+                    certificateStatus = 'PENDING';
+                    
+                    const user = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+                    const course = await prisma.course.findUnique({ where: { id: quiz.courseId }, select: { title: true } });
+                    
+                    await (prisma as any).notification.create({
+                        data: {
+                            title: 'Certificate Re-approval Required',
+                            message: `${user?.name || 'A student'} has re-completed "${course?.title}" and is waiting for certificate re-approval.`,
+                            type: 'EXAM_COMPLETED',
+                        }
+                    });
+                }
             } else {
                 const user = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
                 const course = await prisma.course.findUnique({ where: { id: quiz.courseId }, select: { title: true } });
@@ -177,6 +199,7 @@ export const submitQuiz = async (req: Request, res: Response) => {
 
                 certificateId = newCert.id;
                 certificateUniqueId = newCert.uniqueId;
+                certificateStatus = 'PENDING';
             }
 
             // Also set progress to 100%
@@ -199,6 +222,7 @@ export const submitQuiz = async (req: Request, res: Response) => {
             nextExamId,
             certificateId,
             certificateUniqueId,
+            certificateStatus,
         });
     } catch (error: any) {
         console.error('submitQuiz error:', error);

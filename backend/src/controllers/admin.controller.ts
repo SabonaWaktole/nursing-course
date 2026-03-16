@@ -253,6 +253,39 @@ export const markNotificationRead = async (req: Request, res: Response) => {
     }
 };
 
+export const markAllNotificationsRead = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user?.userId;
+        const userRole = (req as any).user?.role;
+        const whereClause = userRole === 'ADMIN'
+            ? { OR: [{ userId: null }, { userId }], read: false }
+            : { userId, read: false };
+        await (prisma as any).notification.updateMany({
+            where: whereClause,
+            data: { read: true }
+        });
+        res.json({ success: true });
+    } catch (error: any) {
+        res.status(500).json({ message: 'Error marking all notifications as read' });
+    }
+};
+
+export const clearAllNotifications = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user?.userId;
+        const userRole = (req as any).user?.role;
+        const whereClause = userRole === 'ADMIN'
+            ? { OR: [{ userId: null }, { userId }] }
+            : { userId };
+        await (prisma as any).notification.deleteMany({
+            where: whereClause
+        });
+        res.json({ success: true });
+    } catch (error: any) {
+        res.status(500).json({ message: 'Error clearing notifications' });
+    }
+};
+
 export const deleteUser = async (req: Request, res: Response) => {
     try {
         const id = req.params.id as string;

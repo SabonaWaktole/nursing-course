@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { Quiz, QuizResult, Course } from '@/lib/types';
+import ThemeToggle from '@/components/ThemeToggle';
 import Link from 'next/link';
 import RoleGuard from '@/components/RoleGuard';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -20,7 +21,7 @@ export default function QuizPage() {
     const [loading, setLoading] = useState(true);
     const [answers, setAnswers] = useState<Record<string, number>>({});
     const [submitting, setSubmitting] = useState(false);
-    const [result, setResult] = useState<(QuizResult & { courseCompleted?: boolean; nextExamId?: string; certificateId?: string; certificateUniqueId?: string }) | null>(null);
+    const [result, setResult] = useState<(QuizResult & { courseCompleted?: boolean; nextExamId?: string; certificateId?: string; certificateUniqueId?: string; certificateStatus?: string }) | null>(null);
     const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
     const [timeLeft, setTimeLeft] = useState(2700); // 45:00 in seconds
     const [showMap, setShowMap] = useState(false);
@@ -96,6 +97,7 @@ export default function QuizPage() {
                     nextExamId={result.nextExamId}
                     certificateId={result.certificateId}
                     certificateUniqueId={result.certificateUniqueId}
+                    certificateStatus={result.certificateStatus}
                 />
             </RoleGuard>
         );
@@ -112,31 +114,53 @@ export default function QuizPage() {
                 transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
                 className="min-h-screen flex flex-col font-sans bg-slate-50 dark:bg-slate-950"
             >
-                <header className="h-16 border-b border-slate-200 bg-white flex items-center justify-between px-6 sticky top-0 z-30 shadow-sm">
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center justify-center size-8 rounded-lg bg-blue-50 text-blue-900">
-                            <span className="material-symbols-outlined text-xl">medical_services</span>
+                <header className="fixed top-0 inset-x-0 z-50 bg-white/85 dark:bg-slate-950/85 backdrop-blur-2xl border-b border-slate-200/70 dark:border-slate-800/70 shadow-[0_18px_45px_rgba(15,23,42,0.12)]">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 lg:py-4">
+                        <div className="flex justify-between items-center gap-4">
+                            {/* Logo */}
+                            <Link href="/" className="flex items-center gap-2 group">
+                                <motion.span
+                                    whileHover={{ rotate: 8, scale: 1.05 }}
+                                    transition={{ duration: 0.35, ease: 'easeInOut' }}
+                                    className="material-symbols-outlined text-primary text-3xl drop-shadow-[0_0_26px_rgba(13,185,242,0.65)]"
+                                >
+                                    medical_services
+                                </motion.span>
+                                <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white group-hover:text-primary transition-colors">
+                                    Excelcommunity Living Inc
+                                </span>
+                            </Link>
+
+                            {/* Quiz Info Pill */}
+                            <nav className="hidden md:flex items-center gap-2 rounded-full bg-slate-900/3 dark:bg-slate-900/70 px-4 py-1.5 border border-slate-200/60 dark:border-slate-800/80 backdrop-blur-2xl shadow-[0_10px_35px_rgba(15,23,42,0.22)]">
+                                <span className="material-symbols-outlined text-primary text-lg">quiz</span>
+                                <div className="flex flex-col">
+                                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 leading-tight">{quiz.title}</span>
+                                    <span className="text-[10px] text-slate-500 dark:text-slate-400">{quiz.moduleId ? 'Module Quiz' : 'Final Examination'} • Q{currentQuestionIdx + 1}/{quiz.questions.length}</span>
+                                </div>
+                            </nav>
+
+                            {/* Right side */}
+                            <div className="flex items-center gap-3">
+                                <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50/60 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800/70">
+                                    <span className="material-symbols-outlined text-slate-500 dark:text-slate-400 text-sm">timer</span>
+                                    <span className={`text-sm font-semibold font-mono ${timeLeft < 300 ? 'text-red-500' : 'text-slate-700 dark:text-slate-300'}`}>{formatTime(timeLeft)}</span>
+                                </div>
+                                <ThemeToggle />
+                                <motion.button
+                                    {...buttonHover}
+                                    onClick={handleSubmit}
+                                    disabled={submitting}
+                                    className="flex items-center justify-center px-5 py-2.5 text-sm font-bold text-white bg-primary rounded-xl hover:bg-primary/90 transition-colors duration-200 shadow-[0_18px_35px_rgba(13,185,242,0.45)]"
+                                >
+                                    {submitting ? 'Submitting...' : 'Submit Quiz'}
+                                </motion.button>
+                            </div>
                         </div>
-                        <div>
-                            <h1 className="font-bold text-lg leading-tight text-slate-900">{quiz.title}</h1>
-                            <p className="text-xs text-slate-500">{quiz.moduleId ? 'Module Quiz' : 'Final Examination'} • Question {currentQuestionIdx + 1}</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-md border border-slate-200">
-                            <span className="material-symbols-outlined text-slate-500 text-sm">timer</span>
-                            <span className="text-sm font-semibold font-mono text-slate-700">{formatTime(timeLeft)}</span>
-                        </div>
-                        <motion.button
-                            {...buttonHover}
-                            onClick={handleSubmit}
-                            disabled={submitting}
-                            className="flex items-center justify-center px-4 py-2 text-sm font-bold text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors duration-200 shadow-lg shadow-primary/20"
-                        >
-                            {submitting ? 'Submitting...' : 'Submit Quiz'}
-                        </motion.button>
                     </div>
                 </header>
+                {/* Spacer for fixed header */}
+                <div className="h-[68px]"></div>
 
                 <div className="flex flex-1 overflow-hidden">
                     {/* Sidebar (Question Map) */}
@@ -303,15 +327,16 @@ export default function QuizPage() {
     );
 }
 
-function QuizResultScreen({ result, user, quiz, onRetry, courseCompleted, nextExamId, certificateId, certificateUniqueId }: {
-    result: QuizResult & { courseCompleted?: boolean, nextExamId?: string, certificateId?: string, certificateUniqueId?: string },
+function QuizResultScreen({ result, user, quiz, onRetry, courseCompleted, nextExamId, certificateId, certificateUniqueId, certificateStatus }: {
+    result: QuizResult & { courseCompleted?: boolean, nextExamId?: string, certificateId?: string, certificateUniqueId?: string, certificateStatus?: string },
     user: any,
     quiz: Quiz,
     onRetry: () => void,
     courseCompleted: boolean,
     nextExamId?: string,
     certificateId?: string,
-    certificateUniqueId?: string
+    certificateUniqueId?: string,
+    certificateStatus?: string
 }) {
     const [courses, setCourses] = useState<Course[]>([]);
     const isExam = !quiz.moduleId;
@@ -331,23 +356,41 @@ function QuizResultScreen({ result, user, quiz, onRetry, courseCompleted, nextEx
             transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
             className="bg-slate-50 dark:bg-slate-950 min-h-screen flex flex-col font-sans overflow-x-hidden"
         >
-            <header className="sticky top-0 z-50 bg-white border-b border-slate-100 px-6 py-3 shadow-sm">
-                <div className="max-w-7xl mx-auto flex items-center justify-between">
-                    <div className="flex items-center gap-8">
-                        <Link href="/" className="flex items-center gap-3 group">
-                            <div className="size-8 bg-blue-50 rounded-lg flex items-center justify-center text-blue-900 group-hover:bg-blue-900 group-hover:text-white transition-colors">
-                                <span className="material-symbols-outlined text-[20px]">medical_services</span>
-                            </div>
-                            <h2 className="text-slate-900 text-lg font-bold tracking-tight">LearnFlow</h2>
+            <header className="fixed top-0 inset-x-0 z-50 bg-white/85 dark:bg-slate-950/85 backdrop-blur-2xl border-b border-slate-200/70 dark:border-slate-800/70 shadow-[0_18px_45px_rgba(15,23,42,0.12)]">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 lg:py-4">
+                    <div className="flex justify-between items-center gap-4">
+                        {/* Logo */}
+                        <Link href="/" className="flex items-center gap-2 group">
+                            <motion.span
+                                whileHover={{ rotate: 8, scale: 1.05 }}
+                                transition={{ duration: 0.35, ease: 'easeInOut' }}
+                                className="material-symbols-outlined text-primary text-3xl drop-shadow-[0_0_26px_rgba(13,185,242,0.65)]"
+                            >
+                                medical_services
+                            </motion.span>
+                            <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white group-hover:text-primary transition-colors">
+                                Excelcommunity Living Inc
+                            </span>
                         </Link>
-                    </div>
-                    <div className="flex items-center gap-4">
-                        <div className="size-9 rounded-full bg-blue-100 border-2 border-blue-200 flex items-center justify-center text-blue-700 font-bold">
-                            {user?.name?.[0]}
+
+                        {/* Result Badge Pill */}
+                        <nav className="hidden md:flex items-center gap-2 rounded-full bg-slate-900/3 dark:bg-slate-900/70 px-4 py-1.5 border border-slate-200/60 dark:border-slate-800/80 backdrop-blur-2xl shadow-[0_10px_35px_rgba(15,23,42,0.22)]">
+                            <span className="material-symbols-outlined text-primary text-lg">assessment</span>
+                            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Assessment Results</span>
+                        </nav>
+
+                        {/* Right side */}
+                        <div className="flex items-center gap-3">
+                            <ThemeToggle />
+                            <div className="size-9 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center text-primary font-bold text-sm">
+                                {user?.name?.[0]}
+                            </div>
                         </div>
                     </div>
                 </div>
             </header>
+            {/* Spacer for fixed header */}
+            <div className="h-[68px]"></div>
 
             <main className="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 py-8 md:py-12">
                 <motion.div
@@ -388,23 +431,32 @@ function QuizResultScreen({ result, user, quiz, onRetry, courseCompleted, nextEx
                                 <>
                                     {courseCompleted ? (
                                         <div className="flex flex-col sm:flex-row gap-3">
-                                            {certificateUniqueId && (
-                                                <motion.span {...buttonHover}>
-                                                    <Link href={`/certificate/verify/${certificateUniqueId}`} className="flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white px-6 py-3.5 rounded-lg font-semibold transition-colors duration-200 shadow-lg shadow-primary/20">
-                                                        <span className="material-symbols-outlined">workspace_premium</span>
-                                                        View Certificate
-                                                    </Link>
-                                                </motion.span>
-                                            )}
-                                            {certificateId && (
-                                                <motion.button
-                                                    {...buttonHover}
-                                                    onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL}/api/certificates/download/${certificateId}`)}
-                                                    className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3.5 rounded-lg font-semibold transition-colors duration-200 shadow-lg shadow-green-500/20"
-                                                >
-                                                    <span className="material-symbols-outlined">download</span>
-                                                    Download PDF
-                                                </motion.button>
+                                            {certificateStatus === 'APPROVED' ? (
+                                                <>
+                                                    {certificateUniqueId && (
+                                                        <motion.span {...buttonHover}>
+                                                            <Link href={`/certificate/verify/${certificateUniqueId}`} className="flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white px-6 py-3.5 rounded-lg font-semibold transition-colors duration-200 shadow-lg shadow-primary/20">
+                                                                <span className="material-symbols-outlined">workspace_premium</span>
+                                                                View Certificate
+                                                            </Link>
+                                                        </motion.span>
+                                                    )}
+                                                    {certificateId && (
+                                                        <motion.button
+                                                            {...buttonHover}
+                                                            onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL}/api/certificates/download/${certificateId}`)}
+                                                            className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3.5 rounded-lg font-semibold transition-colors duration-200 shadow-lg shadow-green-500/20"
+                                                        >
+                                                            <span className="material-symbols-outlined">download</span>
+                                                            Download PDF
+                                                        </motion.button>
+                                                    )}
+                                                </>
+                                            ) : (
+                                                <div className="flex items-center justify-center gap-2 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50 px-6 py-3.5 rounded-lg font-semibold">
+                                                    <span className="material-symbols-outlined animate-spin-slow">hourglass_empty</span>
+                                                    Certificate Pending Admin Approval
+                                                </div>
                                             )}
                                             <motion.span {...buttonHover}>
                                                 <Link href="/certificates" className="flex items-center justify-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-6 py-3.5 rounded-lg font-medium transition-colors duration-200">
