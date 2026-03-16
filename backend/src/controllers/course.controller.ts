@@ -6,7 +6,15 @@ import prisma from '../utils/prisma';
 export const getAllCourses = async (req: Request, res: Response) => {
     try {
         const courses = await prisma.course.findMany({
-            include: {
+            select: {
+                id: true,
+                title: true,
+                description: true,
+                thumbnail: true,
+                price: true,
+                hours: true,
+                category: true,
+                createdAt: true,
                 instructor: { select: { id: true, name: true } },
                 _count: { select: { modules: true, quizzes: true, enrollments: true } },
             },

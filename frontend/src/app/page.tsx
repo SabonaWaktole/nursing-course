@@ -34,6 +34,8 @@ const TESTIMONIALS = [
 
 export default function LandingPage() {
   const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [stats, setStats] = useState({
     students: 0,
     completionRate: 0,
@@ -47,7 +49,22 @@ export default function LandingPage() {
   const glowHover = useGlowHoverMotion();
 
   useEffect(() => {
-    api.get('/courses').then((res) => setCourses(res.data.slice(0, 3))).catch(() => { });
+    setLoading(true);
+    api.get('/courses')
+      .then((res) => {
+        if (Array.isArray(res.data)) {
+          setCourses(res.data.slice(0, 3));
+        } else {
+          setCourses([]);
+        }
+        setLoading(false);
+        setError(false);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch courses:", err);
+        setLoading(false);
+        setError(true);
+      });
     
     // Fetch real backend metrics
     api.get('/public/stats').then((res) => {
@@ -255,7 +272,30 @@ export default function LandingPage() {
             viewport={{ once: true, margin: "-100px" }}
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
           >
-            {courses.length > 0 ? courses.map((course, idx) => (
+            {loading ? (
+              // Skeleton loading cards
+              [1, 2, 3].map((i) => (
+                <div key={i} className="bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-pulse">
+                  <div className="aspect-video bg-slate-200 dark:bg-slate-800"></div>
+                  <div className="p-6 space-y-3">
+                    <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-2/3"></div>
+                    <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded w-full"></div>
+                    <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-5/6"></div>
+                  </div>
+                </div>
+              ))
+            ) : error ? (
+              <div className="col-span-full py-20 text-center">
+                <p className="text-slate-500 dark:text-slate-400 font-medium">Unable to load courses at this time.</p>
+                <button 
+                  onClick={() => window.location.reload()}
+                  className="mt-4 text-primary font-bold hover:underline"
+                >
+                  Try Again
+                </button>
+              </div>
+            ) : courses.length > 0 ? (
+              courses.map((course, idx) => (
               <motion.div
                 key={course.id}
                 variants={sectionItem}
@@ -307,18 +347,11 @@ export default function LandingPage() {
                   </div>
                 </Link>
               </motion.div>
-            )) : (
-              // Skeleton loading cards
-              [1, 2, 3].map((i) => (
-                <div key={i} className="bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-pulse">
-                  <div className="aspect-video bg-slate-200 dark:bg-slate-800"></div>
-                  <div className="p-6 space-y-3">
-                    <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-2/3"></div>
-                    <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded w-full"></div>
-                    <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-5/6"></div>
-                  </div>
-                </div>
-              ))
+            ))
+            ) : (
+              <div className="col-span-full py-20 text-center">
+                <p className="text-slate-500 dark:text-slate-400 font-medium">No courses are currently featured. Check back soon!</p>
+              </div>
             )}
           </motion.div>
         </div>
