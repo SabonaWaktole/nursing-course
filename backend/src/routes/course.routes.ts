@@ -14,6 +14,8 @@ import {
     getMyEnrollments,
     updateProgress,
     getMyActivity,
+    reorderModules,
+    reorderLessons,
 } from '../controllers/course.controller';
 import { authenticate, requireAdmin } from '../middleware/auth.middleware';
 
@@ -37,10 +39,12 @@ router.delete('/:id', authenticate, requireAdmin, deleteCourse);
 
 // Admin - Modules
 router.post('/:courseId/modules', authenticate, requireAdmin, addModule);
+router.put('/:courseId/modules/reorder', authenticate, requireAdmin, reorderModules);
 router.delete('/modules/:moduleId', authenticate, requireAdmin, deleteModule);
 
 // Admin - Lessons (under modules)
 router.post('/modules/:moduleId/lessons', authenticate, requireAdmin, addLesson);
+router.put('/modules/:moduleId/lessons/reorder', authenticate, requireAdmin, reorderLessons);
 router.put('/lessons/:lessonId', authenticate, requireAdmin, updateLesson);
 router.delete('/lessons/:lessonId', authenticate, requireAdmin, deleteLesson);
 
