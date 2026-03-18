@@ -65,6 +65,12 @@ export default function AdminDashboard() {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isDark, setIsDark] = useState(false);
 
+    // Drag-and-drop reordering state
+    const [dragType, setDragType] = useState<'module' | 'lesson' | null>(null);
+    const [dragIndex, setDragIndex] = useState<number | null>(null);
+    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+    const [dragModuleId, setDragModuleId] = useState<string | null>(null);
+
     // Search & filter state
     const [adminSearch, setAdminSearch] = useState('');
     const [courseFilter, setCourseFilter] = useState('');
@@ -336,6 +342,76 @@ export default function AdminDashboard() {
         } catch (err: any) {
             alert(err.response?.data?.message || 'Error deleting lesson');
         }
+    };
+
+    // Drag-and-drop reorder handlers
+    const handleModuleDragStart = (index: number) => {
+        setDragType('module');
+        setDragIndex(index);
+    };
+
+    const handleModuleDragOver = (e: React.DragEvent, index: number) => {
+        e.preventDefault();
+        if (dragType === 'module') setDragOverIndex(index);
+    };
+
+    const handleModuleDrop = async (e: React.DragEvent, dropIndex: number) => {
+        e.preventDefault();
+        if (dragType !== 'module' || dragIndex === null || dragIndex === dropIndex || !courseDetails) {
+            setDragIndex(null); setDragOverIndex(null); setDragType(null);
+            return;
+        }
+        const modules = [...courseDetails.modules];
+        const [moved] = modules.splice(dragIndex, 1);
+        modules.splice(dropIndex, 0, moved);
+        // Optimistic update
+        setCourseDetails({ ...courseDetails, modules });
+        setDragIndex(null); setDragOverIndex(null); setDragType(null);
+        try {
+            await api.put(`/courses/${courseDetails.id}/modules/reorder`, { orderedIds: modules.map((m: any) => m.id) });
+        } catch (err: any) {
+            alert(err.response?.data?.message || 'Error reordering modules');
+            loadCourseDetail(courseDetails.id);
+        }
+    };
+
+    const handleLessonDragStart = (moduleId: string, index: number) => {
+        setDragType('lesson');
+        setDragModuleId(moduleId);
+        setDragIndex(index);
+    };
+
+    const handleLessonDragOver = (e: React.DragEvent, moduleId: string, index: number) => {
+        e.preventDefault();
+        if (dragType === 'lesson' && dragModuleId === moduleId) setDragOverIndex(index);
+    };
+
+    const handleLessonDrop = async (e: React.DragEvent, moduleId: string, dropIndex: number) => {
+        e.preventDefault();
+        if (dragType !== 'lesson' || dragModuleId !== moduleId || dragIndex === null || dragIndex === dropIndex || !courseDetails) {
+            setDragIndex(null); setDragOverIndex(null); setDragType(null); setDragModuleId(null);
+            return;
+        }
+        const modules = courseDetails.modules.map((mod: any) => {
+            if (mod.id !== moduleId) return mod;
+            const lessons = [...mod.lessons];
+            const [moved] = lessons.splice(dragIndex, 1);
+            lessons.splice(dropIndex, 0, moved);
+            return { ...mod, lessons };
+        });
+        setCourseDetails({ ...courseDetails, modules });
+        setDragIndex(null); setDragOverIndex(null); setDragType(null); setDragModuleId(null);
+        try {
+            const targetMod = modules.find((m: any) => m.id === moduleId);
+            await api.put(`/courses/modules/${moduleId}/lessons/reorder`, { orderedIds: targetMod.lessons.map((l: any) => l.id) });
+        } catch (err: any) {
+            alert(err.response?.data?.message || 'Error reordering lessons');
+            loadCourseDetail(courseDetails.id);
+        }
+    };
+
+    const handleDragEnd = () => {
+        setDragIndex(null); setDragOverIndex(null); setDragType(null); setDragModuleId(null);
     };
 
     const handleSaveQuiz = async (targetId: string, type: 'course' | 'module') => {
@@ -1208,9 +1284,22 @@ export default function AdminDashboard() {
                                                                         )}
                                                                         <div className="space-y-4">
                                                                             {courseDetails?.modules?.map((mod: any, mi: number) => (
-                                                                                <div key={mod.id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+                                                                                <div
+                                                                                    key={mod.id}
+                                                                                    draggable
+                                                                                    onDragStart={() => handleModuleDragStart(mi)}
+                                                                                    onDragOver={(e) => handleModuleDragOver(e, mi)}
+                                                                                    onDrop={(e) => handleModuleDrop(e, mi)}
+                                                                                    onDragEnd={handleDragEnd}
+                                                                                    className={`bg-white dark:bg-slate-900 rounded-2xl border overflow-hidden shadow-sm transition-all duration-200 ${
+                                                                                        dragType === 'module' && dragOverIndex === mi
+                                                                                            ? 'border-primary ring-2 ring-primary/20 scale-[1.01]'
+                                                                                            : 'border-slate-200 dark:border-slate-800'
+                                                                                    }`}
+                                                                                >
                                                                                     <div className="px-4 py-3 bg-slate-50 dark:bg-slate-800/50 flex justify-between items-center border-b border-slate-200 dark:border-slate-800">
                                                                                         <div className="flex items-center gap-3">
+                                                                                            <span className="material-symbols-outlined text-slate-300 hover:text-primary cursor-grab active:cursor-grabbing text-lg" title="Drag to reorder">drag_indicator</span>
                                                                                             <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center">{mi + 1}</span>
                                                                                             <h4 className="text-sm font-bold">{mod.title}</h4>
                                                                                         </div>
@@ -1227,9 +1316,22 @@ export default function AdminDashboard() {
                                                                                         </div>
                                                                                     </div>
                                                                                     <div className="p-3 space-y-2">
-                                                                                        {mod.lessons?.map((lesson: any) => (
-                                                                                            <div key={lesson.id} className="flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-950/50 rounded-lg group/lesson transition-all hover:bg-white dark:hover:bg-slate-900 shadow-sm border border-transparent hover:border-slate-200 dark:hover:border-slate-800">
+                                                                                        {mod.lessons?.map((lesson: any, li: number) => (
+                                                                                            <div
+                                                                                                key={lesson.id}
+                                                                                                draggable
+                                                                                                onDragStart={(e) => { e.stopPropagation(); handleLessonDragStart(mod.id, li); }}
+                                                                                                onDragOver={(e) => { e.stopPropagation(); handleLessonDragOver(e, mod.id, li); }}
+                                                                                                onDrop={(e) => { e.stopPropagation(); handleLessonDrop(e, mod.id, li); }}
+                                                                                                onDragEnd={handleDragEnd}
+                                                                                                className={`flex justify-between items-center p-2 rounded-lg group/lesson transition-all shadow-sm border ${
+                                                                                                    dragType === 'lesson' && dragModuleId === mod.id && dragOverIndex === li
+                                                                                                        ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                                                                                                        : 'bg-slate-50 dark:bg-slate-950/50 border-transparent hover:bg-white dark:hover:bg-slate-900 hover:border-slate-200 dark:hover:border-slate-800'
+                                                                                                }`}
+                                                                                            >
                                                                                                 <div className="flex items-center gap-3">
+                                                                                                    <span className="material-symbols-outlined text-slate-300 hover:text-primary cursor-grab active:cursor-grabbing text-sm" title="Drag to reorder">drag_indicator</span>
                                                                                                     <span className="material-symbols-outlined text-slate-400 text-sm">play_circle</span>
                                                                                                     <div className="flex flex-col">
                                                                                                         <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">{lesson.title}</span>

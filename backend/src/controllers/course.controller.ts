@@ -380,3 +380,45 @@ export const getMyActivity = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Error fetching activity' });
     }
 };
+
+// Reorder modules within a course
+export const reorderModules = async (req: Request, res: Response) => {
+    try {
+        const { orderedIds } = req.body; // string[]
+        if (!Array.isArray(orderedIds) || orderedIds.length === 0) {
+            return res.status(400).json({ message: 'orderedIds array is required' });
+        }
+
+        await prisma.$transaction(
+            orderedIds.map((id: string, index: number) =>
+                prisma.module.update({ where: { id }, data: { order: index + 1 } })
+            )
+        );
+
+        res.json({ message: 'Modules reordered' });
+    } catch (error: any) {
+        console.error('reorderModules error:', error);
+        res.status(500).json({ message: 'Error reordering modules' });
+    }
+};
+
+// Reorder lessons within a module
+export const reorderLessons = async (req: Request, res: Response) => {
+    try {
+        const { orderedIds } = req.body; // string[]
+        if (!Array.isArray(orderedIds) || orderedIds.length === 0) {
+            return res.status(400).json({ message: 'orderedIds array is required' });
+        }
+
+        await prisma.$transaction(
+            orderedIds.map((id: string, index: number) =>
+                prisma.lesson.update({ where: { id }, data: { order: index + 1 } })
+            )
+        );
+
+        res.json({ message: 'Lessons reordered' });
+    } catch (error: any) {
+        console.error('reorderLessons error:', error);
+        res.status(500).json({ message: 'Error reordering lessons' });
+    }
+};
