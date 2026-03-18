@@ -1,10 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { Course } from '@/lib/types';
-import { motion, useInView } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { getFileUrl } from '@/lib/url-utils';
 import {
   useSectionContainerVariants,
@@ -49,7 +49,6 @@ export default function LandingPage() {
   const glowHover = useGlowHoverMotion();
 
   useEffect(() => {
-    setLoading(true);
     api.get('/courses')
       .then((res) => {
         if (Array.isArray(res.data)) {
@@ -265,10 +264,7 @@ export default function LandingPage() {
             </Link>
           </motion.div>
 
-          <motion.div
-            variants={sectionContainer}
-            initial="hidden"
-            animate={!loading && courses.length > 0 ? "show" : "hidden"}
+          <div
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
           >
             {loading ? (
@@ -297,8 +293,10 @@ export default function LandingPage() {
               courses.map((course, idx) => (
               <motion.div
                 key={course.id}
-                variants={sectionItem}
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
                 {...cardHover}
+                transition={{ ...cardHover.transition, delay: idx * 0.08 }}
                 className="relative group h-full"
               >
                 <div className="absolute inset-0 bg-primary/20 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10"></div>
@@ -352,7 +350,7 @@ export default function LandingPage() {
                 <p className="text-slate-500 dark:text-slate-400 font-medium">No courses are currently featured. Check back soon!</p>
               </div>
             )}
-          </motion.div>
+          </div>
         </div>
       </section>
 
@@ -376,7 +374,7 @@ export default function LandingPage() {
             viewport={{ once: true, margin: "-60px" }}
             className="grid grid-cols-1 md:grid-cols-3 gap-8"
           >
-            {TESTIMONIALS.map((t, idx) => (
+            {TESTIMONIALS.map((t) => (
               <motion.div
                 key={t.name}
                 variants={sectionItem}
