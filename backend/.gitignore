@@ -5,3 +5,5 @@ node_modules
 /generated/prisma
 old_db_backup/*
 *.txt
+*.log
+*.zip
