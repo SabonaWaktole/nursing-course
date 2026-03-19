@@ -122,7 +122,28 @@ export const updateCourse = async (req: Request, res: Response) => {
 export const deleteCourse = async (req: Request, res: Response) => {
     try {
         const id = req.params.id as string;
-        await prisma.course.delete({ where: { id } });
+
+        // Find all quizzes in this course to delete related Results
+        const quizzes = await prisma.quiz.findMany({
+            where: { courseId: id },
+            select: { id: true }
+        });
+        const quizIds = quizzes.map(q => q.id);
+
+        // Delete related records manually inside a transaction because Enrollment
+        // and Result models do not have onDelete: Cascade in schema.prisma
+        await prisma.$transaction([
+            prisma.result.deleteMany({
+                where: { quizId: { in: quizIds } }
+            }),
+            prisma.enrollment.deleteMany({
+                where: { courseId: id }
+            }),
+            prisma.course.delete({
+                where: { id }
+            })
+        ]);
+
         res.json({ message: 'Course deleted' });
     } catch (error: any) {
         console.error('deleteCourse error:', error);
