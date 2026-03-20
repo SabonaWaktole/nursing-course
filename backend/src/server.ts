@@ -52,8 +52,9 @@ app.use(cors({
 
 app.use(express.json({ limit: '50mb' }));
 
-// Serve uploaded files
-app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+// Serve uploaded files from persistent upload directory
+const serveUploadDir = process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads');
+app.use('/uploads', express.static(serveUploadDir));
 
 // Health check
 app.get('/', (req, res) => {
@@ -87,7 +88,12 @@ async function checkDatabaseConnection() {
   }
 }
 
-app.listen(PORT, async () => {
+const server = app.listen(PORT, async () => {
   await checkDatabaseConnection();
   console.log(`🚀 Server is running on port ${PORT}`);
 });
+
+// Increase timeouts for large file uploads (2 hours)
+server.timeout = 7200000;          // 2 hour request timeout
+server.keepAliveTimeout = 7220000; // slightly longer than timeout
+server.headersTimeout = 7240000;   // slightly longer than keepAliveTimeout

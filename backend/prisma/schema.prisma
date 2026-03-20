@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -32,8 +32,8 @@ enum Role {
 model Course {
   id          String   @id @default(uuid())
   title       String
-  description String
-  thumbnail   String?
+  description String   @db.Text
+  thumbnail   String?  @db.Text
   category    String?
   tags        Json?
   price       Float?   @default(0)
@@ -64,9 +64,9 @@ model Module {
 model Lesson {
   id          String   @id @default(uuid())
   title       String
-  description String?
-  videoUrl    String?
-  materialUrl String?  // PDF/ZIP etc
+  description String?  @db.Text
+  videoUrl    String?  @db.Text
+  materialUrl String?  @db.Text
   order       Int      @default(0)
   moduleId    String
   module      Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
@@ -89,9 +89,9 @@ model Quiz {
 
 model Question {
   id            String   @id @default(uuid())
-  text          String
-  options       Json // Array stored as JSON string
-  correctAnswer Int      // Index of correct answer in options array
+  text          String   @db.Text
+  options       Json
+  correctAnswer Int
   quizId        String
   quiz          Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
 }
@@ -140,10 +140,10 @@ enum CertificateStatus {
 model Notification {
   id        String   @id @default(uuid())
   title     String
-  message   String
-  type      String   // 'EXAM_COMPLETED', 'CERT_APPROVED', etc.
+  message   String   @db.Text
+  type      String
   read      Boolean  @default(false)
-  userId    String?  // Recipient (null for all admins)
+  userId    String?
   createdAt DateTime @default(now())
 }
 
@@ -153,7 +153,7 @@ model Enrollment {
   user      User     @relation(fields: [userId], references: [id])
   courseId  String
   course    Course   @relation(fields: [courseId], references: [id])
-  progress  Int      @default(0) // Percentage 0-100
+  progress  Int      @default(0)
   completed Boolean  @default(false)
   
   createdAt DateTime @default(now())
@@ -165,7 +165,7 @@ model ActivityLog {
   id        String   @id @default(uuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type      String   // 'LESSON_VIEW', 'QUIZ_SUBMIT', 'PROGRESS_UPDATE'
+  type      String
   courseId  String?
   createdAt DateTime @default(now())
 
