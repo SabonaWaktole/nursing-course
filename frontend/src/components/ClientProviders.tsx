@@ -13,7 +13,8 @@ export default function ClientProviders({ children }: { children: ReactNode }) {
     // Routes that have their own sidebar + header layout — hide global Navbar & Footer
     const hasDashboardLayout = pathname?.startsWith('/admin') || pathname?.startsWith('/my-courses') || pathname?.startsWith('/certificates') || pathname?.startsWith('/settings');
     // Routes that have their own header but still need normal scrolling (not fixed height)
-    const hasOwnNav = pathname?.startsWith('/quiz');
+    const isCourseDetails = pathname?.startsWith('/courses/') && pathname !== '/courses';
+    const hasOwnNav = pathname?.startsWith('/quiz') || isCourseDetails;
     const hideGlobalNav = hasDashboardLayout || hasOwnNav;
     const pageVariants = usePageVariants();
 
