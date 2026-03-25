@@ -7,3 +7,5 @@ old_db_backup/*
 *.txt
 *.log
 *.zip
+
+uploads/*

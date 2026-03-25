@@ -8,7 +8,6 @@ import { useAuth } from '@/lib/auth-context';
 const NAV_ITEMS = [
     { href: '/my-courses', icon: 'book', label: 'My Courses' },
     { href: '/certificates', icon: 'workspace_premium', label: 'Certificates' },
-    { href: '/courses', icon: 'explore', label: 'Browse Courses' },
     { href: '/settings', icon: 'settings', label: 'Settings' },
 ];
 
