@@ -115,27 +115,57 @@ export const approveCertificate = async (req: Request, res: Response) => {
         const id = req.params.id as string;
         const { status } = req.body; // 'APPROVED' or 'REJECTED'
 
-        const cert = await (prisma.certificate as any).update({
-            where: { id },
-            data: { status },
-            include: { user: true, course: true }
-        });
+        const p = prisma as any;
 
-        const courseTitle = cert.course?.title || 'your course';
+        const result = await p.$transaction(async (tx: any) => {
+            const cert = await tx.certificate.update({
+                where: { id },
+                data: { status },
+                include: { user: true, course: true }
+            });
 
-        // Notify user
-        await (prisma as any).notification.create({
-            data: {
-                userId: cert.userId,
-                title: status === 'APPROVED' ? 'Certificate Approved!' : 'Certificate Rejected',
-                message: status === 'APPROVED'
-                    ? `Congratulations! Your certificate for "${courseTitle}" has been approved.`
-                    : `We couldn't approve your certificate for "${courseTitle}". Please contact support for details.`,
-                type: status === 'APPROVED' ? 'CERT_APPROVED' : 'CERT_REJECTED'
+            if (status === 'APPROVED') {
+                await tx.enrollment.updateMany({
+                    where: {
+                        userId: cert.userId,
+                        courseId: cert.courseId
+                    },
+                    data: {
+                        progress: 100,
+                        completed: true
+                    }
+                });
+            } else if (status === 'REJECTED') {
+                await tx.enrollment.updateMany({
+                    where: {
+                        userId: cert.userId,
+                        courseId: cert.courseId
+                    },
+                    data: {
+                        progress: 0,
+                        completed: false
+                    }
+                });
             }
+
+            const courseTitle = cert.course?.title || 'your course';
+
+            // Notify user
+            await tx.notification.create({
+                data: {
+                    userId: cert.userId,
+                    title: status === 'APPROVED' ? 'Certificate Approved!' : 'Certificate Rejected',
+                    message: status === 'APPROVED'
+                        ? `Congratulations! Your certificate for "${courseTitle}" has been approved.`
+                        : `We couldn't approve your certificate for "${courseTitle}". Please contact support for details.`,
+                    type: status === 'APPROVED' ? 'CERT_APPROVED' : 'CERT_REJECTED'
+                }
+            });
+
+            return cert;
         });
 
-        res.json(cert);
+        res.json(result);
     } catch (error: any) {
         console.error('approveCertificate error:', error);
         res.status(500).json({ message: 'Error updating certificate status' });

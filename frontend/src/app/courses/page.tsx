@@ -178,9 +178,9 @@ export default function CoursesPage() {
                 {/* Featured Highlight */}
                 {filtered.length > 0 && (
                     <motion.div
+                        key={`featured-${filtered[0]?.id}`}
                         initial={{ opacity: 0, y: 30, scale: 0.98 }}
-                        whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                        viewport={{ once: true, margin: "-60px" }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
                         transition={{ duration: 0.6, ease: [0.25, 0.8, 0.25, 1] }}
                         className="relative group overflow-hidden rounded-3xl mb-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl hover:shadow-2xl hover:shadow-primary/10 transition-all duration-700"
                     >
@@ -334,10 +334,10 @@ export default function CoursesPage() {
                     </motion.div>
                 ) : (
                     <motion.div
+                        key={`grid-${search}-${selectedTag}`}
                         variants={sectionContainer}
                         initial="hidden"
-                        whileInView="show"
-                        viewport={{ once: true, margin: "-50px" }}
+                        animate="show"
                         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
                     >
                         {filtered.map((course, idx) => (
