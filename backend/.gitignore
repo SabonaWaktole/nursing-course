@@ -6,6 +6,7 @@ node_modules
 old_db_backup/*
 *.txt
 *.log
+*.pdf
 *.zip
 
 uploads/*

@@ -415,6 +415,13 @@ export default function AdminDashboard() {
     };
 
     const handleSaveQuiz = async (targetId: string, type: 'course' | 'module') => {
+        // Validate that all questions have a correct answer selected
+        const unansweredOptions = quizForm.questions.findIndex(q => q.correctAnswer === -1);
+        if (unansweredOptions !== -1) {
+            alert(`Please select a correct answer for question ${unansweredOptions + 1} before saving.`);
+            return;
+        }
+
         try {
             if (showQuizForm?.mode === 'edit' && showQuizForm.quizId) {
                 // Update existing quiz
@@ -452,6 +459,50 @@ export default function AdminDashboard() {
         } catch (err: any) {
             alert(err.response?.data?.message || 'Error deleting quiz');
         }
+    };
+
+    const handleTxtUpload = async (targetId: string, type: 'course' | 'module') => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.txt';
+        input.onchange = async (e: any) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                // Show a loading indicator if desired, or just wait
+                const res = await api.post('/quizzes/parse-txt', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                });
+
+                const parsedQuestions = res.data.questions.map((q: any) => ({
+                    text: q.text,
+                    options: q.options,
+                    correctAnswer: -1 // Enforce admin to select the answer
+                }));
+
+                const noun = type === 'course' ? 'Final Exam' : 'Module Quiz';
+
+                setQuizForm({
+                    title: `Imported ${noun}`,
+                    passingScore: '70',
+                    questions: parsedQuestions
+                });
+                
+                setShowQuizForm({ id: targetId, type, mode: 'create' });
+
+                if (res.data.errors && res.data.errors.length > 0) {
+                    alert(`Parsed ${parsedQuestions.length} questions, but with some warnings:\n\n${res.data.errors.join('\n')}`);
+                }
+
+            } catch (err: any) {
+                alert(err.response?.data?.message || err.response?.data?.errors?.join('\n') || 'Error parsing TXT file');
+            }
+        };
+        input.click();
     };
 
     const handleUpload = async (type: 'video' | 'material') => {
@@ -1304,15 +1355,16 @@ export default function AdminDashboard() {
                                                                                             <h4 className="text-sm font-bold">{mod.title}</h4>
                                                                                         </div>
                                                                                         <div className="flex gap-1">
-                                                                                            <button onClick={() => setShowLessonForm(showLessonForm === mod.id ? null : mod.id)} className="p-1 hover:text-primary transition-colors"><span className="material-symbols-outlined text-lg">add_circle</span></button>
+                                                                                            <button onClick={() => setShowLessonForm(showLessonForm === mod.id ? null : mod.id)} className="p-1 hover:text-primary transition-colors" title="Add Lesson"><span className="material-symbols-outlined text-lg">add_circle</span></button>
+                                                                                            <button onClick={() => handleTxtUpload(mod.id, 'module')} className="p-1 hover:text-sky-500 transition-colors" title="Upload Quiz (TXT)"><span className="material-symbols-outlined text-lg">upload_file</span></button>
                                                                                             <button onClick={() => {
                                                                                                 if (mod.quizzes && mod.quizzes.length > 0) {
                                                                                                     openQuizEdit(mod.quizzes[0], 'module');
                                                                                                 } else {
                                                                                                     setShowQuizForm({ id: mod.id, type: 'module', mode: 'create' });
                                                                                                 }
-                                                                                            }} className="p-1 hover:text-emerald-500 transition-colors"><span className="material-symbols-outlined text-lg">quiz</span></button>
-                                                                                            <button onClick={() => handleDeleteModule(mod.id, course.id)} className="p-1 hover:text-red-500 transition-colors"><span className="material-symbols-outlined text-lg">delete</span></button>
+                                                                                            }} className="p-1 hover:text-emerald-500 transition-colors" title="Create Quiz Manually"><span className="material-symbols-outlined text-lg">quiz</span></button>
+                                                                                            <button onClick={() => handleDeleteModule(mod.id, course.id)} className="p-1 hover:text-red-500 transition-colors" title="Delete Module"><span className="material-symbols-outlined text-lg">delete</span></button>
                                                                                         </div>
                                                                                     </div>
                                                                                     <div className="p-3 space-y-2">
@@ -1409,8 +1461,18 @@ export default function AdminDashboard() {
                                                                                 </div>
                                                                             ))}
                                                                         </div>
+                                                                        <div className="pt-2 flex gap-2">
+                                                                            <button onClick={() => handleCourseQuizClick(courseDetails?.id, courseDetails?.quizzes && courseDetails.quizzes.length > 0)} className="flex items-center gap-2 rounded-xl bg-emerald-50 text-emerald-600 px-4 py-2 text-xs font-bold hover:bg-emerald-100 transition-colors dark:bg-emerald-900/20 dark:hover:bg-emerald-900/30">
+                                                                                <span className="material-symbols-outlined text-sm">workspace_premium</span>
+                                                                                {courseDetails?.quizzes && courseDetails.quizzes.length > 0 ? 'Edit Final Exam' : 'Add Final Exam'}
+                                                                            </button>
+                                                                            <button onClick={() => handleTxtUpload(courseDetails?.id, 'course')} className="flex items-center gap-2 rounded-xl bg-sky-50 text-sky-600 px-4 py-2 text-xs font-bold hover:bg-sky-100 transition-colors dark:bg-sky-900/20 dark:hover:bg-sky-900/30">
+                                                                                <span className="material-symbols-outlined text-sm">upload_file</span>
+                                                                                Upload Final Exam (TXT)
+                                                                            </button>
+                                                                        </div>
                                                                         {courseDetails?.quizzes?.length > 0 && (
-                                                                            <div className="p-4 bg-emerald-500/5 rounded-2xl border-2 border-emerald-500/10 flex justify-between items-center">
+                                                                            <div className="mt-4 p-4 bg-emerald-500/5 rounded-2xl border-2 border-emerald-500/10 flex justify-between items-center">
                                                                                 <div className="flex items-center gap-3"><span className="material-symbols-outlined text-emerald-500">verified</span><div><p className="text-sm font-bold">Final Certification Exam</p><p className="text-[10px] text-emerald-600">{courseDetails.quizzes[0].title}</p></div></div>
                                                                                 <div className="flex items-center gap-2"><button onClick={() => openQuizEdit(courseDetails.quizzes[0], 'course')} className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-emerald-500/20 text-emerald-600 rounded-lg text-xs font-bold">Edit</button><button onClick={() => handleDeleteQuiz(courseDetails.quizzes[0].id)} className="hover:text-red-500 transition-colors"><span className="material-symbols-outlined">delete</span></button></div>
                                                                             </div>
@@ -1439,14 +1501,24 @@ export default function AdminDashboard() {
                                                                 <div className="flex justify-between items-center"><h4 className="text-sm font-bold">Questions ({quizForm.questions.length})</h4><button onClick={addQuestion} className="px-4 py-2 bg-emerald-500/10 text-emerald-500 rounded-lg text-xs font-bold flex items-center gap-1"><span className="material-symbols-outlined text-sm">add</span>Add Question</button></div>
                                                                 <div className="space-y-4">
                                                                     {quizForm.questions.map((q, qi) => (
-                                                                        <div key={qi} className="p-5 bg-slate-50 dark:bg-slate-950/50 rounded-2xl border border-slate-200 dark:border-slate-800 relative group/q">
+                                                                        <div key={qi} className={`p-5 rounded-2xl border relative group/q transition-colors ${
+                                                                            q.correctAnswer === -1 
+                                                                                ? 'bg-red-50/50 dark:bg-red-900/10 border-red-300 dark:border-red-800' 
+                                                                                : 'bg-slate-50 dark:bg-slate-950/50 border-slate-200 dark:border-slate-800'
+                                                                        }`}>
                                                                             <button onClick={() => { const qs = [...quizForm.questions]; qs.splice(qi, 1); setQuizForm({ ...quizForm, questions: qs }); }} className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover/q:opacity-100 transition-opacity"><span className="material-symbols-outlined text-xs">close</span></button>
-                                                                            <textarea value={q.text} onChange={(e) => updateQuestion(qi, 'text', e.target.value)} placeholder="Question text..." className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 text-sm mb-4" rows={2} />
+                                                                            <textarea value={q.text} onChange={(e) => updateQuestion(qi, 'text', e.target.value)} placeholder="Question text..." className={`w-full rounded-xl border bg-white dark:bg-slate-900 px-4 py-3 text-sm mb-4 ${q.correctAnswer === -1 ? 'border-red-200 dark:border-red-900/50' : 'border-slate-200 dark:border-slate-700'}`} rows={2} />
+                                                                            {q.correctAnswer === -1 && (
+                                                                                <p className="text-xs font-bold text-red-500 mb-3 flex items-center gap-1">
+                                                                                    <span className="material-symbols-outlined text-sm">warning</span>
+                                                                                    Please select the correct answer
+                                                                                </p>
+                                                                            )}
                                                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                                                                 {q.options.map((opt, oi) => (
-                                                                                    <div key={oi} className={`flex items-center gap-3 p-2 rounded-xl border transition-all ${q.correctAnswer === oi ? 'border-emerald-500 bg-emerald-500/5' : 'border-slate-200 dark:border-slate-800'}`}>
-                                                                                        <input type="radio" name={`q-${qi}`} checked={q.correctAnswer === oi} onChange={() => updateQuestion(qi, 'correctAnswer', oi)} className="text-emerald-500 focus:ring-emerald-500" />
-                                                                                        <input value={opt} onChange={(e) => updateOption(qi, oi, e.target.value)} className="flex-1 bg-transparent border-none p-0 text-sm focus:ring-0" placeholder={`Option ${oi + 1}`} />
+                                                                                    <div key={oi} className={`flex items-center gap-3 p-2 rounded-xl border transition-all cursor-pointer ${q.correctAnswer === oi ? 'border-emerald-500 bg-emerald-500/5' : 'border-slate-200 dark:border-slate-800 hover:border-slate-300'}`} onClick={() => updateQuestion(qi, 'correctAnswer', oi)}>
+                                                                                        <input type="radio" name={`q-${qi}`} checked={q.correctAnswer === oi} onChange={() => updateQuestion(qi, 'correctAnswer', oi)} className="text-emerald-500 focus:ring-emerald-500 cursor-pointer" />
+                                                                                        <input value={opt} onChange={(e) => updateOption(qi, oi, e.target.value)} onClick={(e) => e.stopPropagation()} className="flex-1 bg-transparent border-none p-0 text-sm focus:ring-0" placeholder={`Option ${oi + 1}`} />
                                                                                     </div>
                                                                                 ))}
                                                                             </div>

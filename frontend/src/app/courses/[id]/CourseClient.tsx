@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -23,6 +23,23 @@ export default function CourseDetailPage() {
     const [completing, setCompleting] = useState(false);
     const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
     const [progress, setProgress] = useState(0);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+    const pdfContainerRef = useRef<HTMLDivElement>(null);
+
+    const toggleFullscreen = useCallback(() => {
+        if (!pdfContainerRef.current) return;
+        if (!document.fullscreenElement) {
+            pdfContainerRef.current.requestFullscreen().catch(() => {});
+        } else {
+            document.exitFullscreen().catch(() => {});
+        }
+    }, []);
+
+    useEffect(() => {
+        const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+        document.addEventListener('fullscreenchange', onFsChange);
+        return () => document.removeEventListener('fullscreenchange', onFsChange);
+    }, []);
 
     useEffect(() => {
         api.get(`/courses/${id}`).then((r) => {
@@ -396,11 +413,61 @@ export default function CourseDetailPage() {
                                             />
                                         </div>
                                     ) : currentLesson.materialUrl && currentLesson.materialUrl.toLowerCase().endsWith('.pdf') ? (
-                                        <div className="relative w-full rounded-2xl overflow-hidden shadow-2xl bg-slate-200 dark:bg-slate-900 mb-10" style={{ height: '65vh' }}>
+                                        <div
+                                            ref={pdfContainerRef}
+                                            className={`relative w-full rounded-2xl overflow-hidden shadow-2xl mb-10 transition-all duration-300 ${
+                                                isFullscreen
+                                                    ? 'rounded-none bg-black'
+                                                    : 'bg-slate-200 dark:bg-slate-900'
+                                            }`}
+                                            style={isFullscreen ? { width: '100vw', height: '100vh' } : { height: '75vh' }}
+                                        >
+                                            {/* PDF Toolbar */}
+                                            <div className={`absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 py-2.5 bg-slate-900/80 backdrop-blur-md border-b border-white/10 ${
+                                                isFullscreen ? 'rounded-none' : 'rounded-t-2xl'
+                                            }`}>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="material-symbols-outlined text-lg text-red-400">picture_as_pdf</span>
+                                                    <span className="text-sm font-semibold text-white truncate max-w-[200px] md:max-w-md">{currentLesson.title}</span>
+                                                </div>
+                                                <div className="flex items-center gap-1">
+                                                    <a
+                                                        href={getFileUrl(currentLesson.materialUrl)}
+                                                        download
+                                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-all"
+                                                        title="Download PDF"
+                                                    >
+                                                        <span className="material-symbols-outlined text-base">download</span>
+                                                        <span className="hidden sm:inline">Download</span>
+                                                    </a>
+                                                    <a
+                                                        href={getFileUrl(currentLesson.materialUrl)}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-all"
+                                                        title="Open in New Tab"
+                                                    >
+                                                        <span className="material-symbols-outlined text-base">open_in_new</span>
+                                                        <span className="hidden sm:inline">New Tab</span>
+                                                    </a>
+                                                    <button
+                                                        onClick={toggleFullscreen}
+                                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-all"
+                                                        title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+                                                    >
+                                                        <span className="material-symbols-outlined text-base">
+                                                            {isFullscreen ? 'fullscreen_exit' : 'fullscreen'}
+                                                        </span>
+                                                        <span className="hidden sm:inline">{isFullscreen ? 'Exit' : 'Fullscreen'}</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            {/* PDF iframe */}
                                             <iframe
                                                 key={currentLesson.id}
                                                 src={getFileUrl(currentLesson.materialUrl)}
-                                                className="w-full h-full border-none"
+                                                className="w-full border-none"
+                                                style={{ height: 'calc(100% - 44px)', marginTop: '44px' }}
                                                 title={currentLesson.title}
                                             />
                                         </div>

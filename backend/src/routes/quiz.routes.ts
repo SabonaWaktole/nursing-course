@@ -10,6 +10,7 @@ import {
     updateQuiz,
     deleteQuiz,
 } from '../controllers/quiz.controller';
+import { parseTxtQuiz, uploadTxtOnly } from '../controllers/quiz-upload.controller';
 import { authenticate, requireAdmin } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -20,6 +21,7 @@ router.post('/:quizId/submit', authenticate, submitQuiz);
 router.get('/results/me', authenticate, getMyResults);
 
 // Admin
+router.post('/parse-txt', authenticate, requireAdmin, uploadTxtOnly.single('file'), parseTxtQuiz);
 router.post('/', authenticate, requireAdmin, createQuiz);
 router.put('/:quizId', authenticate, requireAdmin, updateQuiz);
 router.delete('/:quizId', authenticate, requireAdmin, deleteQuiz);
