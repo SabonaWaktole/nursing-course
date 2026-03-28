@@ -6,6 +6,11 @@ export const createQuiz = async (req: Request, res: Response) => {
     try {
         const { courseId, title, passingScore, questions, moduleId } = req.body;
 
+        // Validation for missing correct answers (from TXT upload)
+        if (questions && questions.some((q: any) => q.correctAnswer === -1 || q.correctAnswer === undefined || q.correctAnswer === null)) {
+            return res.status(400).json({ message: 'All questions must have a valid correct answer selected.' });
+        }
+
         const quiz = await prisma.quiz.create({
             data: {
                 courseId,
@@ -297,6 +302,11 @@ export const updateQuiz = async (req: Request, res: Response) => {
     try {
         const quizId = req.params.quizId as string;
         const { title, passingScore, questions } = req.body;
+
+        // Validation for missing correct answers
+        if (questions && questions.some((q: any) => q.correctAnswer === -1 || q.correctAnswer === undefined || q.correctAnswer === null)) {
+            return res.status(400).json({ message: 'All questions must have a valid correct answer selected.' });
+        }
 
         // Transaction to ensure atomic update
         const quiz = await prisma.$transaction(async (tx) => {
