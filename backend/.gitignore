@@ -10,3 +10,4 @@ old_db_backup/*
 *.zip
 
 uploads/*
+old_db_backup/*
