@@ -17,3 +17,4 @@ test_update.js
 test2.js
 */.env.*
 *.pdf
+old_db_backup/*
