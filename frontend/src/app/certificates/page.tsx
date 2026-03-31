@@ -71,7 +71,7 @@ export default function CertificatesPage() {
                                     variants={sectionItem}
                                     initial="hidden"
                                     animate="show"
-                                    className="text-center py-24 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm"
+                                    className="text-center py-24 rounded-[2rem] border-2 border-dashed border-slate-200/50 dark:border-slate-700/50 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl shadow-sm"
                                 >
                                     <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-slate-50 mb-6 text-slate-300">
                                         <span className="material-symbols-outlined text-5xl">workspace_premium</span>
@@ -97,7 +97,7 @@ export default function CertificatesPage() {
                                             key={cert.id}
                                             variants={sectionItem}
                                             {...cardHover}
-                                            className="group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-7 shadow-sm hover:shadow-lg transition-shadow duration-200"
+                                            className="group relative overflow-hidden rounded-[2rem] border border-slate-200/50 dark:border-slate-700/50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-7 shadow-[0_8px_30px_rgba(15,23,42,0.04)] hover:shadow-[0_20px_40px_rgba(15,23,42,0.08)] transition-all duration-300"
                                         >
                                             {/* Shimmer shine overlay */}
                                             <div className="absolute inset-0 -z-0 pointer-events-none overflow-hidden rounded-2xl">
