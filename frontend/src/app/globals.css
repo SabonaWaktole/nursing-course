@@ -240,3 +240,28 @@ select:disabled,
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.4);
 }
+
+/* ─── Glow On Hover (used by cards) ─────────────────────────────────────── */
+.glow-on-hover-dark {
+  box-shadow: 0 0 20px rgba(13, 185, 242, 0.15), 0 0 40px rgba(13, 185, 242, 0.05);
+}
+
+.glow-on-hover-light {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08), 0 0 20px rgba(13, 185, 242, 0.08);
+}
+
+/* ─── Fade In Animation ─────────────────────────────────────────────────── */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-in-out forwards;
+}
