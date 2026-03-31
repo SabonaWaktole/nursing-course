@@ -1,499 +1,944 @@
 'use client';
 
-import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { motion, useScroll, useTransform, useSpring, useMotionValue } from 'framer-motion';
+import {
+  Stethoscope, BookOpen, GraduationCap, Users, Target, Eye, Clock, Heart,
+  Shield, ChevronRight, ArrowRight, Pin, Calendar, ExternalLink,
+  Mail, Phone, MapPin, Send, ArrowDown, Award, Star, Quote
+} from 'lucide-react';
 import api from '@/lib/api';
 import { Course } from '@/lib/types';
-import { motion } from 'framer-motion';
 import { getFileUrl } from '@/lib/url-utils';
-import {
-  useSectionContainerVariants,
-  useSectionItemVariants,
-  useButtonHoverMotion,
-  useCardHoverMotion,
-  useGlowHoverMotion,
-  useCounterAnimation,
-} from '@/lib/motion';
 
-const HERO_IMAGE = "https://lh3.googleusercontent.com/aida-public/AB6AXuDL3Ct44XGGczsC3PgCH88mGoarkOnfGqO5yGNDimM3qDhIrSmMljtkwyBxg60rnV-szI55fdbZKDM8oVetYU7ZJdpAieBJboQWzpk1XaoIBNzAbjI-wLJVlGOKPPdHpWKF2EfsflwbmSY9bkWfbMDeaXNk8HiHIdVsi48QHKuhQeZ6Kf6nkz1yjTfCkLvCi6HqBf1gpkjyswXnw9aR9krjnmHHH2L9WFU7Aa29LuTa-8IFbraOD5LvQbGxu7f9x7CqhIzkfa58g7A";
-const AVATARS = [
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuDsnLpkkrc9PH9kfDTlLQcql89H38_Kmxab-jno3FTeXMEwN0CkC4T4isqRHBPQC_Y9usfNybbUgOxxncyRw-p6xeXKwDK3Ui5XcV8hYA0qmGV8_brV4e5YaAmg34G9t3sceHP1dLRxwO0oxV3eybg37qDOdbZvo_BZSTC3XcT1uSna-BstaiMxkajoHNFHjjtYSVwAtiHVIcMlS3a4142Cvou37zoQcwpuCkQZylTY9SttMimqXjERi9jpMheMXMg8hjOIQj2I5ZQ",
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuC6Mfriz3JVqlE_4pU2k2z2mYUIH4raLITGXgJTvoESCEFV4cBo2KAIXimqIFBGwCqh_97-OjmYNsqRdfAa9qvWjT8NGubfw4D1GVCVJIGyO3gpcSsW2YpYLZpaIHRFTRJ2m-fSW0X5ySlaY3ILGh8PoQszHpUdH6GbkJHzVnyn9jMOy7RM8j-qd7U4wGJTT3IF7wsGFM-JKLUjanHrtKmDtcZnhLa_SX5NlSYR6tILLLIu5AecsxG53bQhg8md5cySeLREevZXbHk",
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuAT9abQfh6Ithv2Gr_wcbnfBsFzTqtGj_b0FM3wAAmZy7B8lBBCbT2qj4y0FMg_MwTMLxFh9_RXeGOx5UdoBU9zepGCTBV8V8pMkUvHNvNqSs706ko1l1ZPXNWISEy75XmxPaHWfGIyUZHMlDmv69GBrZvU5WQ6Ku7ne5SgdeqaEIIn25aqPl6wMIo5KjpWFuZ0A2mVI1Qxp3EQUWZDHjD0K5Mb_Kc5uEm5n1-Y63Q07q3iSzSMiQkhyZWch0VmUsLznPgQE6xhubE"
+/* ═══════════════════════════════════════════
+   DATA
+   ═══════════════════════════════════════════ */
+
+const SERVICES = [
+  {
+    title: 'State-Approved Courses',
+    description: 'Access a comprehensive library of state-approved CNA training courses designed by healthcare professionals and aligned with current regulations.',
+    icon: <Stethoscope size={32} />,
+  },
+  {
+    title: 'Expert-Led Training',
+    description: 'Learn from experienced nursing professionals through high-quality video lessons that feel like being in a real classroom.',
+    icon: <BookOpen size={32} />,
+  },
+  {
+    title: 'Certification Programs',
+    description: 'Earn recognized certifications that advance your nursing career with flexible, self-paced training programs.',
+    icon: <GraduationCap size={32} />,
+  },
+  {
+    title: 'Career Advancement Tools',
+    description: 'Build in-demand clinical skills and move into the next chapter of your career with our professional development platform.',
+    icon: <Users size={32} />,
+  },
 ];
-const COURSE_IMAGES = [
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuBPiqNN6doImeLGvx7AqVM_u_4eayC43oI1qy0L47mYSquj7P2LU2uiqhNUml0x_TPkVP_SqzwTTWn4t40NadHma8Oml-vufTbpB-E4JBd517h-eN08D4EeqelLzY5vLzqyNyAWiCs9gWxnUQ4eWC4Mtu_ewDysIdLL6374Ks3QUxtVzWwTZdrePNXMKp1i1DwQXG2OlvllhSdHPnef-CecorR7XnsUBcxSGayYdunYpXxf8wuRTtWERYCLZ8X0RJ4c4Y2rVG159PY",
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuC8tvO4TD4F-WMTFdov_hEBkYocmKlBBNsfjx7KRDvnjDeIpsmxteAIhdgMOJIWwJ5Pcjql0Bg8SMjmBmoYxoNm6oCK1kxuGUv_cfzDVt3ZFNbA5KnL4T-b4zPKiR-8bwPHoctPiXoInpCpiGW3hK9EF9RLPtTm3s4RDpm9lI2Xm5W_WoPIsp6JyG3Lhkr_aLqt66-9FeAiX2VdE3zX_fNSvLWoi7ziJfp0JHpTCdlglthr4a-qH6-RtTeR_ofM4B5gdI3uY5cnlJE",
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuDcCgxwDXJPRza7EyzuFXAh7WQbVoxQsH0I5J8OV6s8s-1tY32z592eFhmNqQbZ49-ZUldN0wW8klYYm1rkBNGEwqkauVjTbAf65c-dIjksIxyzBPKaFCP_m5e__ohl7nQZ2cvwxwVmEMB1r1g4EBgby8dOoQ-vvcOEKM_9-yXLOYr5hhg_xg2ygEY13tHeMRHzrHdXjOmpsvxR9sR0mv_N5Ii1p8ZuGnzIGTXkKU4r2KyTrJKXq4rwZhZoPt4h8m6KELksywHOrew"
-];
+
+const ABOUT_TABS: Record<string, { title: string; icon: React.ReactNode; content: { title: string; description: string }[] }> = {
+  mission: {
+    title: 'Our Mission',
+    icon: <Target size={32} />,
+    content: [
+      { title: 'Empowering Caregivers', description: 'Providing top-tier professional development and certification training for the next generation of healthcare heroes.' },
+      { title: 'Accessible Education', description: 'Making quality nursing assistant training accessible to everyone through flexible, self-paced online learning.' },
+      { title: 'Empowering Care Everywhere', description: 'Building a community of skilled, compassionate caregivers who deliver outstanding patient care nationwide.' },
+    ],
+  },
+  vision: {
+    title: 'Our Vision',
+    icon: <Eye size={32} />,
+    content: [
+      { title: 'Leading CNA Education', description: 'Excelcommunity Living Inc envisions being the premier platform for nursing assistant professional development across the nation.' },
+      { title: 'Innovative Learning', description: 'We aim to provide innovative, technology-driven education solutions that bridge the gap between classroom learning and hands-on clinical practice.' },
+      { title: 'Advancing Healthcare Standards', description: 'By combining expert-led instruction with modern e-learning tools, we work to elevate the standard of patient care everywhere.' },
+    ],
+  },
+  background: {
+    title: 'Background',
+    icon: <Clock size={32} />,
+    content: [
+      { title: 'Industry-Leading Platform', description: 'Excelcommunity Living Inc has built a comprehensive SaaS platform for healthcare professional development and certification training.' },
+      { title: 'Trusted by Professionals', description: 'Our platform serves active students and healthcare facilities with state-approved courses and a 4.9/5 average rating.' },
+      { title: 'Proven Results', description: 'Facilities using our training have seen measurable improvements in patient satisfaction scores and staff competency.' },
+    ],
+  },
+  values: {
+    title: 'Core Values',
+    icon: <Heart size={32} />,
+    content: [
+      { title: 'Patient-Centered Care', description: 'Everything we teach is rooted in compassionate, patient-centered care that prioritizes safety and dignity.' },
+      { title: 'Excellence in Education', description: 'We maintain the highest standards in our course content, ensuring every lesson is practical, current, and impactful.' },
+      { title: 'Community & Support', description: 'We foster a supportive learning community where caregivers can grow, connect, and thrive in their careers.' },
+    ],
+  },
+};
+
 const TESTIMONIALS = [
-  { name: "Sarah Jenkins", role: "Lead CNA, Brightview Senior Living", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuB-9ccj2AW3PbcWnkG64zZp__O-ZjVuSeUBj9uqlocIrUBV8m3nryaYCvfteE8pScQ0_bfEr9B2B4EsTHbaWK0g-9CmhFLyBHbD2m4rEsi-hsSXzj-ipL4T2RBaPMJOCAW2xk99RKjcLUNGo_gBbmPlJ8eOb5uV1RZu2EXRHHJugV0ghpR8QqMMc7jLSMIIzodeD6NRSP4Z1CVeRHfobGPVJeJwHt5fhVCU2ay9SAZ-2izeXMi1gsBAMYlPixGU8pN8vjvNqZt_jbE", quote: "The dementia care certification helped me land a lead position at my facility. The content is practical and the platform is so easy to use on my phone during breaks." },
-  { name: "Michael Rivera", role: "Director of Nursing, City Clinic", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuD7NzmnFrDemVTBMFYAytspafxa5vwrxpngervzGZvVFM8_PT_DqvVwdj2nK917fj6bCY5m_6zf52czmmHSBNfflxGqdniQwnLqn7V6Fw6Uywj5OS0jIKt8t5yotcPXYFIcrmYh5bMrP4K9FaUBoyHkFfIaf9K6QEXXtWoioSFzFIeS8Me8G528qC7qqdfXplvOMMarIsfmoWbKqB8IwiVPczqgLhLAKBzXaAbsShsTN2pPEJ9rzqwoG0-gfjxnF7h_83CiappLEhI", quote: "As a facility manager, training my staff has never been easier. We've seen a 15% increase in patient satisfaction scores since starting with Excelcommunity Living Inc." },
-  { name: "Elena Thompson", role: "Senior Caregiver", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCNJ4GXSaUjEBgZW2E0Cn96oMz_L-ivaYG0u_FjHJ75z7dz9XgDxYeucKMJw9Yy0WU9ztdGqptLAVpHuefYx2BQX0dlDnhPg8SyuU99UjdSMja5D8VqdVyGOdVOaJh0tlrcH9UfO8UakNOAmjYXxwrnijKKQowlMQuY8iTz2Y4U8hi0oFY1GMwWCyPVgD5Ew991s4qpL125MUsjP8fvokJqeJsAqnA6cBsBsGiLS5EvgSaB3N3-s-AbCwjzXx20KT_xeCa12ZWYgC4", quote: "The quality of the video lessons is incredible. It feels like you're in a real classroom. This is by far the best CE platform I've used in my 10-year career." },
+  {
+    id: 1,
+    name: 'Sarah Jenkins',
+    role: 'Lead CNA, Brightview Senior Living',
+    quote: 'The dementia care certification helped me land a lead position at my facility. The content is practical and the platform is so easy to use on my phone during breaks.',
+    rating: 5,
+  },
+  {
+    id: 2,
+    name: 'Michael Rivera',
+    role: 'Director of Nursing, City Clinic',
+    quote: 'As a facility manager, training my staff has never been easier. We\'ve seen a 15% increase in patient satisfaction scores since starting with Excelcommunity Living Inc.',
+    rating: 5,
+  },
+  {
+    id: 3,
+    name: 'Elena Thompson',
+    role: 'Senior Caregiver',
+    quote: 'The quality of the video lessons is incredible. It feels like you\'re in a real classroom. This is by far the best CE platform I\'ve used in my 10-year career.',
+    rating: 5,
+  },
 ];
+
+
+const STATS = [
+  { label: 'Active Students', value: '2,500+', icon: <Users size={24} /> },
+  { label: 'Completion Rate', value: '94%', icon: <Target size={24} /> },
+  { label: 'Certificates Issued', value: '8,200+', icon: <Award size={24} /> },
+  { label: 'Average Rating', value: '4.9/5', icon: <Star size={24} /> },
+];
+
+const COURSES = [
+  {
+    id: 1,
+    name: 'Patient Safety Protocols',
+    overview: 'Master essential safety procedures, infection control, and emergency protocols for clinical environments.',
+    link: '/courses',
+    thumbnail: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&h=400&fit=crop',
+  },
+  {
+    id: 2,
+    name: 'Dementia Care Certification',
+    overview: 'Comprehensive training in dementia and Alzheimer\'s care, communication techniques, and behavioral management.',
+    link: '/courses',
+    thumbnail: 'https://images.unsplash.com/photo-1559757175-5700dde675bc?w=600&h=400&fit=crop',
+  },
+  {
+    id: 3,
+    name: 'CNA Fundamentals',
+    overview: 'Core nursing assistant skills including vital signs, patient hygiene, mobility assistance, and documentation.',
+    link: '/courses',
+    thumbnail: 'https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?w=600&h=400&fit=crop',
+  },
+];
+
+/* ═══════════════════════════════════════════
+   MAIN COMPONENT
+   ═══════════════════════════════════════════ */
 
 export default function LandingPage() {
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const [stats, setStats] = useState({
-    students: 0,
-    completionRate: 0,
-    clinics: 0,
-  });
-
-  const sectionContainer = useSectionContainerVariants();
-  const sectionItem = useSectionItemVariants();
-  const buttonHover = useButtonHoverMotion();
-  const cardHover = useCardHoverMotion();
-  const glowHover = useGlowHoverMotion();
-
-  useEffect(() => {
-    api.get('/courses')
-      .then((res) => {
-        if (Array.isArray(res.data)) {
-          setCourses(res.data.slice(0, 3));
-        } else {
-          setCourses([]);
-        }
-        setLoading(false);
-        setError(false);
-      })
-      .catch((err) => {
-        console.error("Failed to fetch courses:", err);
-        setLoading(false);
-        setError(true);
-      });
-    
-    // Fetch real backend metrics
-    api.get('/public/stats').then((res) => {
-      if (res.data) {
-        setStats({
-          // Use real data or fallback to marketing numbers if database is completely empty
-          students: res.data.students > 0 ? res.data.students : 0,
-          completionRate: res.data.completionRate > 0 ? res.data.completionRate : 0,
-          clinics: res.data.clinics > 0 ? res.data.clinics : 0,
-        });
-      }
-    }).catch(err => console.error("Failed to fetch public stats:", err));
-  }, []);
-
-  const courseLabels = ["Bestseller", null, "Trending"];
-  const courseColors = ["bg-primary", null, "bg-emerald-500"];
-
   return (
     <div className="flex flex-col overflow-x-hidden">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden pt-16 pb-20 lg:pt-24 lg:pb-32 hero-gradient">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="lg:grid lg:grid-cols-12 lg:gap-8 items-center">
-            {/* Left Content */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
-              className="sm:text-center md:max-w-2xl md:mx-auto lg:col-span-6 lg:text-left"
-            >
-              <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10">
-                <motion.div 
-                    animate={{ y: [0, -50, 0], x: [0, 30, 0], scale: [1, 1.1, 1] }} 
-                    transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-                    className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-primary/20 rounded-full blur-[100px]" 
-                />
-                <motion.div 
-                    animate={{ y: [0, 40, 0], x: [0, -40, 0], scale: [1, 1.2, 1] }} 
-                    transition={{ duration: 18, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-                    className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-[120px]" 
-                />
-              </div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider mb-6 shadow-sm border border-primary/20">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-                </span>
-                New: Advanced Wound Care Certification
-              </div>
-              <motion.h1 
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ type: 'spring', damping: 20, stiffness: 100, delay: 0.1 }}
-                className="text-5xl md:text-6xl lg:text-7xl font-black text-slate-900 dark:text-white leading-[1.1] tracking-tight mb-6"
-              >
-                Empower Your <span className="text-primary relative whitespace-nowrap">
-                    Career in Care
-                    <motion.svg 
-                        initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.5, delay: 0.8, ease: "easeInOut" }}
-                        className="absolute w-full h-3 -bottom-1 left-0 text-primary/30" viewBox="0 0 100 10" preserveAspectRatio="none"
-                    >
-                        <path d="M0 5 Q 50 10 100 5" fill="transparent" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
-                    </motion.svg>
-                </span>
-              </motion.h1>
-              <motion.p 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ type: 'spring', damping: 20, stiffness: 100, delay: 0.2 }}
-                className="text-lg md:text-xl text-slate-600 dark:text-slate-400 mb-10 leading-relaxed max-w-2xl mx-auto lg:mx-0"
-              >
-                Industry-leading SaaS platform for Excelcommunity Living Inc professional development. Access state-approved courses, expert-led training, and career advancement tools designed for the modern healthcare professional.
-              </motion.p>
-              <div className="flex flex-col sm:flex-row gap-4 sm:justify-center lg:justify-start">
-                <motion.div {...glowHover}>
-                  <Link href="/courses" className="shimmer-btn px-8 py-4 bg-primary text-white font-bold rounded-xl shadow-xl shadow-primary/30 hover:-translate-y-0.5 transition-all text-lg flex items-center justify-center gap-2">
-                    Browse Courses <span className="material-symbols-outlined">arrow_forward</span>
-                  </Link>
-                </motion.div>
-                <motion.div whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>
-                  <Link href="/register" className="px-8 py-4 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 transition-all text-lg text-center h-full block leading-none flex items-center justify-center">
-                    View Demo
-                  </Link>
-                </motion.div>
-              </div>
-              {/* Social proof */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ type: 'spring', damping: 20, stiffness: 100, delay: 0.5 }}
-                className="mt-8 flex items-center gap-4 text-sm text-slate-500 sm:justify-center lg:justify-start"
-              >
-                <div className="flex -space-x-2">
-                  {AVATARS.map((src, i) => (
-                    <motion.img
-                      key={i}
-                      alt="User"
-                      initial={{ opacity: 0, scale: 0.5 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.6 + i * 0.1, duration: 0.3, ease: 'easeOut' }}
-                      className="h-8 w-8 rounded-full border-2 border-white dark:border-background-dark object-cover"
-                      src={src}
-                    />
-                  ))}
-                </div>
-                <span>Joined by <strong className="text-slate-900 dark:text-white">12,000+</strong> CNAs this month</span>
-              </motion.div>
-            </motion.div>
-
-            {/* Right Image */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 1, ease: "easeOut" }}
-              className="mt-16 lg:mt-0 lg:col-span-6 relative"
-            >
-              <motion.div
-                animate={{ y: [0, -12, 0] }}
-                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-                className="relative mx-auto w-full rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden border-[6px] border-white/50 dark:border-slate-800/50 backdrop-blur-sm group"
-              >
-                <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none z-10"></div>
-                <img alt="Platform Preview" className="w-full object-cover aspect-[4/3] transform group-hover:scale-105 transition-transform duration-700 ease-out" src={HERO_IMAGE} />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent z-10"></div>
-                <div className="absolute bottom-6 left-6 right-6 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md p-5 rounded-2xl flex items-center justify-between shadow-2xl z-20 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
-                  <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 bg-primary/20 rounded-xl flex items-center justify-center relative shadow-inner">
-                      <div className="absolute inset-0 bg-primary/20 animate-ping rounded-xl"></div>
-                      <span className="material-symbols-outlined text-primary text-2xl relative z-10">play_circle</span>
-                    </div>
-                    <div>
-                      <p className="text-xs font-black text-primary uppercase tracking-wider">Current Lesson</p>
-                      <p className="text-sm font-bold text-slate-900 dark:text-white truncate max-w-[150px] sm:max-w-[200px]">Patient Safety Protocols</p>
-                    </div>
-                  </div>
-                  <div className="w-24 h-2.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden shadow-inner">
-                    <motion.div 
-                      initial={{ width: 0 }}
-                      whileInView={{ width: '75%' }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 1.5, ease: "easeOut", delay: 0.5 }}
-                      className="h-full bg-gradient-to-r from-primary to-emerald-400"
-                    />
-                  </div>
-                </div>
-              </motion.div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-12 bg-white dark:bg-background-dark border-y border-slate-200 dark:border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            variants={sectionContainer}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: "-100px" }}
-            className="grid grid-cols-2 lg:grid-cols-4 gap-8"
-          >
-            <AnimatedStat 
-              end={stats.students >= 1000 ? Math.floor(stats.students / 1000) : stats.students} 
-              suffix={stats.students >= 1000 ? "k+" : ""} 
-              label="Active Students" 
-            />
-            <AnimatedStat 
-              end={stats.completionRate} 
-              suffix="%" 
-              label="Completion Rate" 
-            />
-            <AnimatedStat 
-              end={stats.clinics >= 1000 ? Math.floor(stats.clinics / 1000) : stats.clinics} 
-              suffix={stats.clinics >= 1000 ? "k+" : ""} 
-              label="Certificates Issued" 
-            />
-            <AnimatedStatText value="4.9/5" label="Average Rating" />
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Featured Courses */}
-      <section className="py-24 bg-background-light dark:bg-background-dark">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            variants={sectionItem}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: "-80px" }}
-            className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6"
-          >
-            <div>
-              <h2 className="text-primary font-bold uppercase tracking-widest text-sm mb-2">Our Catalog</h2>
-              <h3 className="text-4xl font-black text-slate-900 dark:text-white">Featured Courses</h3>
-            </div>
-            <Link href="/courses" className="text-primary font-bold flex items-center gap-1 hover:underline underline-offset-4">
-              View all courses <span className="material-symbols-outlined">chevron_right</span>
-            </Link>
-          </motion.div>
-
-          <div
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-          >
-            {loading ? (
-              // Skeleton loading cards
-              [1, 2, 3].map((i) => (
-                <div key={i} className="bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-pulse">
-                  <div className="aspect-video bg-slate-200 dark:bg-slate-800"></div>
-                  <div className="p-6 space-y-3">
-                    <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-2/3"></div>
-                    <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded w-full"></div>
-                    <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-5/6"></div>
-                  </div>
-                </div>
-              ))
-            ) : error ? (
-              <div className="col-span-full py-20 text-center">
-                <p className="text-slate-500 dark:text-slate-400 font-medium">Unable to load courses at this time.</p>
-                <button 
-                  onClick={() => window.location.reload()}
-                  className="mt-4 text-primary font-bold hover:underline"
-                >
-                  Try Again
-                </button>
-              </div>
-            ) : courses.length > 0 ? (
-              courses.map((course, idx) => (
-              <motion.div
-                key={course.id}
-                initial={{ opacity: 0, y: 24 }}
-                animate={{ opacity: 1, y: 0 }}
-                {...cardHover}
-                transition={{ ...cardHover.transition, delay: idx * 0.08 }}
-                className="relative group h-full"
-              >
-                <div className="absolute inset-0 bg-primary/20 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10"></div>
-                <Link
-                  href={`/courses/${course.id}`}
-                  className="bg-white dark:bg-slate-900 rounded-3xl overflow-hidden border border-slate-200/80 dark:border-slate-800/80 transition-all hover:shadow-[0_20px_40px_-15px_rgba(13,185,242,0.15)] dark:hover:shadow-[0_20px_40px_-15px_rgba(13,185,242,0.1)] h-full flex flex-col relative z-0"
-                >
-                  <div className="relative aspect-[4/3] overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity z-10"></div>
-                    <img
-                      alt={course.title}
-                      className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
-                      src={course.thumbnail ? getFileUrl(course.thumbnail) : COURSE_IMAGES[idx % 3]}
-                    />
-                    {courseLabels[idx] && (
-                      <div className={`absolute top-4 left-4 ${courseColors[idx]} text-white text-[10px] font-black uppercase px-3 py-1.5 rounded-lg shadow-lg z-20 backdrop-blur-md bg-opacity-90 tracking-wider`}>
-                        {courseLabels[idx]}
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-8 flex flex-col flex-1 relative bg-white dark:bg-slate-900 z-20">
-                    <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                    
-                    <div className="flex items-center gap-1.5 mb-4">
-                      <div className="flex items-center text-amber-500 bg-amber-50 dark:bg-amber-500/10 px-2 py-1 rounded-md">
-                        <span className="material-symbols-outlined text-[14px]">star</span>
-                        <span className="text-xs font-bold ml-1">4.9</span>
-                      </div>
-                      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 ml-2 border-l border-slate-200 dark:border-slate-700 pl-3">1.2k Reviews</span>
-                    </div>
-                    
-                    <h4 className="text-xl font-bold mb-3 group-hover:text-primary transition-colors text-slate-900 dark:text-white leading-tight">{course.title}</h4>
-                    <p className="text-slate-600 dark:text-slate-400 text-sm mb-8 line-clamp-2 leading-relaxed flex-1">
-                      {course.description || "Master specialized healthcare techniques and behavioral management in this comprehensive digital credential."}
-                    </p>
-                    
-                    <div className="flex items-center justify-between pt-6 border-t border-slate-100 dark:border-slate-800/80 mt-auto">
-                      <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                        {course.price ? `$${course.price}` : 'Free'}
-                      </span>
-                      <span className="px-5 py-2.5 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl group-hover:bg-primary group-hover:text-white transition-all duration-300 font-bold text-sm shadow-sm group-hover:shadow-primary/30 flex items-center gap-2">
-                        Enroll <span className="material-symbols-outlined text-sm transition-transform group-hover:translate-x-1">arrow_forward</span>
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              </motion.div>
-            ))
-            ) : (
-              <div className="col-span-full py-20 text-center">
-                <p className="text-slate-500 dark:text-slate-400 font-medium">No courses are currently featured. Check back soon!</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section className="py-24 bg-white dark:bg-background-dark">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            variants={sectionItem}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: "-80px" }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-4xl font-black mb-4 text-slate-900 dark:text-white">Trusted by Caregivers</h2>
-            <p className="text-slate-600 dark:text-slate-400">Hear from professionals who advanced their careers with Excelcommunity Living Inc.</p>
-          </motion.div>
-          <motion.div
-            variants={sectionContainer}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: "-60px" }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-8"
-          >
-            {TESTIMONIALS.map((t) => (
-              <motion.div
-                key={t.name}
-                variants={sectionItem}
-                {...cardHover}
-                className="bg-background-light dark:bg-slate-800/50 p-8 rounded-2xl relative transition-colors"
-              >
-                <span className="material-symbols-outlined text-primary/30 text-6xl absolute top-4 right-4">format_quote</span>
-                <p className="text-slate-700 dark:text-slate-300 italic mb-8 relative z-10">
-                  &ldquo;{t.quote}&rdquo;
-                </p>
-                <div className="flex items-center gap-4">
-                  <img alt={t.name} className="w-12 h-12 rounded-full object-cover" src={t.img} />
-                  <div>
-                    <h5 className="font-bold text-slate-900 dark:text-white">{t.name}</h5>
-                    <p className="text-xs text-slate-500">{t.role}</p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 px-4">
-        <motion.div
-          variants={sectionItem}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: "-80px" }}
-          className="max-w-6xl mx-auto bg-primary rounded-[2rem] p-10 md:p-14 text-white relative overflow-hidden shadow-2xl shadow-primary/40"
-        >
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent)]" />
-          <motion.div
-            animate={{ y: [0, -20, 0], x: [0, 15, 0] }}
-            transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
-            className="absolute -left-24 -bottom-24 w-72 h-72 rounded-full bg-white/8 blur-3xl"
-          />
-          <motion.div
-            animate={{ y: [0, 15, 0], x: [0, -10, 0] }}
-            transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
-            className="absolute -right-16 -top-16 w-56 h-56 rounded-full bg-white/5 blur-3xl"
-          />
-          <div className="relative flex flex-col md:flex-row items-center md:items-start gap-10">
-            <div className="flex-1 text-center md:text-left space-y-4">
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.1, duration: 0.4 }}
-                className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-xs font-bold uppercase tracking-[0.2em]"
-              >
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-70 blur-[2px]" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
-                </span>
-                Enrollment Open
-              </motion.div>
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-black leading-tight">
-                Ready to advance your{" "}
-                <span className="relative whitespace-nowrap">
-                  nursing career?
-                  <span className="absolute -bottom-1 left-0 right-0 h-[3px] bg-gradient-to-r from-white/70 to-white/20 rounded-full" />
-                </span>
-              </h2>
-              <p className="text-base md:text-lg text-white/85 max-w-xl">
-                Build in-demand clinical skills, earn state‑approved certificates, and move into the next chapter of your career with flexible, self‑paced training.
-              </p>
-            </div>
-
-            <div className="w-full md:w-auto flex flex-col sm:flex-row md:flex-col gap-3 md:gap-4 justify-center md:justify-start">
-              <motion.div {...glowHover} className="w-full sm:w-auto">
-                <Link
-                  href="/register"
-                  className="shimmer-btn flex items-center justify-center gap-2 px-10 py-3.5 bg-white text-primary font-bold rounded-xl hover:bg-slate-50 transition-all shadow-lg shadow-primary/40 text-sm md:text-base"
-                >
-                  Create free account
-                  <span className="material-symbols-outlined text-base md:text-lg">arrow_forward</span>
-                </Link>
-              </motion.div>
-              <motion.div {...buttonHover} className="w-full sm:w-auto">
-                <Link
-                  href="/courses"
-                  className="flex items-center justify-center gap-2 px-10 py-3.5 bg-primary/10 border border-white/30 text-white font-semibold rounded-xl hover:bg-white/5 transition-all text-sm md:text-base"
-                >
-                  Explore course catalog
-                  <span className="material-symbols-outlined text-base md:text-lg">menu_book</span>
-                </Link>
-              </motion.div>
-              <p className="text-xs text-white/70 text-center md:text-left">
-                No credit card required. Start learning in under 2 minutes.
-              </p>
-            </div>
-          </div>
-        </motion.div>
-      </section>
+      <HeroSection />
+      <StatsSection />
+      <ServicesSection />
+      <AboutSection />
+      <TestimonialsSection />
+      <CoursesSection />
+      <CTASection />
+      <ContactSection />
     </div>
   );
 }
 
-/* ─── Animated Stat Counter Component ──────────────────────────────────────── */
+/* ═══════════════════════════════════════════
+   HERO SECTION
+   ═══════════════════════════════════════════ */
 
-function AnimatedStat({ end, suffix, label }: { end: number; suffix: string; label: string }) {
-  const { count, ref } = useCounterAnimation(end, 2);
+function HeroSection() {
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
+  const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
+  const scale = useTransform(scrollYProgress, [0, 0.5], [1, 1.05]);
+  const yShift = useTransform(scrollYProgress, [0, 0.5], [0, 60]);
+
+  const [particles, setParticles] = useState<
+    { id: number; size: number; x: number; y: number; duration: number; delay: number }[]
+  >([]);
+
+  useEffect(() => {
+    setParticles(
+      Array.from({ length: 15 }, (_, i) => ({
+        id: i,
+        size: Math.random() * 4 + 2,
+        x: Math.random() * 100,
+        y: Math.random() * 100,
+        duration: Math.random() * 10 + 15,
+        delay: Math.random() * 5,
+      }))
+    );
+  }, []);
+
+  const scrollToServices = () => {
+    document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const title = 'Excelcommunity Living';
+  const subtitle = 'Professional Nursing Assistant Training';
+  const tagline = 'Access state-approved courses, expert-led training, and career advancement tools designed for the modern healthcare professional.';
+
   return (
-    <motion.div variants={{ hidden: { opacity: 0, y: 24 }, show: { opacity: 1, y: 0, transition: { duration: 0.38, ease: [0.25, 0.8, 0.25, 1] } } }} className="text-center">
-      <p ref={ref as React.Ref<HTMLParagraphElement>} className="text-4xl font-black text-slate-900 dark:text-white tabular-nums">
-        {count}{suffix}
-      </p>
-      <p className="text-sm font-medium text-slate-500 uppercase tracking-widest mt-1">{label}</p>
-    </motion.div>
+    <div
+      ref={ref}
+      className="relative min-h-screen flex items-center justify-center overflow-hidden px-6"
+    >
+      {/* Background Image */}
+      <div className="absolute inset-0 z-0">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage: `url('https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1920&h=1080&fit=crop')`,
+          }}
+        />
+        <div className="absolute inset-0 bg-black/75 dark:bg-black/80" />
+      </div>
+
+      {/* Gradient overlays */}
+      <motion.div
+        className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-purple-400/10 pointer-events-none z-[1]"
+        style={{ opacity, scale }}
+      />
+
+      {/* Grid pattern */}
+      <motion.div className="absolute inset-0 opacity-[0.03] pointer-events-none z-[1]">
+        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="smallGrid" width="15" height="15" patternUnits="userSpaceOnUse">
+              <path d="M 15 0 L 0 0 0 15" fill="none" stroke="currentColor" strokeWidth="0.3" />
+            </pattern>
+            <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
+              <rect width="60" height="60" fill="url(#smallGrid)" />
+              <path d="M 60 0 L 0 0 0 60" fill="none" stroke="currentColor" strokeWidth="0.6" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#grid)" />
+        </svg>
+      </motion.div>
+
+      {/* Glow blobs */}
+      <motion.div
+        className="absolute -top-20 -left-20 w-80 h-80 bg-primary/20 rounded-full blur-[100px] z-0"
+        style={{ y: useTransform(scrollYProgress, [0, 1], [0, -50]) }}
+      />
+      <motion.div
+        className="absolute bottom-0 right-0 w-60 h-60 bg-purple-400/20 rounded-full blur-[80px] z-0"
+        style={{ y: useTransform(scrollYProgress, [0, 1], [0, 50]) }}
+      />
+      <motion.div className="absolute top-1/3 right-1/4 w-40 h-40 bg-blue-400/10 rounded-full blur-[60px] z-0" />
+
+      {/* Floating particles */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-[1]">
+        {particles.map((p) => (
+          <motion.div
+            key={p.id}
+            className="absolute rounded-full bg-primary"
+            style={{
+              width: `${p.size}px`,
+              height: `${p.size}px`,
+              left: `${p.x}%`,
+              top: `${p.y}%`,
+              opacity: p.size > 3 ? 0.15 : 0.08,
+            }}
+            animate={{
+              y: [`${p.y}%`, `${p.y - 15}%`, `${p.y}%`],
+              x: [`${p.x}%`, `${p.x + (Math.random() > 0.5 ? 5 : -5)}%`, `${p.x}%`],
+            }}
+            transition={{
+              duration: p.duration,
+              repeat: Infinity,
+              delay: p.delay,
+              ease: 'easeInOut',
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Main Content */}
+      <motion.div
+        className="relative z-10 max-w-4xl text-center pt-24"
+        style={{ y: yShift }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8 }}
+      >
+        {/* Logo ring */}
+        <div className="relative mx-auto mb-8 w-28 h-28 flex items-center justify-center">
+          <motion.div
+            className="absolute inset-0 rounded-full border border-primary/20"
+            animate={{ rotate: 360, scale: [1, 1.05, 1] }}
+            transition={{
+              rotate: { duration: 25, repeat: Infinity, ease: 'linear' },
+              scale: { duration: 4, repeat: Infinity, ease: 'easeInOut' },
+            }}
+          />
+          <motion.div
+            className="absolute w-24 h-24 rounded-full border border-primary/30"
+            animate={{ rotate: -360 }}
+            transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}
+          />
+          <motion.div
+            className="w-20 h-20 rounded-full flex items-center justify-center shadow-lg bg-slate-900 dark:bg-[#1e293b]"
+            initial={{ scale: 0 }}
+            animate={{
+              scale: 1,
+              boxShadow: [
+                '0 0 0 rgba(13, 185, 242, 0)',
+                '0 0 15px rgba(13, 185, 242, 0.2)',
+                '0 0 0 rgba(13, 185, 242, 0)',
+              ],
+            }}
+            transition={{
+              delay: 0.2,
+              type: 'spring',
+              bounce: 0.4,
+              boxShadow: { duration: 2, repeat: Infinity, ease: 'easeInOut' },
+            }}
+          >
+            <span className="text-primary text-3xl font-black">E</span>
+          </motion.div>
+
+          {/* Orbiting dots */}
+          <motion.div
+            className="absolute w-2 h-2 rounded-full bg-primary"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+            style={{ x: 45, originX: -2, originY: 0 }}
+          />
+          <motion.div
+            className="absolute w-1.5 h-1.5 rounded-full bg-purple-400"
+            animate={{ rotate: -360 }}
+            transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
+            style={{ x: 40, originX: -1.8, originY: 0 }}
+          />
+        </div>
+
+        {/* Title with staggered letters */}
+        <div className="overflow-hidden mb-4">
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-primary inline-flex">
+            {title.split('').map((char, i) => (
+              <motion.span
+                key={i}
+                initial={{ y: 60, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.4 + i * 0.05, duration: 0.7, ease: [0.215, 0.61, 0.355, 1] }}
+                className="inline-block relative"
+              >
+                {char === ' ' ? '\u00A0' : char}
+                <motion.span
+                  className="absolute -bottom-1 left-0 w-full h-[2px] bg-primary/50"
+                  initial={{ scaleX: 0, originX: 0 }}
+                  animate={{ scaleX: 1 }}
+                  transition={{ delay: 0.9 + i * 0.05, duration: 0.4 }}
+                />
+              </motion.span>
+            ))}
+          </h1>
+        </div>
+
+        {/* Animated line */}
+        <motion.div
+          className="relative h-0.5 w-0 mx-auto mb-8 overflow-hidden bg-primary/30"
+          animate={{ width: '80%' }}
+          transition={{ delay: 1.1, duration: 0.8, ease: 'easeOut' }}
+        >
+          <motion.div
+            className="absolute top-0 left-0 h-full bg-primary"
+            initial={{ width: '0%' }}
+            animate={{ width: ['0%', '100%', '0%'] }}
+            transition={{
+              delay: 1.3,
+              duration: 2,
+              times: [0, 0.5, 1],
+              ease: 'easeInOut',
+              repeat: Infinity,
+              repeatDelay: 2,
+            }}
+          />
+        </motion.div>
+
+        {/* Subtitle with staggered words */}
+        <div className="relative mb-4">
+          <motion.p className="text-xl md:text-2xl lg:text-3xl max-w-2xl mx-auto leading-relaxed text-white/90">
+            {subtitle.split(' ').map((word, i) => (
+              <motion.span
+                key={i}
+                className="inline-block mr-2 relative"
+                initial={{ y: 30, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 1.4 + i * 0.15, duration: 0.6, ease: 'easeOut' }}
+              >
+                {word}
+              </motion.span>
+            ))}
+          </motion.p>
+        </div>
+
+        {/* Tagline */}
+        <motion.p
+          className="text-lg md:text-xl mb-10 text-white/70"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 2.1, duration: 0.7 }}
+        >
+          {tagline}
+        </motion.p>
+
+        {/* CTA Button */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 2.4, duration: 0.5 }}
+          className="relative inline-block"
+        >
+          <motion.div
+            className="absolute inset-0 rounded-full blur-lg bg-primary/20"
+            whileHover={{ scale: 1.1, opacity: 0.6 }}
+          />
+          <motion.button
+            onClick={scrollToServices}
+            className="relative z-10 flex items-center px-8 py-4 rounded-full text-lg font-medium bg-primary text-white hover:bg-primary/90 transition-colors"
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <span className="mr-2">Browse Courses</span>
+            <ArrowRight className="w-5 h-5" />
+          </motion.button>
+        </motion.div>
+      </motion.div>
+
+      {/* Scroll indicator */}
+      <motion.div
+        className="absolute bottom-10 left-1/2 -translate-x-1/2 z-10"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5, delay: 2.8 }}
+      >
+        <motion.button
+          onClick={scrollToServices}
+          className="flex flex-col items-center group text-primary"
+          whileHover={{ y: -3 }}
+        >
+          <span className="text-sm mb-2 opacity-70 group-hover:opacity-100 transition-opacity tracking-wider">
+            SCROLL
+          </span>
+          <div className="w-8 h-12 border-2 border-primary/30 rounded-full flex items-center justify-center overflow-hidden">
+            <motion.div
+              className="bg-primary"
+              style={{ width: 2, height: 6, borderRadius: 1 }}
+              animate={{ y: [0, 20, 0] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+            />
+          </div>
+        </motion.button>
+      </motion.div>
+    </div>
   );
 }
 
-function AnimatedStatText({ value, label }: { value: string; label: string }) {
+/* ═══════════════════════════════════════════
+   SERVICES SECTION
+   ═══════════════════════════════════════════ */
+
+function ServiceCard({
+  title,
+  description,
+  icon,
+  delay,
+}: {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  delay: number;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => setVisible(true), delay);
+          observer.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.2 }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => { if (ref.current) observer.unobserve(ref.current); };
+  }, [delay]);
+
   return (
-    <motion.div variants={{ hidden: { opacity: 0, y: 24 }, show: { opacity: 1, y: 0, transition: { duration: 0.38, ease: [0.25, 0.8, 0.25, 1] } } }} className="text-center">
-      <p className="text-4xl font-black text-slate-900 dark:text-white">{value}</p>
-      <p className="text-sm font-medium text-slate-500 uppercase tracking-widest mt-1">{label}</p>
-    </motion.div>
+    <div
+      ref={ref}
+      className={`group p-6 rounded-lg transform transition-all duration-500 relative overflow-hidden
+        ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
+        hover:-translate-y-2 hover:shadow-xl
+        bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800
+        hover:border-primary/30 dark:hover:border-primary/30
+      `}
+    >
+      <div className="w-14 h-14 rounded-full flex items-center justify-center mb-4 transition-transform duration-300 bg-primary/10 text-primary group-hover:scale-110">
+        {icon}
+      </div>
+      <h3 className="text-xl font-semibold mb-3 transition-colors duration-300 text-slate-900 dark:text-white group-hover:text-primary">
+        {title}
+      </h3>
+      <p className="text-slate-600 dark:text-slate-400 group-hover:text-slate-500 transition-colors duration-300">
+        {description}
+      </p>
+      <span className="absolute bottom-0 left-0 h-1 w-0 transition-all duration-300 group-hover:w-full rounded-full bg-primary" />
+    </div>
+  );
+}
+
+function StatsSection() {
+  const [stats, setStats] = useState(STATS);
+
+  useEffect(() => {
+    api.get('/public/stats').then((res) => {
+      setStats([
+        { label: 'Active Students', value: `${res.data.students}+`, icon: <Users size={24} /> },
+        { label: 'Completion Rate', value: `${res.data.completionRate}%`, icon: <Target size={24} /> },
+        { label: 'Certificates Issued', value: `${res.data.clinics}+`, icon: <Award size={24} /> },
+        { label: 'Average Rating', value: '4.9/5', icon: <Star size={24} /> }, // Hardcoded rating
+      ]);
+    }).catch(console.error);
+  }, []);
+
+  return (
+    <section className="py-16 px-4 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800">
+      <div className="container mx-auto max-w-7xl">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          {stats.map((stat, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.1, duration: 0.5 }}
+              className="text-center group"
+            >
+              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-300">
+                {stat.icon}
+              </div>
+              <div className="text-3xl md:text-4xl font-bold text-primary mb-1">{stat.value}</div>
+              <div className="text-sm text-slate-600 dark:text-slate-400 font-medium">{stat.label}</div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ServicesSection() {
+  return (
+    <section id="services" className="py-20 px-4 bg-background-light dark:bg-background-dark">
+      <div className="container mx-auto max-w-7xl">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-primary">What We Offer</h2>
+          <p className="max-w-2xl mx-auto text-slate-600 dark:text-slate-400">
+            Industry-leading SaaS platform for professional development. Access state-approved courses, expert-led training, and career advancement tools.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {SERVICES.map((s, i) => (
+            <ServiceCard key={i} title={s.title} description={s.description} icon={s.icon} delay={i * 100} />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   ABOUT SECTION
+   ═══════════════════════════════════════════ */
+
+function AboutSection() {
+  const [activeTab, setActiveTab] = useState('mission');
+  const tab = ABOUT_TABS[activeTab];
+
+  return (
+    <section id="about" className="py-20 px-4 bg-white dark:bg-slate-950">
+      <div className="container mx-auto max-w-7xl">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-primary">About Us</h2>
+          <p className="max-w-2xl mx-auto text-slate-600 dark:text-slate-400">
+            Learn more about Excelcommunity Living Inc&apos;s mission, vision, and the core values that drive our commitment to healthcare education.
+          </p>
+        </div>
+
+        {/* Tabs */}
+        <div className="mb-10 flex flex-wrap justify-center gap-2">
+          {Object.entries(ABOUT_TABS).map(([key, data]) => (
+            <button
+              key={key}
+              onClick={() => setActiveTab(key)}
+              className={`px-6 py-3 rounded-full transition-all duration-300 ${
+                activeTab === key
+                  ? 'bg-primary text-white shadow-lg shadow-primary/30'
+                  : 'bg-transparent text-primary border border-primary/30 hover:border-primary hover:shadow-[0_0_15px_4px_rgba(13,185,242,0.2)]'
+              }`}
+            >
+              <span className="flex items-center gap-2 text-sm font-medium">
+                {data.title}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* Tab content */}
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <div className="flex items-center justify-center mb-10">
+            <div className="w-16 h-16 rounded-full flex items-center justify-center mr-4 bg-primary/10 text-primary">
+              {tab.icon}
+            </div>
+            <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{tab.title}</h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {tab.content.map((item, i) => (
+              <div
+                key={i}
+                className="relative p-6 rounded-lg transition-all duration-300 hover:-translate-y-2 overflow-hidden group
+                  bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800
+                  hover:border-primary/30 dark:hover:border-primary/30 hover:shadow-xl"
+              >
+                <h4 className="text-xl font-semibold mb-3 transition-colors duration-300 text-primary group-hover:text-primary/80">
+                  {item.title}
+                </h4>
+                <p className="transition-colors duration-300 text-slate-600 dark:text-slate-400">
+                  {item.description}
+                </p>
+                <span className="absolute bottom-0 left-0 h-1 w-0 transition-all duration-300 group-hover:w-full rounded-full bg-primary" />
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+
+function TestimonialsSection() {
+  return (
+    <section id="testimonials" className="py-20 px-4 bg-background-light dark:bg-background-dark">
+      <div className="container mx-auto max-w-7xl">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-primary">Trusted by Caregivers</h2>
+          <p className="max-w-2xl mx-auto text-slate-600 dark:text-slate-400">
+            Hear from professionals who advanced their careers with Excelcommunity Living Inc.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {TESTIMONIALS.map((t, i) => (
+            <motion.div
+              key={t.id}
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.15, duration: 0.5 }}
+              className="group relative p-8 rounded-lg transition-all duration-500 hover:-translate-y-2 overflow-hidden
+                bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800
+                hover:border-primary/30 dark:hover:border-primary/30 hover:shadow-xl"
+            >
+              <Quote size={32} className="text-primary/20 mb-4" />
+              <p className="text-slate-600 dark:text-slate-400 mb-6 italic leading-relaxed">
+                &ldquo;{t.quote}&rdquo;
+              </p>
+              <div className="flex items-center gap-1 mb-4">
+                {Array.from({ length: t.rating }).map((_, j) => (
+                  <Star key={j} size={16} className="fill-primary text-primary" />
+                ))}
+              </div>
+              <div>
+                <h4 className="font-semibold text-slate-900 dark:text-white">{t.name}</h4>
+                <p className="text-sm text-slate-500 dark:text-slate-500">{t.role}</p>
+              </div>
+              <span className="absolute bottom-0 left-0 h-1 w-0 transition-all duration-300 group-hover:w-full rounded-full bg-primary" />
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+
+/* ═══════════════════════════════════════════
+   PARTNERS SECTION
+   ═══════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════
+   COURSES SECTION
+   ═══════════════════════════════════════════ */
+
+function CoursesSection() {
+  const [featuredCourses, setFeaturedCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.get('/courses').then((res) => {
+      setFeaturedCourses(res.data.slice(0, 3));
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
+
+  const displayCourses = featuredCourses.length > 0 ? featuredCourses : (loading ? [] : COURSES.slice(0, 3));
+
+  return (
+    <section id="courses" className="py-20 px-4 bg-background-light dark:bg-background-dark">
+      <div className="container mx-auto max-w-7xl">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-primary">Featured Courses</h2>
+          <p className="max-w-2xl mx-auto text-slate-600 dark:text-slate-400">
+            Explore our catalog of state-approved training courses designed for nursing assistants and healthcare professionals.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {loading ? (
+             [1, 2, 3].map((i) => (
+               <div key={i} className="bg-white dark:bg-slate-900/80 rounded-lg h-96 animate-pulse border border-slate-200 dark:border-slate-800" />
+             ))
+          ) : (
+            displayCourses.map((course, i) => {
+              const isDynamic = 'title' in course;
+              const courseId = isDynamic ? course.id : (course as any).id;
+              const name = isDynamic ? (course as Course).title : (course as any).name;
+              const overview = isDynamic ? (course as Course).description : (course as any).overview;
+              const link = `/courses/${courseId}`;
+              
+              let thumbnail = (course as any).thumbnail;
+              if (isDynamic && (course as Course).thumbnail) {
+                 thumbnail = getFileUrl((course as Course).thumbnail!);
+              } else if (!thumbnail) {
+                 thumbnail = 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&h=400&fit=crop';
+              }
+
+              return (
+                <motion.div
+                  key={courseId}
+                  initial={{ opacity: 0, y: 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.15, duration: 0.5 }}
+                  className="group relative rounded-lg overflow-hidden transition-all duration-500
+                    hover:-translate-y-2
+                    bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800
+                    hover:border-primary/30 dark:hover:border-primary/30 hover:shadow-xl"
+                >
+                  <span className="absolute bottom-0 left-0 h-1 w-0 transition-all duration-300 group-hover:w-full rounded-full bg-primary z-10" />
+                  <div className="relative h-64 overflow-hidden">
+                    <img
+                      src={thumbnail}
+                      alt={name}
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                  </div>
+                  <div className="p-6">
+                    <h3 className="text-xl font-semibold mb-3 transition-colors duration-300 text-slate-900 dark:text-white group-hover:text-primary line-clamp-1">
+                      {name}
+                    </h3>
+                    <p className="mb-4 transition-colors duration-300 text-slate-600 dark:text-slate-400 line-clamp-2">
+                      {overview}
+                    </p>
+                    <a
+                      href={link}
+                      className="inline-flex items-center group/link"
+                    >
+                      <span className="relative font-medium transition-colors duration-300 text-primary group-hover/link:text-primary/80">
+                        View Course
+                        <span className="absolute left-0 bottom-0 h-[1px] w-0 transition-all duration-300 group-hover/link:w-full rounded-full bg-primary" />
+                      </span>
+                      <ArrowRight size={16} className="ml-1 text-primary" />
+                    </a>
+                  </div>
+                </motion.div>
+              );
+            })
+          )}
+        </div>
+        <div className="text-center mt-12">
+          <a
+            href="/courses"
+            className="group relative inline-flex items-center px-8 py-3 rounded-full text-lg font-semibold transition-all duration-300 overflow-hidden bg-primary text-white hover:bg-primary/90"
+          >
+            <span className="absolute inset-0 overflow-hidden">
+              <span className="absolute left-0 top-0 w-[40%] h-full bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-[45deg] translate-x-[-200%] group-hover:translate-x-[400%] transition-transform duration-700" />
+            </span>
+            <span className="relative flex items-center">
+              Explore Course Catalog
+              <BookOpen className="h-5 w-5 ml-2 transform transition-transform duration-300 group-hover:translate-x-1" />
+            </span>
+          </a>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   CTA SECTION
+   ═══════════════════════════════════════════ */
+
+function CTASection() {
+  return (
+    <section className="py-20 px-4 bg-white dark:bg-slate-950">
+      <div className="container mx-auto max-w-4xl text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
+          <h2 className="text-3xl md:text-4xl font-bold mb-6 text-primary">
+            Ready to advance your nursing career?
+          </h2>
+          <p className="text-lg text-slate-600 dark:text-slate-400 mb-10 max-w-2xl mx-auto">
+            Build in-demand clinical skills, earn state-approved certificates, and move into the next chapter of your career with flexible, self-paced training.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <a
+              href="/register"
+              className="group relative inline-flex items-center justify-center px-8 py-4 rounded-full text-lg font-semibold transition-all duration-300 overflow-hidden bg-primary text-white hover:bg-primary/90"
+            >
+              <span className="absolute inset-0 overflow-hidden">
+                <span className="absolute left-0 top-0 w-[40%] h-full bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-[45deg] translate-x-[-200%] group-hover:translate-x-[400%] transition-transform duration-700" />
+              </span>
+              <span className="relative flex items-center">
+                Create Free Account
+                <ArrowRight className="h-5 w-5 ml-2 transform transition-transform duration-300 group-hover:translate-x-2" />
+              </span>
+            </a>
+            <a
+              href="/courses"
+              className="inline-flex items-center justify-center px-8 py-4 rounded-full text-lg font-semibold transition-all duration-300
+                bg-transparent text-primary border border-primary/30 hover:border-primary hover:shadow-[0_0_15px_4px_rgba(13,185,242,0.2)]"
+            >
+              <BookOpen className="h-5 w-5 mr-2" />
+              Explore Course Catalog
+            </a>
+          </div>
+          <p className="mt-6 text-sm text-slate-500 dark:text-slate-500">
+            No credit card required. Start learning in under 2 minutes.
+          </p>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   CONTACT SECTION
+   ═══════════════════════════════════════════ */
+
+function ContactSection() {
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [message, setMessage] = useState('');
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    setStatus('loading');
+    // Simulate subscribe
+    setTimeout(() => {
+      setStatus('success');
+      setMessage('Successfully subscribed to newsletter!');
+      setEmail('');
+    }, 1000);
+  };
+
+  return (
+    <section id="contact" className="py-20 px-4 bg-white dark:bg-slate-950">
+      <div className="container mx-auto max-w-7xl">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-primary">Get In Touch</h2>
+          <p className="max-w-2xl mx-auto text-slate-600 dark:text-slate-400">
+            Have a question about our courses or looking to enroll your team? Reach out to us.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          {/* Contact Info */}
+          <div className="space-y-8">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                <Mail size={20} />
+              </div>
+              <div>
+                <h4 className="font-semibold text-slate-900 dark:text-white mb-1">Email</h4>
+                <p className="text-slate-600 dark:text-slate-400">info@excelcommunityliving.com</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                <Phone size={20} />
+              </div>
+              <div>
+                <h4 className="font-semibold text-slate-900 dark:text-white mb-1">Phone</h4>
+                <p className="text-slate-600 dark:text-slate-400">+1 (800) 555-0199</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                <MapPin size={20} />
+              </div>
+              <div>
+                <h4 className="font-semibold text-slate-900 dark:text-white mb-1">Location</h4>
+                <p className="text-slate-600 dark:text-slate-400">United States</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Newsletter */}
+          <div className="bg-background-light dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-xl p-8">
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Subscribe to Our Newsletter</h3>
+            <p className="text-slate-600 dark:text-slate-400 mb-6 text-sm">Get the latest course updates, certifications, and career tips delivered to your inbox.</p>
+            <form onSubmit={handleSubscribe} className="flex gap-3">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                className="flex-1 px-4 py-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
+                required
+              />
+              <button
+                type="submit"
+                disabled={status === 'loading'}
+                className="px-6 py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                <Send size={16} />
+                {status === 'loading' ? '...' : 'Subscribe'}
+              </button>
+            </form>
+            {status === 'success' && (
+              <p className="mt-3 text-sm text-emerald-500">{message}</p>
+            )}
+            {status === 'error' && (
+              <p className="mt-3 text-sm text-red-500">{message}</p>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }

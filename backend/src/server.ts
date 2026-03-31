@@ -23,6 +23,7 @@ app.set('trust proxy', 1);
 
 const allowedOrigins = [
   'https://cnaceus.excelcommunityliving.website',
+  'https://cna.excelcommunityliving.website/login',
   'http://localhost:3000',
   'http://localhost:3001',
   'https://nursing-course.vercel.app'
@@ -41,7 +42,7 @@ app.use(cors({
       return callback(null, true);
     }
 
-    if (allowedOrigins.includes(origin)) {
+    if (allowedOrigins.includes(origin) || origin.includes('excelcommunityliving.website')) {
       return callback(null, true);
     }
 
