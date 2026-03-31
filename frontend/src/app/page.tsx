@@ -185,8 +185,8 @@ function HeroSection() {
   };
 
   const title = 'Excelcommunity Living';
-  const subtitle = 'Professional Nursing Assistant Training';
-  const tagline = 'Access state-approved courses, expert-led training, and career advancement tools designed for the modern healthcare professional.';
+  const subtitle = '24 hour Continuing Education Courses For CNA’S';
+  const tagline = `The most affordable, high quality, and simplified Continuing Education Courses for CNA's Complete your continuing education requirements from the comfort of your home anywhere any time at an affordable price. Don’t lose your CNA certificate. Start your continuing education courses TODAY!`;
 
   return (
     <div
@@ -198,7 +198,7 @@ function HeroSection() {
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1920&h=1080&fit=crop')`,
+            backgroundImage: "url('https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1920&h=1080&fit=crop')",
           }}
         />
         <div className="absolute inset-0 bg-black/75 dark:bg-black/80" />
@@ -244,15 +244,15 @@ function HeroSection() {
             key={p.id}
             className="absolute rounded-full bg-primary"
             style={{
-              width: `${p.size}px`,
-              height: `${p.size}px`,
-              left: `${p.x}%`,
-              top: `${p.y}%`,
+              width: p.size + 'px',
+              height: p.size + 'px',
+              left: p.x + '%',
+              top: p.y + '%',
               opacity: p.size > 3 ? 0.15 : 0.08,
             }}
             animate={{
-              y: [`${p.y}%`, `${p.y - 15}%`, `${p.y}%`],
-              x: [`${p.x}%`, `${p.x + (Math.random() > 0.5 ? 5 : -5)}%`, `${p.x}%`],
+              y: [p.y + '%', (p.y - 15) + '%', p.y + '%'],
+              x: [p.x + '%', (p.x + (Math.random() > 0.5 ? 5 : -5)) + '%', p.x + '%'],
             }}
             transition={{
               duration: p.duration,
@@ -394,54 +394,10 @@ function HeroSection() {
           {tagline}
         </motion.p>
 
-        {/* CTA Button */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 2.4, duration: 0.5 }}
-          className="relative inline-block"
-        >
-          <motion.div
-            className="absolute inset-0 rounded-full blur-lg bg-primary/20"
-            whileHover={{ scale: 1.1, opacity: 0.6 }}
-          />
-          <motion.button
-            onClick={scrollToServices}
-            className="relative z-10 flex items-center px-8 py-4 rounded-full text-lg font-medium bg-primary text-white hover:bg-primary/90 transition-colors"
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <span className="mr-2">Browse Courses</span>
-            <ArrowRight className="w-5 h-5" />
-          </motion.button>
-        </motion.div>
+        
       </motion.div>
 
-      {/* Scroll indicator */}
-      <motion.div
-        className="absolute bottom-10 left-1/2 -translate-x-1/2 z-10"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5, delay: 2.8 }}
-      >
-        <motion.button
-          onClick={scrollToServices}
-          className="flex flex-col items-center group text-primary"
-          whileHover={{ y: -3 }}
-        >
-          <span className="text-sm mb-2 opacity-70 group-hover:opacity-100 transition-opacity tracking-wider">
-            SCROLL
-          </span>
-          <div className="w-8 h-12 border-2 border-primary/30 rounded-full flex items-center justify-center overflow-hidden">
-            <motion.div
-              className="bg-primary"
-              style={{ width: 2, height: 6, borderRadius: 1 }}
-              animate={{ y: [0, 20, 0] }}
-              transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-            />
-          </div>
-        </motion.button>
-      </motion.div>
+     
     </div>
   );
 }
@@ -723,7 +679,7 @@ function CoursesSection() {
               const courseId = isDynamic ? course.id : (course as any).id;
               const name = isDynamic ? (course as Course).title : (course as any).name;
               const overview = isDynamic ? (course as Course).description : (course as any).overview;
-              const link = `/courses/${courseId}`;
+              const link = "/courses/" + courseId;
               
               let thumbnail = (course as any).thumbnail;
               if (isDynamic && (course as Course).thumbnail) {
@@ -764,7 +720,7 @@ function CoursesSection() {
                       className="inline-flex items-center group/link"
                     >
                       <span className="relative font-medium transition-colors duration-300 text-primary group-hover/link:text-primary/80">
-                        View Course
+                        Enroll
                         <span className="absolute left-0 bottom-0 h-[1px] w-0 transition-all duration-300 group-hover/link:w-full rounded-full bg-primary" />
                       </span>
                       <ArrowRight size={16} className="ml-1 text-primary" />

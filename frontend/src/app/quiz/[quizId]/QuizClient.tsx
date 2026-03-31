@@ -164,8 +164,8 @@ export default function QuizPage() {
 
                 <div className="flex flex-1 overflow-hidden">
                     {/* Sidebar (Question Map) */}
-                    <aside className={`w-72 bg-white border-r border-slate-200 flex flex-col hidden lg:flex z-20`}>
-                        <div className="p-5 border-b border-slate-100">
+                    <aside className={`w-72 bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl border-r border-slate-200/50 dark:border-slate-700/50 flex flex-col hidden lg:flex z-20`}>
+                        <div className="p-5 border-b border-slate-200/50 dark:border-slate-700/50">
                             <div className="flex justify-between items-center mb-4">
                                 <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">Question Map</h2>
                                 <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">{answeredCount}/{quiz.questions.length} Answered</span>
@@ -208,9 +208,9 @@ export default function QuizPage() {
                                 })}
                             </div>
                         </div>
-                        <div className="p-4 border-t border-slate-100 bg-slate-50/50">
+                        <div className="p-4 border-t border-slate-200/50 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50">
                             <div className="flex items-center gap-3">
-                                <div className="size-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-500">
+                                <div className="size-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400">
                                     <span className="material-symbols-outlined text-lg">person</span>
                                 </div>
                                 <div className="flex flex-col">
@@ -247,8 +247,8 @@ export default function QuizPage() {
                             </div>
 
                             {/* Question Card */}
-                            <div className="bg-white rounded-2xl p-6 md:p-10 shadow-sm border border-slate-200">
-                                <p className="text-lg md:text-xl font-medium text-slate-800 leading-relaxed mb-8">
+                            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl rounded-[2rem] p-6 md:p-10 shadow-[0_8px_30px_rgba(15,23,42,0.04)] border border-slate-200/50 dark:border-slate-700/50">
+                                <p className="text-lg md:text-xl font-medium text-slate-800 dark:text-slate-200 leading-relaxed mb-8">
                                     {currentQuestion.text}
                                 </p>
                                 <div className="grid grid-cols-1 gap-4">
@@ -259,8 +259,8 @@ export default function QuizPage() {
                                             <label
                                                 key={oi}
                                                 className={`group relative flex items-center p-4 md:p-5 rounded-xl border-2 cursor-pointer transition-all duration-200 shadow-sm ${isSelected
-                                                    ? 'border-blue-900 bg-blue-50 ring-1 ring-blue-200'
-                                                    : 'border-slate-100 hover:border-blue-200 hover:bg-slate-50'
+                                                    ? 'border-primary bg-primary/10 ring-1 ring-primary/20'
+                                                    : 'border-slate-100 dark:border-slate-700 hover:border-primary/30 hover:bg-slate-50 dark:hover:bg-slate-800/50'
                                                     }`}
                                             >
                                                 <input
@@ -270,15 +270,15 @@ export default function QuizPage() {
                                                     checked={isSelected}
                                                     onChange={() => handleAnswer(currentQuestion.id, oi)}
                                                 />
-                                                <div className={`flex items-center justify-center size-8 rounded-full text-sm font-bold mr-4 shrink-0 transition-transform group-hover:scale-110 ${isSelected ? 'bg-blue-900 text-white' : 'bg-slate-100 text-slate-500'
+                                                <div className={`flex items-center justify-center size-8 rounded-full text-sm font-bold mr-4 shrink-0 transition-transform group-hover:scale-110 ${isSelected ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
                                                     }`}>
                                                     {label}
                                                 </div>
-                                                <span className={`text-base md:text-lg font-medium flex-1 ${isSelected ? 'text-blue-900' : 'text-slate-700'}`}>
+                                                <span className={`text-base md:text-lg font-medium flex-1 ${isSelected ? 'text-primary' : 'text-slate-700 dark:text-slate-300'}`}>
                                                     {option}
                                                 </span>
                                                 {isSelected && (
-                                                    <div className="absolute right-5 text-blue-900">
+                                                    <div className="absolute right-5 text-primary">
                                                         <span className="material-symbols-outlined">check_circle</span>
                                                     </div>
                                                 )}
@@ -410,13 +410,13 @@ function QuizResultScreen({ result, user, quiz, onRetry, courseCompleted, nextEx
                                 Passed Successfully
                             </div>
                         ) : (
-                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-100 text-red-700 text-xs font-bold uppercase tracking-wider mb-6">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-100/10 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 text-xs font-bold uppercase tracking-wider mb-6">
                                 <span className="material-symbols-outlined text-[16px]">cancel</span>
                                 Not Passed
                             </div>
                         )}
 
-                        <h1 className="text-3xl md:text-5xl font-black tracking-tight text-slate-900 mb-4">
+                        <h1 className="text-3xl md:text-5xl font-black tracking-tight text-slate-900 dark:text-white mb-4">
                             {result.passed ? `Congratulations, ${user?.name?.split(' ')[0]}!` : `Don't give up, ${user?.name?.split(' ')[0]}!`}
                         </h1>
                         <p className="text-slate-500 text-lg mb-8 max-w-xl">

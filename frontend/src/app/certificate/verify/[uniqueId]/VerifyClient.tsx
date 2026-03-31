@@ -50,9 +50,9 @@ export default function VerifyClient({ uniqueId }: { uniqueId: string }) {
     if (!result?.valid) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-background-light dark:bg-background-dark px-4">
-                <div className="max-w-md w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 text-center shadow-lg">
-                    <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-red-50 dark:bg-red-900/20 mb-6">
-                        <span className="material-symbols-outlined text-4xl text-red-500">error</span>
+                <div className="max-w-md w-full rounded-[2rem] border border-slate-200/50 dark:border-slate-800/50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl p-10 text-center shadow-[0_8px_30px_rgba(15,23,42,0.04)]">
+                    <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-rose-50/50 dark:bg-rose-900/20 mb-6 border border-rose-100 dark:border-rose-900/30">
+                        <span className="material-symbols-outlined text-4xl text-rose-500">error</span>
                     </div>
                     <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Invalid Certificate</h1>
                     <p className="text-slate-500 mb-8">This certificate ID does not exist or has been revoked. Please check the ID and try again.</p>
@@ -246,9 +246,9 @@ export default function VerifyClient({ uniqueId }: { uniqueId: string }) {
 
                 {/* Status Section - Hide on print */}
                 <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-6 no-print">
-                    <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col gap-4">
+                    <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl rounded-[1.5rem] p-6 shadow-[0_8px_30px_rgba(15,23,42,0.04)] border border-slate-200/50 dark:border-slate-800/50 flex flex-col gap-4">
                         <div className="flex items-center gap-3 text-slate-900 dark:text-white font-semibold">
-                            <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600">
+                            <div className="p-2 rounded-lg bg-emerald-50/80 dark:bg-emerald-900/30 text-emerald-600 border border-emerald-100/50 dark:border-emerald-800/30">
                                 <span className="material-symbols-outlined">verified_user</span>
                             </div>
                             Registry Verification
@@ -262,20 +262,20 @@ export default function VerifyClient({ uniqueId }: { uniqueId: string }) {
                         </div>
                     </div>
 
-                    <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col gap-4">
+                    <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl rounded-[1.5rem] p-6 shadow-[0_8px_30px_rgba(15,23,42,0.04)] border border-slate-200/50 dark:border-slate-800/50 flex flex-col gap-4">
                         <div className="flex items-center gap-3 text-slate-900 dark:text-white font-semibold">
-                            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                            <div className="p-2 rounded-lg bg-primary/10 text-primary border border-primary/10">
                                 <span className="material-symbols-outlined">share</span>
                             </div>
                             Share Credential
                         </div>
                         <p className="text-sm text-slate-600 dark:text-slate-400">Allow others to verify this credential by sharing this unique link or ID.</p>
                         <div className="mt-auto">
-                            <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg">
-                                <code className="text-xs font-mono text-slate-600 dark:text-slate-400 truncate">{currentUrl}</code>
+                            <div className="flex items-center justify-between p-2.5 bg-slate-50/50 dark:bg-slate-800/50 backdrop-blur border border-slate-200/50 dark:border-slate-700/50 rounded-xl">
+                                <code className="text-xs font-mono text-slate-600 dark:text-slate-400 truncate ml-1">{currentUrl}</code>
                                 <button
                                     onClick={() => navigator.clipboard.writeText(currentUrl)}
-                                    className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-500"
+                                    className="p-1.5 hover:bg-white dark:hover:bg-slate-700 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors hover:shadow-sm"
                                 >
                                     <span className="material-symbols-outlined text-[18px]">content_copy</span>
                                 </button>

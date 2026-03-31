@@ -160,9 +160,9 @@ export default function SettingsPage() {
                                         hidden: { opacity: 0, y: 20 },
                                         show: { opacity: 1, y: 0 }
                                     }}
-                                    className="bg-white dark:bg-surface rounded-2xl border border-slate-200 dark:border-border-muted overflow-hidden shadow-xl"
+                                    className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl rounded-[2rem] border border-slate-200/50 dark:border-slate-700/50 overflow-hidden shadow-[0_8px_30px_rgba(15,23,42,0.04)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)]"
                                 >
-                                    <div className="p-6 border-b border-slate-100 dark:border-border-muted flex justify-between items-center">
+                                    <div className="p-6 border-b border-slate-200/50 dark:border-slate-700/50 flex justify-between items-center">
                                         <h3 className="text-lg font-bold text-slate-900 dark:text-white">Profile Information</h3>
                                         <span className="text-xs font-semibold uppercase tracking-wider text-primary bg-primary/10 px-2 py-1 rounded">Public Profile</span>
                                     </div>
@@ -212,7 +212,7 @@ export default function SettingsPage() {
                                                 <div className="flex flex-col gap-2">
                                                     <label className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">First Name</label>
                                                     <input
-                                                        className="bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-border-muted text-slate-900 dark:text-white text-sm rounded-xl focus:ring-primary focus:border-primary block w-full p-3.5 transition-all outline-none focus-glow"
+                                                        className="bg-white/50 dark:bg-slate-900/50 border border-slate-200/50 dark:border-slate-700/50 text-slate-900 dark:text-white text-sm rounded-xl focus:ring-primary focus:border-primary block w-full p-3.5 transition-all outline-none focus-glow"
                                                         type="text"
                                                         value={firstName}
                                                         onChange={(e) => setFirstName(e.target.value)}
@@ -222,7 +222,7 @@ export default function SettingsPage() {
                                                 <div className="flex flex-col gap-2">
                                                     <label className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Last Name</label>
                                                     <input
-                                                        className="bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-border-muted text-slate-900 dark:text-white text-sm rounded-xl focus:ring-primary focus:border-primary block w-full p-3.5 transition-all outline-none"
+                                                        className="bg-white/50 dark:bg-slate-900/50 border border-slate-200/50 dark:border-slate-700/50 text-slate-900 dark:text-white text-sm rounded-xl focus:ring-primary focus:border-primary block w-full p-3.5 transition-all outline-none"
                                                         type="text"
                                                         value={lastName}
                                                         onChange={(e) => setLastName(e.target.value)}
@@ -231,7 +231,7 @@ export default function SettingsPage() {
                                                 <div className="flex flex-col gap-2">
                                                     <label className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Email Address</label>
                                                     <input
-                                                        className="bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-border-muted text-slate-900 dark:text-white text-sm rounded-xl focus:ring-primary focus:border-primary block w-full p-3.5 transition-all outline-none"
+                                                        className="bg-white/50 dark:bg-slate-900/50 border border-slate-200/50 dark:border-slate-700/50 text-slate-900 dark:text-white text-sm rounded-xl focus:ring-primary focus:border-primary block w-full p-3.5 transition-all outline-none"
                                                         type="email"
                                                         value={email}
                                                         onChange={(e) => setEmail(e.target.value)}
@@ -241,7 +241,7 @@ export default function SettingsPage() {
                                                 <div className="flex flex-col gap-2">
                                                     <label className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Job Title / Role</label>
                                                     <input
-                                                        className="bg-slate-100 dark:bg-background-dark/50 border border-slate-200 dark:border-border-muted text-slate-400 dark:text-slate-500 text-sm rounded-xl block w-full p-3.5 outline-none cursor-not-allowed"
+                                                        className="bg-slate-100/50 dark:bg-slate-800/50 backdrop-blur border border-slate-200/50 dark:border-slate-700/50 text-slate-400 dark:text-slate-500 text-sm rounded-xl block w-full p-3.5 outline-none cursor-not-allowed"
                                                         type="text"
                                                         value={user?.role === 'STUDENT' ? 'Student' : user?.role || 'User'}
                                                         readOnly
@@ -268,9 +268,9 @@ export default function SettingsPage() {
                                         hidden: { opacity: 0, y: 20 },
                                         show: { opacity: 1, y: 0 }
                                     }}
-                                    className="bg-white dark:bg-surface rounded-2xl border border-slate-200 dark:border-border-muted overflow-hidden shadow-xl"
+                                    className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl rounded-[2rem] border border-slate-200/50 dark:border-slate-700/50 overflow-hidden shadow-[0_8px_30px_rgba(15,23,42,0.04)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)]"
                                 >
-                                    <div className="p-6 border-b border-slate-100 dark:border-border-muted flex justify-between items-center">
+                                    <div className="p-6 border-b border-slate-200/50 dark:border-slate-700/50 flex justify-between items-center">
                                         <h3 className="text-lg font-bold text-slate-900 dark:text-white">Security & Authentication</h3>
                                         <span className="material-symbols-outlined text-slate-400 dark:text-slate-500">lock</span>
                                     </div>
@@ -295,7 +295,7 @@ export default function SettingsPage() {
                                             <div className="flex flex-col gap-2">
                                                 <label className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Current Password</label>
                                                 <input
-                                                    className="bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-border-muted text-slate-900 dark:text-white text-sm rounded-xl focus:ring-primary focus:border-primary block w-full p-3.5 outline-none"
+                                                    className="bg-white/50 dark:bg-slate-900/50 border border-slate-200/50 dark:border-slate-700/50 text-slate-900 dark:text-white text-sm rounded-xl focus:ring-primary focus:border-primary block w-full p-3.5 outline-none"
                                                     placeholder="••••••••••••"
                                                     type="password"
                                                     value={currentPassword}
@@ -306,7 +306,7 @@ export default function SettingsPage() {
                                             <div className="flex flex-col gap-2">
                                                 <label className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">New Password</label>
                                                 <input
-                                                    className="bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-border-muted text-slate-900 dark:text-white text-sm rounded-xl focus:ring-primary focus:border-primary block w-full p-3.5 outline-none"
+                                                    className="bg-white/50 dark:bg-slate-900/50 border border-slate-200/50 dark:border-slate-700/50 text-slate-900 dark:text-white text-sm rounded-xl focus:ring-primary focus:border-primary block w-full p-3.5 outline-none"
                                                     placeholder="Min. 6 characters"
                                                     type="password"
                                                     value={newPassword}
@@ -317,7 +317,7 @@ export default function SettingsPage() {
                                             <div className="flex flex-col gap-2">
                                                 <label className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Confirm New Password</label>
                                                 <input
-                                                    className="bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-border-muted text-slate-900 dark:text-white text-sm rounded-xl focus:ring-primary focus:border-primary block w-full p-3.5 outline-none"
+                                                    className="bg-white/50 dark:bg-slate-900/50 border border-slate-200/50 dark:border-slate-700/50 text-slate-900 dark:text-white text-sm rounded-xl focus:ring-primary focus:border-primary block w-full p-3.5 outline-none"
                                                     placeholder="Confirm new password"
                                                     type="password"
                                                     value={confirmPassword}
@@ -363,9 +363,9 @@ export default function SettingsPage() {
                                         hidden: { opacity: 0, y: 20 },
                                         show: { opacity: 1, y: 0 }
                                     }}
-                                    className="bg-white dark:bg-surface rounded-2xl border border-rose-100 dark:border-red-900/20 overflow-hidden shadow-xl"
+                                    className="bg-red-50/50 dark:bg-red-900/10 backdrop-blur-2xl rounded-[2rem] border border-red-200/50 dark:border-red-900/30 overflow-hidden shadow-[0_8px_30px_rgba(15,23,42,0.04)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)]"
                                 >
-                                    <div className="p-6 bg-rose-50/50 dark:bg-red-900/10 border-b border-rose-100 dark:border-red-900/20 flex justify-between items-center">
+                                    <div className="p-6 border-b border-red-200/50 dark:border-red-900/30 flex justify-between items-center">
                                         <h3 className="text-lg font-bold text-rose-600 dark:text-red-400">Danger Zone</h3>
                                         <span className="material-symbols-outlined text-rose-500">warning</span>
                                     </div>
