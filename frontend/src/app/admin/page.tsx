@@ -664,13 +664,13 @@ export default function AdminDashboard() {
                 <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-background-light dark:bg-background-dark">
 
                     {/* Header — Premium glassmorphic design matching global Navbar */}
-                    <header className="h-[72px] flex items-center justify-between px-4 sm:px-6 lg:px-8 border-b border-slate-200/50 dark:border-slate-800/50 bg-white/80 dark:bg-slate-950/80 backdrop-blur-2xl shadow-[0_8px_32px_rgba(15,23,42,0.06)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.3)] z-10 shrink-0 transition-all duration-500">
+                    <header className="h-[72px] flex items-center justify-between px-4 sm:px-6 lg:px-8 border-b border-slate-200/50 dark:border-white/[0.06] bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.05)] dark:shadow-[0_4px_30px_rgba(0,0,0,0.4)] z-10 shrink-0 transition-all duration-500">
                         <div className="flex items-center gap-5">
                             {/* Mobile Toggle */}
                             <motion.button
                                 whileTap={{ scale: 0.9 }}
                                 onClick={() => setIsMobileMenuOpen(true)}
-                                className="lg:hidden p-2.5 -ml-2 text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
+                                className="lg:hidden p-2.5 -ml-2 text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-slate-100 dark:hover:bg-white/[0.06] rounded-full transition-all"
                             >
                                 <span className="material-symbols-outlined text-2xl">menu</span>
                             </motion.button>
@@ -680,28 +680,21 @@ export default function AdminDashboard() {
                                 <motion.div
                                     whileHover={{ rotate: 8, scale: 1.05 }}
                                     transition={{ duration: 0.35, ease: 'easeInOut' }}
-                                    className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 dark:from-primary/30 dark:to-primary/10 border border-primary/20 flex items-center justify-center shadow-[0_0_20px_rgba(13,185,242,0.25)]"
+                                    className="w-9 h-9 rounded-full bg-slate-100 dark:bg-[#1e293b] border border-primary/30 flex items-center justify-center shadow-[0_0_12px_rgba(13,185,242,0.1)] dark:shadow-[0_0_12px_rgba(13,185,242,0.2)]"
                                 >
-                                    <span className="material-symbols-outlined text-primary text-xl drop-shadow-[0_0_8px_rgba(13,185,242,0.6)]">
+                                    <span className="material-symbols-outlined text-primary text-xl">
                                         {tab === 'overview' ? 'grid_view' : tab === 'courses' ? 'menu_book' : tab === 'users' ? 'people_alt' : tab === 'results' ? 'analytics' : tab === 'certificates' ? 'card_membership' : 'settings'}
                                     </span>
                                 </motion.div>
-                                <div>
-                                    <h2 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white capitalize leading-tight">
+                                <div className="hidden lg:block">
+                                    <h2 className="text-[15px] font-bold tracking-tight text-slate-900 dark:text-white capitalize leading-tight">
                                         {tab === 'overview' ? 'Dashboard' : `${tab}`}
                                     </h2>
-                                    <p className="text-[11px] text-slate-400 font-medium leading-tight">
-                                        {tab === 'overview' && 'Programs & student progress'}
-                                        {tab === 'courses' && 'Training modules'}
-                                        {tab === 'users' && 'Student & staff access'}
-                                        {tab === 'results' && 'Quiz performance'}
-                                        {tab === 'certificates' && 'Certificate management'}
-                                    </p>
                                 </div>
                             </div>
 
-                            {/* Floating pill tab bar — mirrors global Navbar pill navigation */}
-                            <nav className="hidden xl:flex items-center gap-1 rounded-2xl bg-slate-900/[0.03] dark:bg-slate-900/70 px-1.5 py-1 border border-slate-200/60 dark:border-slate-800/80 backdrop-blur-2xl shadow-[0_4px_20px_rgba(15,23,42,0.08)] ml-4">
+                            {/* Navigation Links — matches global Navbar style */}
+                            <nav className="hidden xl:flex items-center gap-1 lg:gap-2 ml-4">
                                 {[
                                     { id: 'overview', icon: 'grid_view', label: 'Overview' },
                                     { id: 'courses', icon: 'menu_book', label: 'Courses' },
@@ -719,40 +712,22 @@ export default function AdminDashboard() {
                                             if (item.id === 'results') loadResults();
                                             if (item.id === 'certificates') loadCertificates();
                                         }}
-                                        className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-semibold transition-all duration-200 ${
-                                            tab === item.id
-                                                ? 'text-primary bg-primary/10 shadow-sm'
-                                                : 'text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary'
+                                        className={`group flex items-center gap-1.5 px-3 lg:px-4 py-2 text-[13px] font-medium transition-colors duration-300 relative ${
+                                            tab === item.id ? 'text-primary' : 'text-slate-600 dark:text-slate-300 hover:text-primary'
                                         }`}
                                     >
-                                        <span className="material-symbols-outlined text-[16px]">{item.icon}</span>
+                                        <span className={`material-symbols-outlined text-[18px] transition-all duration-300 ${
+                                            tab === item.id ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'
+                                        }`}>
+                                            {item.icon}
+                                        </span>
                                         {item.label}
-                                        {tab === item.id && (
-                                            <motion.span
-                                                layoutId="adminActiveTab"
-                                                className="absolute inset-x-1 -bottom-0.5 h-0.5 bg-primary rounded-full"
-                                                transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                                            />
-                                        )}
                                     </motion.button>
                                 ))}
                             </nav>
                         </div>
 
-                        <div className="flex items-center gap-2 sm:gap-2.5">
-                            {/* Search — pill-shaped */}
-                            <div className="relative hidden lg:block group">
-                                <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg group-focus-within:text-primary transition-colors duration-200">search</span>
-                                <input
-                                    type="text"
-                                    placeholder="Search..."
-                                    value={adminSearch}
-                                    onChange={(e) => setAdminSearch(e.target.value)}
-                                    className="pl-10 pr-4 py-2 w-44 xl:w-52 rounded-2xl bg-slate-50/60 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800/70 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-primary/50 focus:border-primary/30 text-sm text-slate-700 dark:text-slate-300 placeholder:text-slate-400 transition-all duration-300"
-                                />
-                            </div>
-
-                            <div className="h-5 w-px bg-slate-200/60 dark:bg-slate-700/60 hidden lg:block"></div>
+                        <div className="flex items-center gap-1 sm:gap-2">
 
                             {/* Upload buttons */}
                             {(tab === 'overview' || tab === 'courses') && (
@@ -772,9 +747,9 @@ export default function AdminDashboard() {
                                     whileHover={{ scale: 1.08 }}
                                     whileTap={{ scale: 0.92 }}
                                     onClick={() => setShowNotifications(!showNotifications)}
-                                    className="relative flex items-center justify-center h-9 w-9 rounded-xl bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-primary/10 transition-all duration-200"
+                                    className="relative flex items-center justify-center h-9 w-9 rounded-full text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-all duration-300"
                                 >
-                                    <span className="material-symbols-outlined text-[20px] leading-none">notifications</span>
+                                    <span className="material-symbols-outlined text-xl leading-none">notifications</span>
                                     {notifications.some(n => !n.read) && (
                                         <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse ring-2 ring-white dark:ring-slate-950"></span>
                                     )}
