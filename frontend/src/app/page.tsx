@@ -5,7 +5,8 @@ import { motion, useScroll, useTransform, useSpring, useMotionValue } from 'fram
 import {
   Stethoscope, BookOpen, GraduationCap, Users, Target, Eye, Clock, Heart,
   Shield, ChevronRight, ArrowRight, Pin, Calendar, ExternalLink,
-  Mail, Phone, MapPin, Send, ArrowDown, Award, Star, Quote
+  Mail, Phone, MapPin, Send, ArrowDown, Award, Star, Quote,
+  DollarSignIcon
 } from 'lucide-react';
 import api from '@/lib/api';
 import { Course } from '@/lib/types';
@@ -32,9 +33,9 @@ const SERVICES = [
     icon: <GraduationCap size={32} />,
   },
   {
-    title: 'Career Advancement Tools',
-    description: 'Build in-demand clinical skills and move into the next chapter of your career with our professional development platform.',
-    icon: <Users size={32} />,
+    title: `Affordable Courses`,
+    description: `The most affordable, high quality, and simplified Continuing Education Courses for CNA's `,
+    icon: <DollarSignIcon size={32} />,
   },
 ];
 
@@ -43,7 +44,7 @@ const ABOUT_TABS: Record<string, { title: string; icon: React.ReactNode; content
     title: 'Our Mission',
     icon: <Target size={32} />,
     content: [
-      { title: 'Empowering Caregivers', description: 'Providing top-tier professional development and certification training for the next generation of healthcare heroes.' },
+      { title: '"Knowledge produces best care" is our motto', description: 'Our mission is to provide the participants with knowledge and skills to help them become reliable, confident, caring and excellent healthcare providers.' },
       { title: 'Accessible Education', description: 'Making quality nursing assistant training accessible to everyone through flexible, self-paced online learning.' },
       { title: 'Empowering Care Everywhere', description: 'Building a community of skilled, compassionate caregivers who deliver outstanding patient care nationwide.' },
     ],
@@ -52,7 +53,7 @@ const ABOUT_TABS: Record<string, { title: string; icon: React.ReactNode; content
     title: 'Our Vision',
     icon: <Eye size={32} />,
     content: [
-      { title: 'Leading CNA Education', description: 'Excelcommunity Living Inc envisions being the premier platform for nursing assistant professional development across the nation.' },
+      { title: 'Provide Opportunities', description: 'Our goal is to provide every student an opportunity to grow and gain experience they need in order to further their career in healthcare industry.' },
       { title: 'Innovative Learning', description: 'We aim to provide innovative, technology-driven education solutions that bridge the gap between classroom learning and hands-on clinical practice.' },
       { title: 'Advancing Healthcare Standards', description: 'By combining expert-led instruction with modern e-learning tools, we work to elevate the standard of patient care everywhere.' },
     ],
@@ -62,7 +63,7 @@ const ABOUT_TABS: Record<string, { title: string; icon: React.ReactNode; content
     icon: <Clock size={32} />,
     content: [
       { title: 'Industry-Leading Platform', description: 'Excelcommunity Living Inc has built a comprehensive SaaS platform for healthcare professional development and certification training.' },
-      { title: 'Trusted by Professionals', description: 'Our platform serves active students and healthcare facilities with state-approved courses and a 4.9/5 average rating.' },
+      { title: 'Trusted by Professionals', description: 'Excel Community living CNA CEUS are accredited by California department of public health CDPH. We follow the guidelines and curriculum given by CDPH.' },
       { title: 'Proven Results', description: 'Facilities using our training have seen measurable improvements in patient satisfaction scores and staff competency.' },
     ],
   },
@@ -323,6 +324,16 @@ function HeroSection() {
           />
         </div>
 
+        {/* Tagline under logo */}
+        <motion.p
+          className="text-sm text-white/60 italic mb-6 tracking-wide"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6, duration: 0.6 }}
+        >
+          Knowledge produces quality care
+        </motion.p>
+
         {/* Title with staggered letters */}
         <div className="overflow-hidden mb-4">
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-primary inline-flex">
@@ -369,7 +380,7 @@ function HeroSection() {
 
         {/* Subtitle with staggered words */}
         <div className="relative mb-4">
-          <motion.p className="text-xl md:text-2xl lg:text-3xl max-w-2xl mx-auto leading-relaxed text-white/90">
+          <motion.p className="text-lg md:text-xl lg:text-2xl font-bold max-w-2xl mx-auto leading-relaxed text-blue-400">
             {subtitle.split(' ').map((word, i) => (
               <motion.span
                 key={i}
