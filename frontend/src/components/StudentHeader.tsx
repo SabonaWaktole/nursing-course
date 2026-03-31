@@ -72,82 +72,65 @@ export default function StudentHeader({ title, subtitle, icon, onMobileMenuOpen 
     ];
 
     return (
-        <header className="h-[72px] flex items-center justify-between px-4 sm:px-6 lg:px-8 border-b border-slate-200/50 dark:border-slate-800/50 bg-white/85 dark:bg-slate-950/85 backdrop-blur-2xl shadow-[0_8px_32px_rgba(15,23,42,0.06)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.3)] z-20 shrink-0 transition-all duration-500">
+        <header className="h-[72px] flex items-center justify-between px-4 sm:px-6 lg:px-8 border-b border-slate-200/50 dark:border-white/[0.06] bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.05)] dark:shadow-[0_4px_30px_rgba(0,0,0,0.4)] z-20 shrink-0 transition-all duration-500">
             <div className="flex items-center gap-4">
                 {/* Mobile menu toggle */}
                 <motion.button
                     whileTap={{ scale: 0.9 }}
                     onClick={onMobileMenuOpen}
-                    className="lg:hidden p-2.5 -ml-2 text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
+                    className="lg:hidden p-2.5 -ml-2 text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-slate-100 dark:hover:bg-white/[0.06] rounded-full transition-all"
                 >
                     <span className="material-symbols-outlined text-2xl">menu</span>
                 </motion.button>
 
-                {/* Logo — matches global Navbar */}
-                <Link href="/" className="flex items-center gap-2 group">
-                    <motion.span
-                        whileHover={{ rotate: 8, scale: 1.05 }}
+                {/* Logo — visible only on mobile/tablet when sidebar is hidden */}
+                <Link href="/" className="lg:hidden flex items-center gap-3 group shrink-0">
+                    <motion.div
+                        whileHover={{ rotate: 8, scale: 1.08 }}
                         transition={{ duration: 0.35, ease: 'easeInOut' }}
-                        className="material-symbols-outlined text-primary text-2xl drop-shadow-[0_0_26px_rgba(13,185,242,0.65)]"
+                        className="relative w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 dark:bg-[#1e293b] border border-primary/30 shadow-[0_0_12px_rgba(13,185,242,0.1)] dark:shadow-[0_0_12px_rgba(13,185,242,0.2)]"
                     >
-                        medical_services
-                    </motion.span>
-                    <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white group-hover:text-primary transition-colors hidden sm:inline">
-                        Excelcommunity
-                    </span>
+                        <span className="text-primary text-base font-black">E</span>
+                    </motion.div>
+                    <div className="flex flex-col">
+                        <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white group-hover:text-primary transition-colors duration-300">
+                            Excelcommunity
+                        </span>
+                    </div>
                 </Link>
 
-                {/* Floating pill navigation — matches global Navbar exactly */}
-                <nav className="hidden md:flex items-center gap-1 rounded-full bg-slate-900/[0.03] dark:bg-slate-900/70 px-2 py-1.5 border border-slate-200/60 dark:border-slate-800/80 backdrop-blur-2xl shadow-[0_10px_35px_rgba(15,23,42,0.22)] ml-4">
+                {/* Navigation Links — matches global Navbar style */}
+                <nav className="hidden md:flex items-center gap-1 lg:gap-2">
                     {NAV_LINKS.map((item) => {
                         const isActive = pathname === item.href;
                         return (
                             <Link
                                 key={item.href}
                                 href={item.href}
-                                className={`relative text-[13px] font-semibold transition-colors group px-4 py-1.5 rounded-full flex items-center gap-1.5 ${
-                                    isActive
-                                        ? 'text-primary'
-                                        : 'text-slate-600 dark:text-slate-200 hover:text-primary dark:hover:text-primary'
+                                className={`group flex items-center gap-1.5 px-3 lg:px-4 py-2 text-sm font-medium transition-colors duration-300 relative ${
+                                    isActive ? 'text-primary' : 'text-slate-600 dark:text-slate-300 hover:text-primary'
                                 }`}
                             >
-                                <span className="material-symbols-outlined text-[16px]">{item.icon}</span>
+                                <span className={`material-symbols-outlined text-[18px] transition-all duration-300 ${
+                                    isActive ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'
+                                }`}>
+                                    {item.icon}
+                                </span>
                                 {item.label}
-                                {isActive ? (
-                                    <motion.span
-                                        layoutId="studentNavActive"
-                                        className="absolute inset-x-2 -bottom-1 h-0.5 bg-primary/90 rounded-full"
-                                        transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                                    />
-                                ) : (
-                                    <span className="absolute inset-x-2 -bottom-1 h-0.5 bg-primary/90 transition-all duration-300 group-hover:opacity-100 opacity-0 rounded-full"></span>
-                                )}
                             </Link>
                         );
                     })}
                 </nav>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-2.5">
-                {/* Search — matches global Navbar */}
-                <div className="relative hidden lg:block group">
-                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl group-focus-within:text-primary transition-colors">search</span>
-                    <input
-                        type="text"
-                        placeholder="Search courses..."
-                        className="w-44 xl:w-56 pl-10 pr-4 py-2.5 rounded-2xl bg-slate-50/60 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800/70 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-primary focus:border-transparent text-sm text-slate-700 dark:text-slate-300 placeholder:text-slate-400 transition-all duration-300 shadow-[0_0_0_1px_rgba(148,163,184,0.35)]"
-                    />
-                </div>
-
-                <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 hidden lg:block"></div>
-
+            <div className="flex items-center gap-1 sm:gap-2">
                 {/* Notification Bell */}
                 <div className="relative">
                     <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setShowNotifications(!showNotifications)}
-                        className="relative flex items-center justify-center h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-primary transition-colors"
+                        className="relative flex items-center justify-center h-9 w-9 rounded-full text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-all duration-300"
                     >
                         <span className="material-symbols-outlined text-xl leading-none">notifications</span>
                         {unreadCount > 0 && (
@@ -246,7 +229,7 @@ export default function StudentHeader({ title, subtitle, icon, onMobileMenuOpen 
                             localStorage.setItem('theme', 'light');
                         }
                     }}
-                    className="flex items-center justify-center h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                    className="flex items-center justify-center h-9 w-9 rounded-full text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-all duration-300"
                 >
                     <span className="material-symbols-outlined text-xl leading-none">
                         {isDark ? 'light_mode' : 'dark_mode'}
@@ -255,7 +238,7 @@ export default function StudentHeader({ title, subtitle, icon, onMobileMenuOpen 
 
                 {/* Settings button — matches global Navbar */}
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    <Link href="/settings" className="flex items-center justify-center h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                    <Link href="/settings" className="flex items-center justify-center h-9 w-9 rounded-full text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-all duration-300">
                         <span className="material-symbols-outlined text-xl leading-none">settings</span>
                     </Link>
                 </motion.div>
@@ -265,7 +248,7 @@ export default function StudentHeader({ title, subtitle, icon, onMobileMenuOpen 
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={logout}
-                    className="flex items-center justify-center h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-red-500 hover:text-white transition-colors"
+                    className="flex items-center justify-center h-9 w-9 rounded-full text-slate-500 dark:text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all duration-300"
                     title="Logout"
                 >
                     <span className="material-symbols-outlined text-xl leading-none">logout</span>

@@ -46,11 +46,15 @@ export default function StudentSidebar({
                 ${isMobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}
             `}>
                 {/* Logo area — matches AdminSidebar */}
-                <div className="h-20 flex items-center justify-between px-6 shrink-0 border-b border-transparent">
-                    <Link href="/" className="flex items-center gap-3 overflow-hidden">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-800 to-black border border-slate-700 flex items-center justify-center shadow-[0_0_15px_rgba(13,185,242,0.3)] shrink-0">
-                            <span className="material-symbols-outlined text-primary text-xl">medical_services</span>
-                        </div>
+                <div className="h-20 flex items-center justify-between px-6 shrink-0 border-b border-slate-200 dark:border-transparent">
+                    <Link href="/" className="flex items-center gap-3 overflow-hidden group">
+                        <motion.div
+                            whileHover={{ rotate: 8, scale: 1.08 }}
+                            transition={{ duration: 0.35, ease: 'easeInOut' }}
+                            className="w-10 h-10 rounded-full bg-slate-100 dark:bg-[#1e293b] border border-primary/30 flex items-center justify-center shadow-[0_0_12px_rgba(13,185,242,0.1)] dark:shadow-[0_0_12px_rgba(13,185,242,0.2)] shrink-0"
+                        >
+                            <span className="text-primary text-lg font-black">E</span>
+                        </motion.div>
                         {!isSidebarCollapsed && (
                             <div className="animate-in fade-in slide-in-from-left-2 duration-300">
                                 <h1 className="font-bold text-lg tracking-tight leading-none text-slate-900 dark:text-white">Excelcommunity</h1>
