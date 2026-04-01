@@ -67,8 +67,9 @@ export default function AdminSidebar({
                         </motion.div>
                         {!isSidebarCollapsed && (
                             <div className="animate-in fade-in slide-in-from-left-2 duration-300">
-                                <h1 className="font-bold text-lg tracking-tight leading-none text-slate-900 dark:text-white">Excelcommunity Living Inc</h1>
-                                <p className="text-xs text-slate-500 font-medium">Admin Console</p>
+                                <h1 className="font-bold text-lg tracking-tight leading-none text-slate-900 dark:text-white group-hover:text-primary transition-colors duration-300">Excelcommunity</h1>
+                                <p className="text-[10px] italic text-slate-500 font-medium mt-1 group-hover:text-primary transition-colors">Knowledge produces quality care</p>
+                                <p className="text-[11px] text-primary/80 font-medium mt-0.5">Admin Console</p>
                             </div>
                         )}
                     </Link>

@@ -29,6 +29,74 @@ export default function SettingsPage() {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+    // Admin Settings State
+    const [orgName, setOrgName] = useState('Excelcommunity Living Inc');
+    const [orgAddress, setOrgAddress] = useState('');
+    const [orgPhone, setOrgPhone] = useState('');
+    const [providerId, setProviderId] = useState('');
+    const [directorName, setDirectorName] = useState('Administrator');
+    const [directorTitle, setDirectorTitle] = useState('Program Director');
+    const [savingAdmin, setSavingAdmin] = useState(false);
+    const [adminStatus, setAdminStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+
+    useEffect(() => {
+        if (user?.role === 'ADMIN') {
+            api.get('/settings').then(res => {
+                if (res.data) {
+                    setOrgName(res.data.organizationName || 'Excelcommunity Living Inc');
+                    setOrgAddress(res.data.organizationAddress || '');
+                    setOrgPhone(res.data.organizationPhone || '');
+                    setProviderId(res.data.providerId || '');
+                    setDirectorName(res.data.directorName || 'Administrator');
+                    setDirectorTitle(res.data.directorTitle || 'Program Director');
+                }
+            }).catch(console.error);
+        }
+    }, [user?.role]);
+
+    const handleUpdateAdminSettings = async () => {
+        setSavingAdmin(true);
+        setAdminStatus(null);
+        try {
+            await api.put('/settings', {
+                organizationName: orgName,
+                organizationAddress: orgAddress,
+                organizationPhone: orgPhone,
+                providerId,
+                directorName,
+                directorTitle
+            });
+            setAdminStatus({ type: 'success', message: 'Settings saved successfully!' });
+        } catch (error: any) {
+            setAdminStatus({
+                type: 'error',
+                message: error.response?.data?.message || 'Failed to save admin settings'
+            });
+        } finally {
+            setSavingAdmin(false);
+            setTimeout(() => setAdminStatus(null), 3500);
+        }
+    };
+
+    // Theme State
+    const [isDark, setIsDark] = useState(false);
+
+    useEffect(() => {
+        setIsDark(document.documentElement.classList.contains('dark'));
+    }, []);
+
+    const toggleTheme = () => {
+        const next = !isDark;
+        setIsDark(next);
+        if (next) {
+            document.documentElement.classList.add('dark');
+            localStorage.setItem('theme', 'dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+            localStorage.setItem('theme', 'light');
+        }
+    };
+
     useEffect(() => {
         if (user && user.name) {
             const parts = user.name.split(' ');
@@ -137,9 +205,20 @@ export default function SettingsPage() {
                             transition={{ duration: 0.6, ease: "easeOut" }}
                             className="max-w-4xl mx-auto"
                         >
-                            <header className="mb-10">
-                                <h2 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white mb-2">Account Settings</h2>
-                                <p className="text-slate-500 dark:text-slate-400">Manage your profile, security protocols, and administrative preferences.</p>
+                            <header className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                                <div>
+                                    <h2 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white mb-2">Account Settings</h2>
+                                    <p className="text-slate-500 dark:text-slate-400">Manage your profile, security protocols, and administrative preferences.</p>
+                                </div>
+                                <motion.button
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={logout}
+                                    className="flex items-center gap-2 bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-100 dark:hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30 px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-sm shrink-0"
+                                >
+                                    <span className="material-symbols-outlined text-lg">logout</span>
+                                    Secure Log Out
+                                </motion.button>
                             </header>
 
                             <motion.div
@@ -259,6 +338,123 @@ export default function SettingsPage() {
                                                 </motion.button>
                                             </div>
                                         </form>
+                                    </div>
+                                </motion.section>
+
+                                {/* Admin Organization & Certificate Settings (Visible only to ADMIN) */}
+                                {user?.role === 'ADMIN' && (
+                                    <motion.section
+                                        variants={{
+                                            hidden: { opacity: 0, y: 20 },
+                                            show: { opacity: 1, y: 0 }
+                                        }}
+                                        className="mb-8"
+                                    >
+                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
+                                            {/* Organization Info Card */}
+                                            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl rounded-[2rem] border border-slate-200/50 dark:border-slate-700/50 overflow-hidden shadow-[0_8px_30px_rgba(15,23,42,0.04)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)] flex flex-col h-full">
+                                                <div className="p-6 border-b border-slate-200/50 dark:border-slate-700/50 flex items-center gap-4">
+                                                    <div className="w-10 h-10 bg-cyan-100 dark:bg-cyan-900/30 rounded-xl flex items-center justify-center">
+                                                        <span className="material-symbols-outlined text-cyan-600 dark:text-cyan-400">domain</span>
+                                                    </div>
+                                                    <h3 className="text-xl font-black text-slate-900 dark:text-white">Organization Info</h3>
+                                                </div>
+                                                <div className="p-8 space-y-6 flex-1 flex flex-col">
+                                                    <div>
+                                                        <label className="text-xs font-bold uppercase tracking-widest text-[#5e6e82] dark:text-slate-400 mb-2 block">Organization Name</label>
+                                                        <input type="text" value={orgName} onChange={e => setOrgName(e.target.value)} className="bg-[#f8f9fa] dark:bg-slate-800/50 border-0 dark:border dark:border-slate-700/50 text-[#334155] dark:text-white text-sm font-semibold rounded-xl focus:ring-2 focus:ring-primary focus:outline-none block w-full p-4 transition-all" />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-bold uppercase tracking-widest text-[#5e6e82] dark:text-slate-400 mb-2 block">Organization Address</label>
+                                                        <input type="text" placeholder="e.g. 123 Health Ave, Suite 100" value={orgAddress} onChange={e => setOrgAddress(e.target.value)} className="bg-[#f8f9fa] dark:bg-slate-800/50 border-0 dark:border dark:border-slate-700/50 text-[#334155] dark:text-white text-sm font-semibold rounded-xl focus:ring-2 focus:ring-primary focus:outline-none block w-full p-4 transition-all" />
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <label className="text-xs font-bold uppercase tracking-widest text-[#5e6e82] dark:text-slate-400 mb-2 block">Phone Number</label>
+                                                            <input type="text" placeholder="(555) 123-4567" value={orgPhone} onChange={e => setOrgPhone(e.target.value)} className="bg-[#f8f9fa] dark:bg-slate-800/50 border-0 dark:border dark:border-slate-700/50 text-[#334155] dark:text-white text-sm font-semibold rounded-xl focus:ring-2 focus:ring-primary focus:outline-none block w-full p-4 transition-all" />
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-xs font-bold uppercase tracking-widest text-[#5e6e82] dark:text-slate-400 mb-2 block">Provider ID / Training No.</label>
+                                                            <input type="text" placeholder="e.g. NY-CNA-9988" value={providerId} onChange={e => setProviderId(e.target.value)} className="bg-[#f8f9fa] dark:bg-slate-800/50 border-0 dark:border dark:border-slate-700/50 text-[#334155] dark:text-white text-sm font-semibold rounded-xl focus:ring-2 focus:ring-primary focus:outline-none block w-full p-4 transition-all" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Certificate Signatory Card */}
+                                            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl rounded-[2rem] border border-slate-200/50 dark:border-slate-700/50 overflow-hidden shadow-[0_8px_30px_rgba(15,23,42,0.04)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)] flex flex-col h-full">
+                                                <div className="p-6 border-b border-slate-200/50 dark:border-slate-700/50 flex items-center gap-4">
+                                                    <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center">
+                                                        <span className="material-symbols-outlined text-indigo-600 dark:text-indigo-400">history_edu</span>
+                                                    </div>
+                                                    <h3 className="text-xl font-black text-slate-900 dark:text-white">Certificate Signatory</h3>
+                                                </div>
+                                                <div className="p-8 space-y-6 flex-1 flex flex-col">
+                                                    <div>
+                                                        <label className="text-xs font-bold uppercase tracking-widest text-[#5e6e82] dark:text-slate-400 mb-2 block">Director Name</label>
+                                                        <input type="text" value={directorName} onChange={e => setDirectorName(e.target.value)} className="bg-[#f8f9fa] dark:bg-slate-800/50 border-0 dark:border dark:border-slate-700/50 text-[#334155] dark:text-white text-sm font-semibold rounded-xl focus:ring-2 focus:ring-primary focus:outline-none block w-full p-4 transition-all" />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-bold uppercase tracking-widest text-[#5e6e82] dark:text-slate-400 mb-2 block">Director Title</label>
+                                                        <input type="text" value={directorTitle} onChange={e => setDirectorTitle(e.target.value)} className="bg-[#f8f9fa] dark:bg-slate-800/50 border-0 dark:border dark:border-slate-700/50 text-[#334155] dark:text-white text-sm font-semibold rounded-xl focus:ring-2 focus:ring-primary focus:outline-none block w-full p-4 transition-all" />
+                                                    </div>
+                                                    <p className="text-[13px] text-slate-500 dark:text-slate-400 leading-relaxed pt-2">
+                                                        The name and title above will appear on the signature line of all newly generated completion certificates.
+                                                    </p>
+
+                                                    <div className="pt-6 mt-auto border-t border-slate-100/0 flex justify-end items-center gap-4">
+                                                        {adminStatus && (
+                                                            <span className={`text-sm font-bold ${adminStatus.type === 'success' ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                                                {adminStatus.message}
+                                                            </span>
+                                                        )}
+                                                        <motion.button
+                                                            whileHover={{ scale: 1.02 }}
+                                                            whileTap={{ scale: 0.98 }}
+                                                            onClick={handleUpdateAdminSettings}
+                                                            disabled={savingAdmin}
+                                                            className="bg-[#0DB9F2] hover:bg-[#0CA8DC] text-white text-[15px] font-bold py-3.5 px-8 rounded-xl shadow-[0_4px_14px_rgba(13,185,242,0.39)] transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed ml-auto"
+                                                        >
+                                                            <span className="material-symbols-outlined text-lg">save</span>
+                                                            {savingAdmin ? 'Saving...' : 'Save Settings'}
+                                                        </motion.button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </motion.section>
+                                )}
+
+                                {/* Preferences Section */}
+                                <motion.section
+                                    variants={{
+                                        hidden: { opacity: 0, y: 20 },
+                                        show: { opacity: 1, y: 0 }
+                                    }}
+                                    className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl rounded-[2rem] border border-slate-200/50 dark:border-slate-700/50 overflow-hidden shadow-[0_8px_30px_rgba(15,23,42,0.04)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)]"
+                                >
+                                    <div className="p-6 border-b border-slate-200/50 dark:border-slate-700/50 flex justify-between items-center">
+                                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">App Preferences</h3>
+                                        <span className="material-symbols-outlined text-slate-400 dark:text-slate-500">tune</span>
+                                    </div>
+                                    <div className="p-8">
+                                        <div className="flex items-center justify-between p-6 bg-slate-50 dark:bg-background-dark rounded-2xl border border-slate-100 dark:border-border-muted transition-colors">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                                                    <span className="material-symbols-outlined text-primary">{isDark ? 'dark_mode' : 'light_mode'}</span>
+                                                </div>
+                                                <div>
+                                                    <p className="text-base font-bold text-slate-900 dark:text-white">Theme Appearance</p>
+                                                    <p className="text-sm text-slate-500 dark:text-slate-400">Toggle between Light and Dark mode interface.</p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={toggleTheme}
+                                                className={`relative inline-flex items-center h-7 w-12 rounded-full transition-colors focus:outline-none ${isDark ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-700'}`}
+                                            >
+                                                <span className={`inline-block w-5 h-5 transform bg-white rounded-full shadow transition-transform ${isDark ? 'translate-x-6' : 'translate-x-1'}`} />
+                                            </button>
+                                        </div>
                                     </div>
                                 </motion.section>
 

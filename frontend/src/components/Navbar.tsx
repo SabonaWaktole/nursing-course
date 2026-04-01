@@ -64,6 +64,9 @@ export default function Navbar() {
                             <span className="text-lg font-bold tracking-tight text-white group-hover:text-primary transition-colors duration-300">
                                 Excelcommunity Living
                             </span>
+                            <span className="text-[10px] italic text-slate-300 group-hover:text-primary/80 transition-colors duration-300">
+                                Knowledge produces quality care
+                            </span>
                         </div>
                     </Link>
 
@@ -85,44 +88,25 @@ export default function Navbar() {
 
                     {/* ── Right side: search, theme, auth ── */}
                     <div className="hidden md:flex items-center gap-3">
-                        <ThemeToggle />
-
-                        {/* Auth buttons */}
                         {user ? (
-                            <div className="flex items-center gap-2 ml-1">
-                                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                    <Link
-                                        href="/settings"
-                                        className="flex items-center justify-center h-9 w-9 rounded-full text-slate-400 hover:text-primary hover:bg-white/[0.06] transition-all duration-300"
-                                        title="Settings"
-                                    >
-                                        <span className="material-symbols-outlined text-xl">settings</span>
-                                    </Link>
-                                </motion.div>
-                                <motion.button
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    onClick={logout}
-                                    className="flex items-center justify-center h-9 w-9 rounded-full text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all duration-300"
-                                    title="Logout"
-                                >
-                                    <span className="material-symbols-outlined text-xl">logout</span>
-                                </motion.button>
-                            </div>
-                        ) : (
-                            <div className="flex items-center gap-3 ml-1">
+                            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="ml-1">
                                 <Link
-                                    href="/login"
-                                    className="text-sm font-semibold text-slate-300 hover:text-primary transition-colors duration-300"
+                                    href="/settings"
+                                    className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-cyan-500 text-white font-bold flex items-center justify-center shadow-[0_0_12px_rgba(13,185,242,0.3)] border border-primary/20 shrink-0 transition-shadow hover:shadow-[0_0_20px_rgba(13,185,242,0.5)]"
+                                    title="Account Settings"
                                 >
-                                    Log In
+                                    {user?.name?.charAt(0)?.toUpperCase() || 'U'}
                                 </Link>
+                            </motion.div>
+                        ) : (
+                            <div className="flex items-center gap-4 ml-1">
+                                <ThemeToggle />
                                 <motion.div whileHover={{ y: -1 }} whileTap={{ scale: 0.97 }}>
                                     <Link
-                                        href="/register"
-                                        className="bg-primary hover:bg-primary/90 text-white px-5 py-2 rounded-full text-sm font-bold shadow-[0_0_20px_rgba(13,185,242,0.35)] hover:shadow-[0_0_28px_rgba(13,185,242,0.5)] transition-all duration-300"
+                                        href="/login"
+                                        className="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-full text-sm font-bold shadow-[0_0_20px_rgba(13,185,242,0.35)] hover:shadow-[0_0_28px_rgba(13,185,242,0.5)] transition-all duration-300"
                                     >
-                                        Get Started
+                                        Log In
                                     </Link>
                                 </motion.div>
                             </div>
@@ -131,7 +115,15 @@ export default function Navbar() {
 
                     {/* ── Mobile toggle ── */}
                     <div className="flex items-center gap-2 md:hidden">
-                        <ThemeToggle />
+                        {!user && <ThemeToggle />}
+                        {user && (
+                            <Link 
+                                href="/settings" 
+                                className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-cyan-500 text-[12px] text-white font-bold flex items-center justify-center shadow-[0_0_10px_rgba(13,185,242,0.3)] shrink-0 mr-1"
+                            >
+                                {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                            </Link>
+                        )}
                         <motion.button
                             whileTap={{ scale: 0.9 }}
                             className="flex items-center justify-center h-10 w-10 rounded-full text-slate-300 hover:text-primary hover:bg-white/[0.06] transition-all duration-300"
@@ -175,44 +167,15 @@ export default function Navbar() {
                                 </motion.div>
                             ))}
 
-                            {/* Account section */}
-                            {user && (
-                                <div className="border-t border-white/[0.06] mt-4 pt-4 space-y-1">
-                                    <p className="px-4 py-1.5 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Account</p>
-                                    <Link
-                                        href="/settings"
-                                        className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-300 hover:text-primary hover:bg-white/[0.04] transition-all duration-300"
-                                        onClick={() => setMobileOpen(false)}
-                                    >
-                                        <span className="material-symbols-outlined text-[20px] opacity-70">settings</span>
-                                        Settings
-                                    </Link>
-                                    <button
-                                        onClick={() => { logout(); setMobileOpen(false); }}
-                                        className="flex items-center gap-3 px-4 py-3 w-full text-left rounded-xl text-sm font-bold text-red-400 hover:bg-red-500/10 transition-all duration-300 mt-1"
-                                    >
-                                        <span className="material-symbols-outlined text-[20px]">logout</span>
-                                        Log out
-                                    </button>
-                                </div>
-                            )}
-
                             {/* Auth buttons for logged-out users */}
                             {!user && (
-                                <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-white/[0.06]">
+                                <div className="mt-4 pt-4 border-t border-white/[0.06]">
                                     <Link
                                         href="/login"
-                                        className="flex items-center justify-center rounded-xl border border-white/[0.1] bg-white/[0.04] px-4 py-3.5 text-sm font-bold text-slate-300 hover:text-primary hover:border-primary/30 transition-all duration-300"
-                                        onClick={() => setMobileOpen(false)}
-                                    >
-                                        Log in
-                                    </Link>
-                                    <Link
-                                        href="/register"
                                         className="flex items-center justify-center rounded-xl bg-primary px-4 py-3.5 text-sm font-bold text-white hover:bg-primary/90 shadow-lg shadow-primary/25 transition-all duration-300"
                                         onClick={() => setMobileOpen(false)}
                                     >
-                                        Get Started
+                                        Log in
                                     </Link>
                                 </div>
                             )}
