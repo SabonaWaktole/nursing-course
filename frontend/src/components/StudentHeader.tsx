@@ -73,7 +73,7 @@ export default function StudentHeader({ title, subtitle, icon, onMobileMenuOpen 
 
     return (
         <header className="h-[72px] flex items-center justify-between px-4 sm:px-6 lg:px-8 border-b border-slate-200/50 dark:border-white/[0.06] bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.05)] dark:shadow-[0_4px_30px_rgba(0,0,0,0.4)] z-20 shrink-0 transition-all duration-500">
-            <div className="flex items-center gap-4">
+            <div className="flex-1 flex items-center gap-4">
                 {/* Mobile menu toggle */}
                 <motion.button
                     whileTap={{ scale: 0.9 }}
@@ -102,19 +102,19 @@ export default function StudentHeader({ title, subtitle, icon, onMobileMenuOpen 
                     </div>
                 </Link>
 
-                {/* Navigation Links — matches global Navbar style */}
-                <nav className="hidden md:flex items-center gap-1 lg:gap-2">
+                {/* Navigation Links — Spaced edge-to-edge to fill all gaps as requested */}
+                <nav className="hidden md:flex flex-1 items-center justify-between ml-8 mr-10 px-4">
                     {NAV_LINKS.map((item) => {
                         const isActive = pathname === item.href;
                         return (
                             <Link
                                 key={item.href}
                                 href={item.href}
-                                className={`group flex items-center gap-1.5 px-3 lg:px-4 py-2 text-sm font-medium transition-colors duration-300 relative ${
-                                    isActive ? 'text-primary' : 'text-slate-600 dark:text-slate-300 hover:text-primary'
+                                className={`group flex items-center gap-1.5 px-4 py-2 text-[14px] font-bold tracking-tight transition-colors duration-300 relative ${
+                                    isActive ? 'text-primary bg-primary/5 rounded-xl border border-primary/20' : 'text-slate-600 dark:text-slate-300 hover:text-primary'
                                 }`}
                             >
-                                <span className={`material-symbols-outlined text-[18px] transition-all duration-300 ${
+                                <span className={`material-symbols-outlined text-[20px] transition-all duration-300 ${
                                     isActive ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'
                                 }`}>
                                     {item.icon}

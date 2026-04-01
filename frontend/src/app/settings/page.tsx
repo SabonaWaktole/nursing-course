@@ -210,15 +210,6 @@ export default function SettingsPage() {
                                     <h2 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white mb-2">Account Settings</h2>
                                     <p className="text-slate-500 dark:text-slate-400">Manage your profile, security protocols, and administrative preferences.</p>
                                 </div>
-                                <motion.button
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    onClick={logout}
-                                    className="flex items-center gap-2 bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-100 dark:hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30 px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-sm shrink-0"
-                                >
-                                    <span className="material-symbols-outlined text-lg">logout</span>
-                                    Secure Log Out
-                                </motion.button>
                             </header>
 
                             <motion.div
@@ -532,23 +523,36 @@ export default function SettingsPage() {
                                                 </motion.button>
                                             </div>
                                         </form>
+                                    </div>
+                                </motion.section>
 
-                                        <hr className="my-10 border-slate-100 dark:border-border-muted" />
-
-                                        <div className="flex items-center justify-between p-6 bg-slate-50 dark:bg-background-dark rounded-2xl border border-slate-100 dark:border-border-muted transition-colors">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
-                                                    <span className="material-symbols-outlined text-primary">phonelink_lock</span>
-                                                </div>
-                                                <div>
-                                                    <p className="text-base font-bold text-slate-900 dark:text-white">Two-Factor Authentication</p>
-                                                    <p className="text-sm text-slate-500 dark:text-slate-400">Add an extra layer of security to your account.</p>
-                                                </div>
+                                {/* Account Session Section */}
+                                <motion.section
+                                    variants={{
+                                        hidden: { opacity: 0, y: 20 },
+                                        show: { opacity: 1, y: 0 }
+                                    }}
+                                    className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl rounded-[2rem] border border-slate-200/50 dark:border-slate-700/50 overflow-hidden shadow-[0_8px_30px_rgba(15,23,42,0.04)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)]"
+                                >
+                                    <div className="p-6 border-b border-slate-200/50 dark:border-slate-700/50 flex justify-between items-center">
+                                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Account Session</h3>
+                                        <span className="material-symbols-outlined text-slate-400 dark:text-slate-500">login</span>
+                                    </div>
+                                    <div className="p-8">
+                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                            <div>
+                                                <p className="text-base font-bold text-slate-900 dark:text-white">End Current Session</p>
+                                                <p className="text-sm text-slate-500 dark:text-slate-400">Securely log out of your account on this device.</p>
                                             </div>
-                                            <label className="relative inline-flex items-center cursor-not-allowed opacity-50">
-                                                <input disabled checked={false} className="sr-only peer" type="checkbox" />
-                                                <div className="w-11 h-6 bg-slate-200 dark:bg-slate-700 rounded-full peer peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
-                                            </label>
+                                            <motion.button
+                                                whileHover={{ scale: 1.05 }}
+                                                whileTap={{ scale: 0.95 }}
+                                                onClick={logout}
+                                                className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-bold py-3 px-8 rounded-lg border border-slate-200 dark:border-slate-700 transition-all font-sans flex items-center gap-2"
+                                            >
+                                                <span className="material-symbols-outlined text-lg">logout</span>
+                                                Log Out
+                                            </motion.button>
                                         </div>
                                     </div>
                                 </motion.section>
@@ -559,7 +563,7 @@ export default function SettingsPage() {
                                         hidden: { opacity: 0, y: 20 },
                                         show: { opacity: 1, y: 0 }
                                     }}
-                                    className="bg-red-50/50 dark:bg-red-900/10 backdrop-blur-2xl rounded-[2rem] border border-red-200/50 dark:border-red-900/30 overflow-hidden shadow-[0_8px_30px_rgba(15,23,42,0.04)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)]"
+                                    className="mb-12 bg-red-50/50 dark:bg-red-900/10 backdrop-blur-2xl rounded-[2rem] border border-red-200/50 dark:border-red-900/30 overflow-hidden shadow-[0_8px_30px_rgba(15,23,42,0.04)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)]"
                                 >
                                     <div className="p-6 border-b border-red-200/50 dark:border-red-900/30 flex justify-between items-center">
                                         <h3 className="text-lg font-bold text-rose-600 dark:text-red-400">Danger Zone</h3>

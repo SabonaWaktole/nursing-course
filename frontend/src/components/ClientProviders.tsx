@@ -15,7 +15,8 @@ export default function ClientProviders({ children }: { children: ReactNode }) {
     // Routes that have their own header but still need normal scrolling (not fixed height)
     const isCourseDetails = pathname?.startsWith('/courses/') && pathname !== '/courses';
     const hasOwnNav = pathname?.startsWith('/quiz') || isCourseDetails;
-    const hideGlobalNav = hasDashboardLayout || hasOwnNav;
+    const isAuthPage = pathname === '/login' || pathname === '/register';
+    const hideGlobalNav = hasDashboardLayout || hasOwnNav || isAuthPage;
     const pageVariants = usePageVariants();
 
     return (

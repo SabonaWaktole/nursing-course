@@ -40,6 +40,27 @@ export default function RegisterPage() {
 
     return (
         <div className="min-h-screen bg-[#f8fafc] dark:bg-[#0f172a] flex items-center justify-center p-4 relative overflow-hidden">
+            {/* Styled Brand Button — Back to Home as requested */}
+            <div className="absolute top-8 left-8 z-50">
+                <Link href="/" className="flex items-center gap-3 group shrink-0">
+                    <motion.div
+                        whileHover={{ rotate: 8, scale: 1.08 }}
+                        transition={{ duration: 0.35, ease: 'easeInOut' }}
+                        className="relative w-10 h-10 rounded-full flex items-center justify-center bg-slate-900 dark:bg-[#1e293b] border border-primary/30 shadow-[0_0_12px_rgba(13,185,242,0.2)]"
+                    >
+                        <span className="text-primary text-lg font-black tracking-tighter">E</span>
+                    </motion.div>
+                    <div className="flex flex-col">
+                        <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white group-hover:text-primary transition-colors duration-300">
+                            Excelcommunity Living
+                        </span>
+                        <span className="text-[10px] italic text-slate-500 dark:text-slate-300 group-hover:text-primary/80 transition-colors duration-300 leading-none mt-0.5">
+                            Knowledge produces quality care
+                        </span>
+                    </div>
+                </Link>
+            </div>
+
             {/* Background Decorative Elements */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
                 <motion.div
@@ -58,7 +79,7 @@ export default function RegisterPage() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-                className="w-full max-w-[440px] z-10 mt-20"
+                className="w-full max-w-[440px] z-10"
             >
                 <div className="text-center mb-8">
                     <motion.div
