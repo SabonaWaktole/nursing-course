@@ -11,6 +11,7 @@ import {
 import api from '@/lib/api';
 import { Course } from '@/lib/types';
 import { getFileUrl } from '@/lib/url-utils';
+import CourseCard from '@/components/CourseCard';
 
 /* ═══════════════════════════════════════════
    DATA
@@ -700,44 +701,16 @@ function CoursesSection() {
               }
 
               return (
-                <motion.div
+                <CourseCard
                   key={courseId}
-                  initial={{ opacity: 0, y: 24 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.15, duration: 0.5 }}
-                  className="group relative rounded-lg overflow-hidden transition-all duration-500
-                    hover:-translate-y-2
-                    bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800
-                    hover:border-primary/30 dark:hover:border-primary/30 hover:shadow-xl"
-                >
-                  <span className="absolute bottom-0 left-0 h-1 w-0 transition-all duration-300 group-hover:w-full rounded-full bg-primary z-10" />
-                  <div className="relative h-64 overflow-hidden">
-                    <img
-                      src={thumbnail}
-                      alt={name}
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                  </div>
-                  <div className="p-6">
-                    <h3 className="text-xl font-semibold mb-3 transition-colors duration-300 text-slate-900 dark:text-white group-hover:text-primary line-clamp-1">
-                      {name}
-                    </h3>
-                    <p className="mb-4 transition-colors duration-300 text-slate-600 dark:text-slate-400 line-clamp-2">
-                      {overview}
-                    </p>
-                    <a
-                      href={link}
-                      className="inline-flex items-center group/link"
-                    >
-                      <span className="relative font-medium transition-colors duration-300 text-primary group-hover/link:text-primary/80">
-                        Enroll
-                        <span className="absolute left-0 bottom-0 h-[1px] w-0 transition-all duration-300 group-hover/link:w-full rounded-full bg-primary" />
-                      </span>
-                      <ArrowRight size={16} className="ml-1 text-primary" />
-                    </a>
-                  </div>
-                </motion.div>
+                  courseId={courseId}
+                  name={name}
+                  overview={overview}
+                  thumbnail={thumbnail}
+                  link={link}
+                  delay={i * 0.15}
+                  category={isDynamic ? ((course as Course).tags?.[0] || (course as Course).category || undefined) : undefined}
+                />
               );
             })
           )}

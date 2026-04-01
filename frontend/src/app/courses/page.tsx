@@ -13,6 +13,7 @@ import {
     useCardHoverMotion,
     useGlowHoverMotion,
 } from '@/lib/motion';
+import CourseCard from '@/components/CourseCard';
 
 const PLACEHOLDER_IMAGES = [
     "https://lh3.googleusercontent.com/aida-public/AB6AXuCx8O0XAYxQEfXeLfRH-6FfKX-9Z25q3IW2LEzqB3vq2Gjsi19mvFXdUV6eATG3m2EWGewTGxSWwZzZXOXhFNxiJGchZ1X7Ngn3ziO1W125d4PgRVqSLp30uM7ytxTK6mtU312iAhNc30w8kysWGRCCo23qNaFSvHITxKvRUlzopPkUReQMbvlGci6rk0oe9mu3vr9DRmMtZA_iAIhN1kR6zQSUXKhDrjd-2_Dc271nGTlZfm3brlEaniNbZg1m-EsYIoN4rqNGht0",
@@ -182,7 +183,7 @@ export default function CoursesPage() {
                         initial={{ opacity: 0, y: 30, scale: 0.98 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         transition={{ duration: 0.6, ease: [0.25, 0.8, 0.25, 1] }}
-                        className="relative group overflow-hidden rounded-3xl mb-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl hover:shadow-2xl hover:shadow-primary/10 transition-all duration-700"
+                        className="relative group overflow-hidden rounded-2xl mb-12 transition-all duration-500 hover:-translate-y-3 bg-white dark:bg-slate-900/60 backdrop-blur-sm border border-slate-200/80 dark:border-slate-700/50 hover:border-primary/40 dark:hover:border-primary/40 hover:shadow-[0_20px_60px_-15px_rgba(13,185,242,0.15),0_8px_24px_-8px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_20px_60px_-15px_rgba(13,185,242,0.2),0_8px_24px_-8px_rgba(0,0,0,0.3)]"
                     >
                         {/* Animated gradient top accent */}
                         <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent animate-gradient-shift z-30" />
@@ -291,10 +292,10 @@ export default function CoursesPage() {
 
                 {/* Course Grid */}
                 {loading ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         {[1, 2, 3, 4, 5, 6].map((i) => (
-                            <div key={i} className="bg-white dark:bg-slate-800 rounded-3xl overflow-hidden border border-slate-100 dark:border-slate-700">
-                                <div className="h-52 bg-slate-200 dark:bg-slate-700 relative overflow-hidden">
+                            <div key={i} className="bg-white dark:bg-slate-900/60 backdrop-blur-sm rounded-2xl overflow-hidden border border-slate-200/80 dark:border-slate-700/50">
+                                <div className="h-56 bg-slate-200 dark:bg-slate-800 relative overflow-hidden">
                                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
                                 </div>
                                 <div className="p-7 space-y-4">
@@ -338,63 +339,22 @@ export default function CoursesPage() {
                         variants={sectionContainer}
                         initial="hidden"
                         animate="show"
-                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                        className="grid grid-cols-1 md:grid-cols-3 gap-8"
                     >
                         {filtered.map((course, idx) => (
-                            <motion.div
+                            <CourseCard
                                 key={course.id}
-                                variants={sectionItem}
-                                {...cardHover}
-                            >
-                                <Link
-                                    href={`/courses/${course.id}`}
-                                    className="group bg-white dark:bg-slate-900 rounded-3xl overflow-hidden border border-slate-200/80 dark:border-slate-800/80 transition-all duration-500 hover:shadow-[0_20px_50px_-15px_rgba(13,185,242,0.2)] dark:hover:shadow-[0_20px_50px_-15px_rgba(13,185,242,0.12)] h-full flex flex-col relative z-0"
-                                >
-                                    {/* Card hover glow */}
-                                    <div className="absolute inset-0 bg-primary/15 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 -z-10"></div>
-                                    {/* Card top accent on hover */}
-                                    <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-30" />
-                                    {/* Shine sweep overlay */}
-                                    <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden rounded-3xl">
-                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.07] to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out" />
-                                    </div>
-
-                                    <div className="relative h-48 md:h-56 overflow-hidden">
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-500 z-10"></div>
-                                        {/* Category tag */}
-                                        <div className="absolute top-4 left-4 z-20 bg-white/90 dark:bg-slate-900/90 backdrop-blur px-3 py-1.5 rounded-lg text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-wider shadow-lg">
-                                            {course.tags && course.tags.length > 0 ? course.tags[0] : (course.category || 'Course')}
-                                        </div>
-                                        <img
-                                            alt={course.title}
-                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
-                                            src={course.thumbnail ? getFileUrl(course.thumbnail) : PLACEHOLDER_IMAGES[idx % PLACEHOLDER_IMAGES.length]}
-                                        />
-                                    </div>
-                                    <div className="p-7 flex flex-col flex-1 relative bg-white dark:bg-slate-900 z-20">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <div className="flex items-center text-amber-500 bg-amber-50 dark:bg-amber-500/10 px-2.5 py-1 rounded-lg">
-                                                <span className="material-symbols-outlined text-[14px]">star</span>
-                                                <span className="text-xs font-bold ml-1">4.{8 + (idx % 2)}</span>
-                                            </div>
-                                            <span className="text-slate-500 dark:text-slate-400 text-xs font-semibold flex items-center gap-1.5">
-                                                <span className="material-symbols-outlined text-[14px]">schedule</span>
-                                                {course._count?.modules || 1} Modules
-                                            </span>
-                                        </div>
-                                        <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-3 leading-tight group-hover:text-primary transition-colors duration-300">{course.title}</h4>
-                                        <p className="text-slate-600 dark:text-slate-400 text-sm mb-8 flex-1 line-clamp-2 leading-relaxed">{course.description}</p>
-                                        <div className="flex items-center justify-between pt-5 border-t border-slate-100 dark:border-slate-800/80 mt-auto">
-                                            <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                                                {course.price && course.price > 0 ? `$${course.price}` : <span className="text-emerald-500">Free</span>}
-                                            </span>
-                                            <span className="px-5 py-2.5 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl group-hover:bg-primary group-hover:text-white transition-all duration-300 font-bold text-sm shadow-sm group-hover:shadow-lg group-hover:shadow-primary/20 flex items-center gap-2">
-                                                Enroll Now <span className="material-symbols-outlined text-sm transition-transform duration-300 group-hover:translate-x-1">arrow_forward</span>
-                                            </span>
-                                        </div>
-                                    </div>
-                                </Link>
-                            </motion.div>
+                                courseId={course.id}
+                                name={course.title}
+                                overview={course.description}
+                                thumbnail={course.thumbnail ? getFileUrl(course.thumbnail) : PLACEHOLDER_IMAGES[idx % PLACEHOLDER_IMAGES.length]}
+                                link={`/courses/${course.id}`}
+                                category={course.tags && course.tags.length > 0 ? course.tags[0] : (course.category || 'Course')}
+                                price={course.price ?? undefined}
+                                modules={course._count?.modules || 1}
+                                rating={4.8 + (idx % 2)}
+                                delay={idx * 0.15}
+                            />
                         ))}
                     </motion.div>
                 )}
