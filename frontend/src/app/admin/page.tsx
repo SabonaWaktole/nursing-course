@@ -741,122 +741,15 @@ export default function AdminDashboard() {
                                 </div>
                             )}
 
-                            {/* Notification bell */}
-                            <div className="relative">
-                                <motion.button
-                                    whileHover={{ scale: 1.08 }}
-                                    whileTap={{ scale: 0.92 }}
-                                    onClick={() => setShowNotifications(!showNotifications)}
-                                    className="relative flex items-center justify-center h-9 w-9 rounded-full text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-all duration-300"
-                                >
-                                    <span className="material-symbols-outlined text-xl leading-none">notifications</span>
-                                    {notifications.some(n => !n.read) && (
-                                        <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse ring-2 ring-white dark:ring-slate-950"></span>
-                                    )}
-                                </motion.button>
-
-                                <AnimatePresence>
-                                {showNotifications && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: -8, scale: 0.96 }}
-                                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                                        exit={{ opacity: 0, y: -8, scale: 0.96 }}
-                                        transition={{ duration: 0.2, ease: [0.25, 0.8, 0.25, 1] }}
-                                        className="absolute right-0 mt-2 w-80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-slate-200/50 dark:border-slate-800/50 rounded-2xl shadow-[0_20px_50px_rgba(15,23,42,0.18)] z-50 overflow-hidden"
-                                    >
-                                        <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                                            <h4 className="font-bold text-sm">Notifications</h4>
-                                            <span className="text-[10px] font-black uppercase text-primary px-2.5 py-1 bg-primary/10 rounded-full">
-                                                {notifications.filter(n => !n.read).length} New
-                                            </span>
-                                        </div>
-                                        <div className="max-h-96 overflow-y-auto custom-scrollbar">
-                                            {notifications.length > 0 ? (
-                                                notifications.map((n: any, ni: number) => (
-                                                    <motion.div
-                                                        key={n.id}
-                                                        initial={{ opacity: 0, x: -10 }}
-                                                        animate={{ opacity: 1, x: 0 }}
-                                                        transition={{ delay: ni * 0.05, duration: 0.25 }}
-                                                        onClick={() => {
-                                                            markRead(n.id);
-                                                            if (n.type === 'EXAM_COMPLETED') {
-                                                                setTab('certificates');
-                                                            }
-                                                            setShowNotifications(false);
-                                                        }}
-                                                        className={`p-4 border-b border-slate-50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors ${!n.read ? 'bg-primary/5' : ''}`}
-                                                    >
-                                                        <div className="flex gap-3">
-                                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${n.type === 'EXAM_COMPLETED' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600' : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600'
-                                                                }`}>
-                                                                <span className="material-symbols-outlined text-lg">
-                                                                    {n.type === 'EXAM_COMPLETED' ? 'grade' : 'verified_user'}
-                                                                </span>
-                                                            </div>
-                                                            <div className="flex-1 min-w-0">
-                                                                <p className="text-sm font-bold truncate">{n.title}</p>
-                                                                <p className="text-xs text-slate-500 line-clamp-2 mt-0.5">{n.message}</p>
-                                                                <p className="text-[10px] text-slate-400 mt-2 flex items-center gap-1">
-                                                                    <span className="material-symbols-outlined text-[10px]">schedule</span>
-                                                                    {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                                </p>
-                                                            </div>
-                                                            {!n.read && <div className="w-2 h-2 bg-primary rounded-full mt-2 animate-pulse"></div>}
-                                                        </div>
-                                                    </motion.div>
-                                                ))
-                                            ) : (
-                                                <div className="p-12 text-center">
-                                                    <span className="material-symbols-outlined text-4xl text-slate-300 mb-2">notifications_off</span>
-                                                    <p className="text-xs text-slate-500">No notifications yet</p>
-                                                </div>
-                                            )}
-                                        </div>
-                                        {notifications.length > 0 && (
-                                            <div className="p-3 bg-slate-50/80 dark:bg-slate-800/50 flex items-center justify-between backdrop-blur-sm border-t border-slate-100 dark:border-slate-800">
-                                                {notifications.some(n => !n.read) ? (
-                                                    <button onClick={markAllRead} className="text-[10px] font-bold text-slate-500 hover:text-primary transition-colors flex items-center gap-1">
-                                                        <span className="material-symbols-outlined text-[12px]">done_all</span>
-                                                        Mark all as read
-                                                    </button>
-                                                ) : <div></div>}
-                                                <button onClick={clearAll} className="text-[10px] font-black uppercase text-slate-400 hover:text-red-500 transition-colors">Clear All</button>
-                                            </div>
-                                        )}
-                                    </motion.div>
-                                )}
-                                </AnimatePresence>
-                            </div>
-
-                            {/* Theme toggle */}
-                            <motion.button
-                                whileHover={{ scale: 1.08 }}
-                                whileTap={{ scale: 0.92 }}
-                                onClick={() => {
-                                    const next = !document.documentElement.classList.contains('dark');
-                                    setIsDark(next);
-                                    if (next) {
-                                        document.documentElement.classList.add('dark');
-                                        localStorage.setItem('theme', 'dark');
-                                    } else {
-                                        document.documentElement.classList.remove('dark');
-                                        localStorage.setItem('theme', 'light');
-                                    }
-                                }}
-                                className="flex items-center justify-center h-9 w-9 rounded-xl bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-primary/10 transition-all duration-200"
-                            >
-                                <span className="material-symbols-outlined text-[20px] leading-none">
-                                    {isDark ? 'light_mode' : 'dark_mode'}
-                                </span>
-                            </motion.button>
-
                             {/* Admin avatar */}
-                            <motion.div
-                                whileHover={{ scale: 1.05 }}
-                                className="hidden sm:flex items-center justify-center h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-cyan-400 text-white text-sm font-bold shadow-[0_0_15px_rgba(13,185,242,0.3)]"
-                            >
-                                {user?.name?.charAt(0)?.toUpperCase() || 'A'}
+                            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="hidden sm:flex ml-1">
+                                <Link
+                                    href="/settings"
+                                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-primary to-cyan-500 text-white font-bold flex items-center justify-center shadow-[0_0_12px_rgba(13,185,242,0.3)] border border-primary/20 shrink-0 transition-shadow hover:shadow-[0_0_20px_rgba(13,185,242,0.5)]"
+                                    title="Account Settings"
+                                >
+                                    {user?.name?.charAt(0)?.toUpperCase() || 'A'}
+                                </Link>
                             </motion.div>
                         </div>
                     </header>
