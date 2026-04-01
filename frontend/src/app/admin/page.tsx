@@ -55,6 +55,7 @@ export default function AdminDashboard() {
     const [results, setResults] = useState<any[]>([]);
     const [notifications, setNotifications] = useState<any[]>([]);
     const [showNotifications, setShowNotifications] = useState(false);
+    const unreadCount = notifications.filter(n => !n.read).length;
 
     // User management
     const [showUserForm, setShowUserForm] = useState(false);
@@ -727,21 +728,91 @@ export default function AdminDashboard() {
                             </nav>
                         </div>
 
-                        <div className="flex items-center gap-1 sm:gap-2">
+                            <div className="flex items-center gap-1 sm:gap-2 relative">
+                                {/* Notifications Link/Dropdown */}
+                                <div className="relative">
+                                    <motion.button
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={() => setShowNotifications(!showNotifications)}
+                                        className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border transition-all duration-300 ${
+                                            showNotifications ? 'bg-primary/20 border-primary text-primary' : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:text-primary hover:border-primary/50'
+                                        }`}
+                                        title="Notifications"
+                                    >
+                                        <span className="material-symbols-outlined text-xl">notifications</span>
+                                        {unreadCount > 0 && (
+                                            <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-rose-500 border-2 border-white dark:border-slate-900 rounded-full flex items-center justify-center animate-pulse">
+                                                <span className="text-[7px] font-bold text-white">{unreadCount}</span>
+                                            </span>
+                                        )}
+                                    </motion.button>
 
-                            {/* Removed Upload buttons header inline section */}
+                                    <AnimatePresence>
+                                        {showNotifications && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 15, scale: 0.95 }}
+                                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                className="absolute right-0 mt-3 w-80 sm:w-96 bg-white/90 dark:bg-slate-900/95 backdrop-blur-2xl rounded-2xl border border-slate-200 dark:border-slate-800 shadow-[0_10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] z-50 overflow-hidden"
+                                            >
+                                                <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                                                    <h4 className="font-bold text-slate-900 dark:text-white text-sm">Notifications</h4>
+                                                    {unreadCount > 0 && (
+                                                        <button onClick={markAllRead} className="text-xs font-bold text-primary hover:underline">Mark all read</button>
+                                                    )}
+                                                </div>
+                                                <div className="max-h-[400px] overflow-y-auto custom-scrollbar p-2">
+                                                    {notifications.length > 0 ? (
+                                                        <div className="space-y-1 text-left">
+                                                            {notifications.map((n) => (
+                                                                <div 
+                                                                    key={n.id} 
+                                                                    className={`p-4 rounded-xl transition-all border ${n.read ? 'bg-transparent border-transparent opacity-60' : 'bg-slate-50 dark:bg-slate-800/40 border-slate-100 dark:border-slate-800/60'}`}
+                                                                >
+                                                                    <div className="flex gap-3">
+                                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${n.read ? 'bg-slate-200 dark:bg-slate-700' : 'bg-primary/20 text-primary'}`}>
+                                                                            <span className="material-symbols-outlined text-sm">{n.type === 'enrollment' ? 'person_add' : 'info'}</span>
+                                                                        </div>
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <p className="text-xs text-slate-900 dark:text-slate-100 font-medium leading-tight">{n.message}</p>
+                                                                            <p className="text-[10px] text-slate-500 mt-1">{new Date(n.createdAt).toLocaleString()}</p>
+                                                                        </div>
+                                                                        {!n.read && (
+                                                                            <button onClick={() => markRead(n.id)} className="text-slate-400 hover:text-primary transition-colors">
+                                                                                <span className="material-symbols-outlined text-base">check_circle</span>
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="py-12 text-center">
+                                                            <span className="material-symbols-outlined text-4xl text-slate-300 dark:text-slate-700 mb-2">notifications_off</span>
+                                                            <p className="text-sm text-slate-500">No notifications yet</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="p-4 bg-slate-50 dark:bg-slate-800/30 border-t border-slate-200 dark:border-slate-800 flex justify-center">
+                                                    <button onClick={clearAll} className="text-xs font-bold text-slate-500 hover:text-rose-500 transition-colors">Clear All</button>
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
 
-                            {/* Admin avatar */}
-                            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="hidden sm:flex ml-1">
-                                <Link
-                                    href="/settings"
-                                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-primary to-cyan-500 text-white font-bold flex items-center justify-center shadow-[0_0_12px_rgba(13,185,242,0.3)] border border-primary/20 shrink-0 transition-shadow hover:shadow-[0_0_20px_rgba(13,185,242,0.5)]"
-                                    title="Account Settings"
-                                >
-                                    {user?.name?.charAt(0)?.toUpperCase() || 'A'}
-                                </Link>
-                            </motion.div>
-                        </div>
+                                {/* Admin avatar */}
+                                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="hidden sm:flex">
+                                    <Link
+                                        href="/settings"
+                                        className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-primary to-cyan-500 text-white font-bold flex items-center justify-center shadow-[0_0_12px_rgba(13,185,242,0.3)] border border-primary/20 shrink-0 transition-shadow hover:shadow-[0_0_20px_rgba(13,185,242,0.5)]"
+                                        title="Account Settings"
+                                    >
+                                        {user?.name?.charAt(0)?.toUpperCase() || 'A'}
+                                    </Link>
+                                </motion.div>
+                            </div>
                     </header>
 
                     {/* Scrollable Content */}
