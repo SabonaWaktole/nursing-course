@@ -137,9 +137,9 @@ export default function AdminSidebar({
                 </nav>
 
                 <div className="p-4 border-t border-slate-200 dark:border-slate-800 shrink-0">
-                    <button
+                    <Link
+                        href="/settings"
                         onClick={() => {
-                            setTab?.('settings');
                             if (window.innerWidth < 1024) setIsMobileMenuOpen(false);
                         }}
                         className={`w-full flex items-center gap-3 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors ${isSidebarCollapsed ? 'justify-center' : ''} ${tab === 'settings' ? 'bg-primary/10 border border-primary/20 text-primary' : ''}`}
@@ -153,7 +153,7 @@ export default function AdminSidebar({
                                 <p className="text-xs text-slate-500 truncate">{user?.email || 'admin@excelcommunity.com'}</p>
                             </div>
                         )}
-                    </button>
+                    </Link>
                 </div>
             </aside>
         </>

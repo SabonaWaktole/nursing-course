@@ -106,7 +106,7 @@ export default function StudentSidebar({
                 {!isSidebarCollapsed && (
                     <div className="px-4 pb-6">
                         <div className="bg-gradient-to-br from-primary/10 to-cyan-500/5 rounded-2xl p-4 flex flex-col gap-3 border border-primary/15 animate-in fade-in slide-in-from-bottom-2">
-                            <div className="flex items-center gap-3">
+                            <Link href="/settings" className="flex items-center gap-3 p-2 -mx-2 rounded-xl hover:bg-white/50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer">
                                 <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-cyan-400 text-white text-sm font-bold flex items-center justify-center shadow-[0_0_12px_rgba(13,185,242,0.25)]">
                                     {user?.name?.charAt(0)?.toUpperCase() || 'S'}
                                 </div>
@@ -114,7 +114,7 @@ export default function StudentSidebar({
                                     <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{user?.name || 'Student'}</p>
                                     <p className="text-[10px] text-slate-500 truncate">{user?.email}</p>
                                 </div>
-                            </div>
+                            </Link>
                             <motion.button
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
@@ -128,9 +128,9 @@ export default function StudentSidebar({
                 )}
                 {isSidebarCollapsed && (
                     <div className="pb-6 flex justify-center">
-                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-cyan-400 text-white text-xs font-bold flex items-center justify-center shadow-[0_0_12px_rgba(13,185,242,0.25)]" title={user?.name}>
+                        <Link href="/settings" className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-cyan-400 text-white text-xs font-bold flex items-center justify-center shadow-[0_0_12px_rgba(13,185,242,0.25)] hover:scale-105 transition-transform" title={user?.name || "Settings"}>
                             {user?.name?.charAt(0)?.toUpperCase() || 'S'}
-                        </div>
+                        </Link>
                     </div>
                 )}
             </aside>

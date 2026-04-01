@@ -665,7 +665,7 @@ export default function AdminDashboard() {
 
                     {/* Header — Premium glassmorphic design matching global Navbar */}
                     <header className="h-[72px] flex items-center justify-between px-4 sm:px-6 lg:px-8 border-b border-slate-200/50 dark:border-white/[0.06] bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.05)] dark:shadow-[0_4px_30px_rgba(0,0,0,0.4)] z-10 shrink-0 transition-all duration-500">
-                        <div className="flex items-center gap-5">
+                        <div className="flex-1 flex items-center">
                             {/* Mobile Toggle */}
                             <motion.button
                                 whileTap={{ scale: 0.9 }}
@@ -693,8 +693,8 @@ export default function AdminDashboard() {
                                 </div>
                             </div>
 
-                            {/* Navigation Links — matches global Navbar style */}
-                            <nav className="hidden xl:flex items-center gap-1 lg:gap-2 ml-4">
+                            {/* Navigation Links — Spaced edge-to-edge to fill all gaps as requested */}
+                            <nav className="hidden xl:flex flex-1 items-center justify-between ml-8 mr-10">
                                 {[
                                     { id: 'overview', icon: 'grid_view', label: 'Overview' },
                                     { id: 'courses', icon: 'menu_book', label: 'Courses' },
@@ -712,11 +712,11 @@ export default function AdminDashboard() {
                                             if (item.id === 'results') loadResults();
                                             if (item.id === 'certificates') loadCertificates();
                                         }}
-                                        className={`group flex items-center gap-1.5 px-3 lg:px-4 py-2 text-[13px] font-medium transition-colors duration-300 relative ${
-                                            tab === item.id ? 'text-primary' : 'text-slate-600 dark:text-slate-300 hover:text-primary'
+                                        className={`group flex items-center gap-1.5 px-3 lg:px-5 py-2 text-[14px] font-bold tracking-tight transition-colors duration-300 relative ${
+                                            tab === item.id ? 'text-primary bg-primary/5 rounded-xl border border-primary/20' : 'text-slate-600 dark:text-slate-300 hover:text-primary'
                                         }`}
                                     >
-                                        <span className={`material-symbols-outlined text-[18px] transition-all duration-300 ${
+                                        <span className={`material-symbols-outlined text-[20px] transition-all duration-300 ${
                                             tab === item.id ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'
                                         }`}>
                                             {item.icon}
@@ -729,17 +729,7 @@ export default function AdminDashboard() {
 
                         <div className="flex items-center gap-1 sm:gap-2">
 
-                            {/* Upload buttons */}
-                            {(tab === 'overview' || tab === 'courses') && (
-                                <div className="hidden sm:flex gap-1.5">
-                                    <motion.button whileHover={{ y: -1 }} whileTap={{ scale: 0.95 }} onClick={() => handleUpload('video')} className="flex items-center gap-1 rounded-xl bg-primary/10 px-3 py-2 text-[11px] font-bold text-primary hover:bg-primary/20 transition-all">
-                                        <span className="material-symbols-outlined text-sm">upload</span> Video
-                                    </motion.button>
-                                    <motion.button whileHover={{ y: -1 }} whileTap={{ scale: 0.95 }} onClick={() => handleUpload('material')} className="flex items-center gap-1 rounded-xl bg-primary/10 px-3 py-2 text-[11px] font-bold text-primary hover:bg-primary/20 transition-all">
-                                        <span className="material-symbols-outlined text-sm">description</span> PDF
-                                    </motion.button>
-                                </div>
-                            )}
+                            {/* Removed Upload buttons header inline section */}
 
                             {/* Admin avatar */}
                             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="hidden sm:flex ml-1">
