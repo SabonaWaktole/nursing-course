@@ -4,6 +4,8 @@ export interface User {
     name: string;
     role: 'STUDENT' | 'ADMIN';
     createdAt?: string;
+    directorName?: string | null;
+    directorTitle?: string | null;
 }
 
 export interface Course {
@@ -15,8 +17,9 @@ export interface Course {
     tag?: string | null;
     tags?: string[];
     price: number | null;
-    instructorId: string;
-    instructor: { id: string; name: string };
+    hours?: number | null;
+    instructorId?: string | null;
+    instructor?: { id: string; name: string } | null;
     createdAt: string;
     _count: { modules: number; quizzes: number; enrollments: number; lessons?: number };
 }

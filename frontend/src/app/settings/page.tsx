@@ -38,6 +38,8 @@ export default function SettingsPage() {
     const [directorTitle, setDirectorTitle] = useState('Program Director');
     const [savingAdmin, setSavingAdmin] = useState(false);
     const [adminStatus, setAdminStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+    const [savingSignatory, setSavingSignatory] = useState(false);
+    const [signatoryStatus, setSignatoryStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
     useEffect(() => {
         if (user?.role === 'ADMIN') {
@@ -47,14 +49,12 @@ export default function SettingsPage() {
                     setOrgAddress(res.data.organizationAddress || '');
                     setOrgPhone(res.data.organizationPhone || '');
                     setProviderId(res.data.providerId || '');
-                    setDirectorName(res.data.directorName || 'Administrator');
-                    setDirectorTitle(res.data.directorTitle || 'Program Director');
                 }
             }).catch(console.error);
         }
     }, [user?.role]);
 
-    const handleUpdateAdminSettings = async () => {
+    const handleUpdateOrgSettings = async () => {
         setSavingAdmin(true);
         setAdminStatus(null);
         try {
@@ -62,11 +62,9 @@ export default function SettingsPage() {
                 organizationName: orgName,
                 organizationAddress: orgAddress,
                 organizationPhone: orgPhone,
-                providerId,
-                directorName,
-                directorTitle
+                providerId
             });
-            setAdminStatus({ type: 'success', message: 'Settings saved successfully!' });
+            setAdminStatus({ type: 'success', message: 'Organization Settings saved successfully!' });
         } catch (error: any) {
             setAdminStatus({
                 type: 'error',
@@ -75,6 +73,32 @@ export default function SettingsPage() {
         } finally {
             setSavingAdmin(false);
             setTimeout(() => setAdminStatus(null), 3500);
+        }
+    };
+
+    const handleUpdateSignatorySettings = async () => {
+        setSavingSignatory(true);
+        setSignatoryStatus(null);
+        try {
+            const fullName = `${firstName}${lastName ? ' ' + lastName : ''}`.trim();
+            const res = await api.put('/auth/profile', { 
+                name: fullName, 
+                email,
+                directorName,
+                directorTitle
+            });
+            if (res.data.user) {
+                updateUser(res.data.user);
+            }
+            setSignatoryStatus({ type: 'success', message: 'Personal Signatory saved successfully!' });
+        } catch (error: any) {
+            setSignatoryStatus({
+                type: 'error',
+                message: error.response?.data?.message || 'Failed to save signatory settings'
+            });
+        } finally {
+            setSavingSignatory(false);
+            setTimeout(() => setSignatoryStatus(null), 3500);
         }
     };
 
@@ -103,6 +127,10 @@ export default function SettingsPage() {
             setFirstName(parts[0] || '');
             setLastName(parts.slice(1).join(' ') || '');
             setEmail(user.email || '');
+            if (user.role === 'ADMIN') {
+                setDirectorName(user.directorName || 'Administrator');
+                setDirectorTitle(user.directorTitle || 'Program Director');
+            }
         }
     }, [user]);
 
@@ -113,7 +141,12 @@ export default function SettingsPage() {
 
         try {
             const fullName = `${firstName}${lastName ? ' ' + lastName : ''}`.trim();
-            const res = await api.put('/auth/profile', { name: fullName, email });
+            const res = await api.put('/auth/profile', { 
+                name: fullName, 
+                email,
+                directorName: user?.role === 'ADMIN' ? directorName : undefined,
+                directorTitle: user?.role === 'ADMIN' ? directorTitle : undefined
+            });
             if (res.data.user) {
                 updateUser(res.data.user);
             }
@@ -369,6 +402,23 @@ export default function SettingsPage() {
                                                             <input type="text" placeholder="e.g. NY-CNA-9988" value={providerId} onChange={e => setProviderId(e.target.value)} className="bg-[#f8f9fa] dark:bg-slate-800/50 border-0 dark:border dark:border-slate-700/50 text-[#334155] dark:text-white text-sm font-semibold rounded-xl focus:ring-2 focus:ring-primary focus:outline-none block w-full p-4 transition-all" />
                                                         </div>
                                                     </div>
+                                                    <div className="pt-6 mt-auto border-t border-slate-100/0 flex justify-end items-center gap-4">
+                                                        {adminStatus && (
+                                                            <span className={`text-sm font-bold ${adminStatus.type === 'success' ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                                                {adminStatus.message}
+                                                            </span>
+                                                        )}
+                                                        <motion.button
+                                                            whileHover={{ scale: 1.02 }}
+                                                            whileTap={{ scale: 0.98 }}
+                                                            onClick={handleUpdateOrgSettings}
+                                                            disabled={savingAdmin}
+                                                            className="bg-[#0DB9F2] hover:bg-[#0CA8DC] text-white text-[15px] font-bold py-3.5 px-8 rounded-xl shadow-[0_4px_14px_rgba(13,185,242,0.39)] transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed ml-auto"
+                                                        >
+                                                            <span className="material-symbols-outlined text-lg">save</span>
+                                                            {savingAdmin ? 'Saving...' : 'Save Settings'}
+                                                        </motion.button>
+                                                    </div>
                                                 </div>
                                             </div>
 
@@ -394,20 +444,20 @@ export default function SettingsPage() {
                                                     </p>
 
                                                     <div className="pt-6 mt-auto border-t border-slate-100/0 flex justify-end items-center gap-4">
-                                                        {adminStatus && (
-                                                            <span className={`text-sm font-bold ${adminStatus.type === 'success' ? 'text-emerald-500' : 'text-rose-500'}`}>
-                                                                {adminStatus.message}
+                                                        {signatoryStatus && (
+                                                            <span className={`text-sm font-bold ${signatoryStatus.type === 'success' ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                                                {signatoryStatus.message}
                                                             </span>
                                                         )}
                                                         <motion.button
                                                             whileHover={{ scale: 1.02 }}
                                                             whileTap={{ scale: 0.98 }}
-                                                            onClick={handleUpdateAdminSettings}
-                                                            disabled={savingAdmin}
-                                                            className="bg-[#0DB9F2] hover:bg-[#0CA8DC] text-white text-[15px] font-bold py-3.5 px-8 rounded-xl shadow-[0_4px_14px_rgba(13,185,242,0.39)] transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed ml-auto"
+                                                            onClick={handleUpdateSignatorySettings}
+                                                            disabled={savingSignatory}
+                                                            className="bg-indigo-500 hover:bg-indigo-600 text-white text-[15px] font-bold py-3.5 px-8 rounded-xl shadow-[0_4px_14px_rgba(99,102,241,0.39)] transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed ml-auto"
                                                         >
-                                                            <span className="material-symbols-outlined text-lg">save</span>
-                                                            {savingAdmin ? 'Saving...' : 'Save Settings'}
+                                                            <span className="material-symbols-outlined text-lg">save_as</span>
+                                                            {savingSignatory ? 'Saving...' : 'Save Signatory'}
                                                         </motion.button>
                                                     </div>
                                                 </div>

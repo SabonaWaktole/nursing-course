@@ -26,7 +26,7 @@ export default function AdminDashboard() {
 
     // Course form
     const [showCourseForm, setShowCourseForm] = useState(false);
-    const [courseForm, setCourseForm] = useState({ title: '', description: '', price: '0', category: 'Nursing', thumbnail: '', tags: [] as string[] });
+    const [courseForm, setCourseForm] = useState({ title: '', description: '', price: '0', category: 'Nursing', thumbnail: '', tags: [] as string[], instructorId: '' });
     const [editingCourse, setEditingCourse] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
 
@@ -122,13 +122,15 @@ export default function AdminDashboard() {
                 api.get('/courses'),
                 api.get('/admin/users'),
                 api.get('/quizzes/results/all'),
-                api.get('/admin/notifications')
+                api.get('/admin/notifications'),
+                api.get('/admin/certificates')
             ]);
             if (results[0].status === 'fulfilled') setStats(results[0].value.data);
             if (results[1].status === 'fulfilled') setCourses(results[1].value.data);
             if (results[2].status === 'fulfilled') setUsers(results[2].value.data);
             if (results[3].status === 'fulfilled') setResults(results[3].value.data);
             if (results[4].status === 'fulfilled') setNotifications(results[4].value.data);
+            if (results[5].status === 'fulfilled') setCertificates(results[5].value.data);
             // Log any failed endpoints
             results.forEach((r, i) => {
                 if (r.status === 'rejected') console.warn(`Admin endpoint ${i} failed:`, r.reason?.message);
@@ -186,7 +188,7 @@ export default function AdminDashboard() {
             } else {
                 await api.post('/courses', courseForm);
             }
-            setCourseForm({ title: '', description: '', price: '0', category: 'Nursing', thumbnail: '', tags: [] });
+            setCourseForm({ title: '', description: '', price: '0', category: 'Nursing', thumbnail: '', tags: [], instructorId: '' });
             setShowCourseForm(false);
             loadData();
         } catch (err: any) {
@@ -280,7 +282,8 @@ export default function AdminDashboard() {
             price: (course.price || 0).toString(),
             category: course.category || 'Nursing',
             thumbnail: course.thumbnail || '',
-            tags: course.tags || []
+            tags: course.tags || [],
+            instructorId: course.instructor?.id || course.instructorId || ''
         });
         setEditingCourse(course.id);
         setShowCourseForm(true);
@@ -987,7 +990,7 @@ export default function AdminDashboard() {
                                                 <button
                                                     onClick={() => {
                                                         setEditingCourse(null);
-                                                        setCourseForm({ title: '', description: '', price: '0', category: 'Nursing', thumbnail: '', tags: [] });
+                                                        setCourseForm({ title: '', description: '', price: '0', category: 'Nursing', thumbnail: '', tags: [], instructorId: '' });
                                                         setShowCourseForm(!showCourseForm);
                                                     }}
                                                     className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-sky-500 text-white rounded-lg text-sm font-medium transition-all shadow-lg shadow-primary/20"
@@ -1032,6 +1035,24 @@ export default function AdminDashboard() {
                                                                 <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 block">Price ($)</label>
                                                                 <input type="number" value={courseForm.price} onChange={(e) => setCourseForm({ ...courseForm, price: e.target.value })} placeholder="E.g., 49.99" className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all" />
                                                             </div>
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 block">Assigned Instructor</label>
+                                                            <div className="relative">
+                                                                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none">person</span>
+                                                                <select
+                                                                    value={courseForm.instructorId}
+                                                                    onChange={(e) => setCourseForm({ ...courseForm, instructorId: e.target.value })}
+                                                                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 pl-10 pr-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none"
+                                                                >
+                                                                    <option value="">Unassigned (All Admins)</option>
+                                                                    {users.filter((u: any) => u.role === 'ADMIN').map((admin: any) => (
+                                                                        <option key={admin.id} value={admin.id}>{admin.name || admin.email}</option>
+                                                                    ))}
+                                                                </select>
+                                                                <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">expand_more</span>
+                                                            </div>
+                                                            <p className="text-[10px] text-slate-400 mt-1">Certificates and notifications will be routed to the assigned instructor. Leave unassigned for all admins.</p>
                                                         </div>
                                                         <div>
                                                             <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Tags (select multiple)</label>
@@ -1846,7 +1867,7 @@ export default function AdminDashboard() {
                                                                         </td>
                                                                         <td className="px-6 py-4 text-right whitespace-nowrap">
                                                                             <div className="flex items-center justify-end gap-2">
-                                                                                {c.status === 'PENDING' ? (
+                                                                                {!c.status || c.status === 'PENDING' ? (
                                                                                     <>
                                                                                         <button
                                                                                             onClick={() => handleApproveCertificate(c.id, 'APPROVED')}

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../utils/prisma';
+import { createInstructorNotification } from '../utils/notificationHelper';
 
 // Create quiz for a course
 export const createQuiz = async (req: Request, res: Response) => {
@@ -173,12 +174,10 @@ export const submitQuiz = async (req: Request, res: Response) => {
                     const user = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
                     const course = await prisma.course.findUnique({ where: { id: quiz.courseId }, select: { title: true } });
                     
-                    await (prisma as any).notification.create({
-                        data: {
-                            title: 'Certificate Re-approval Required',
-                            message: `${user?.name || 'A student'} has re-completed "${course?.title}" and is waiting for certificate re-approval.`,
-                            type: 'EXAM_COMPLETED',
-                        }
+                    await createInstructorNotification(quiz.courseId, {
+                        title: 'Certificate Re-approval Required',
+                        message: `${user?.name || 'A student'} has re-completed "${course?.title}" and is waiting for certificate re-approval.`,
+                        type: 'EXAM_COMPLETED',
                     });
                 }
             } else {
@@ -193,13 +192,11 @@ export const submitQuiz = async (req: Request, res: Response) => {
                     },
                 });
 
-                // Create notification for all admins
-                await (prisma as any).notification.create({
-                    data: {
-                        title: 'Certificate Approval Required',
-                        message: `${user?.name || 'A student'} has completed "${course?.title}" and is waiting for certificate approval.`,
-                        type: 'EXAM_COMPLETED',
-                    }
+                // Create notification for assigned instructor (or all admins)
+                await createInstructorNotification(quiz.courseId, {
+                    title: 'Certificate Approval Required',
+                    message: `${user?.name || 'A student'} has completed "${course?.title}" and is waiting for certificate approval.`,
+                    type: 'EXAM_COMPLETED',
                 });
 
                 certificateId = newCert.id;
