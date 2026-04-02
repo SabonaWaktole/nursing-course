@@ -3,6 +3,7 @@ import PDFDocument from 'pdfkit';
 import path from 'path';
 import QRCode from 'qrcode';
 import prisma from '../utils/prisma';
+import { createInstructorNotification } from '../utils/notificationHelper';
 
 // Generate certificate when student passes
 export const generateCertificate = async (req: Request, res: Response) => {
@@ -68,6 +69,18 @@ export const generateCertificate = async (req: Request, res: Response) => {
                 providerId: settings.providerId
             },
         });
+
+        // Send completion notification to the assigned instructor (or all admins if unassigned)
+        try {
+            const student = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+            await createInstructorNotification(courseId, {
+                title: 'Course Completed',
+                message: `${student?.name || 'A student'} has completed "${course?.title}" and requested a certificate.`,
+                type: 'COURSE_COMPLETED',
+            });
+        } catch (notifErr) {
+            console.warn('Failed to create completion notification:', notifErr);
+        }
 
         res.status(201).json(certificate);
     } catch (error: any) {

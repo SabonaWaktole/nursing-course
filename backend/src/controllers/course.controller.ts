@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../utils/prisma';
-// IDE Refresh Poke
+import { createInstructorNotification } from '../utils/notificationHelper';
+// IDE Refresh Poke 2
 
 
 export const getAllCourses = async (req: Request, res: Response) => {
@@ -15,6 +16,7 @@ export const getAllCourses = async (req: Request, res: Response) => {
                 hours: true,
                 category: true,
                 createdAt: true,
+                instructorId: true,
                 instructor: { select: { id: true, name: true } },
                 _count: { select: { modules: true, quizzes: true, enrollments: true } },
             },
@@ -62,8 +64,9 @@ export const getCourseById = async (req: Request, res: Response) => {
 
 export const createCourse = async (req: Request, res: Response) => {
     try {
-        const { title, description, price, hours, thumbnail, category, tags } = req.body;
-        const instructorId = (req as any).user.userId;
+        const { title, description, price, hours, thumbnail, category, tags, instructorId: bodyInstructorId } = req.body;
+        // Use body instructorId if provided, otherwise null (unassigned)
+        const instructorId = (bodyInstructorId && bodyInstructorId !== 'unassigned') ? bodyInstructorId : null;
 
         const course = await prisma.course.create({
             data: {
@@ -91,10 +94,16 @@ export const createCourse = async (req: Request, res: Response) => {
 export const updateCourse = async (req: Request, res: Response) => {
     try {
         const id = req.params.id as string;
-        const { title, description, price, hours, thumbnail, category, tags } = req.body;
+        const { title, description, price, hours, thumbnail, category, tags, instructorId: bodyInstructorId } = req.body;
 
         const parsedPrice = price !== undefined && price !== null && price !== '' ? parseFloat(price.toString()) : undefined;
         const parsedHours = hours !== undefined && hours !== null && hours !== '' ? parseInt(hours.toString()) : undefined;
+
+        // Resolve instructorId: 'unassigned' or empty string => null
+        let instructorId: string | null | undefined = undefined;
+        if (bodyInstructorId !== undefined) {
+            instructorId = (bodyInstructorId && bodyInstructorId !== 'unassigned') ? bodyInstructorId : null;
+        }
 
         const course = await prisma.course.update({
             where: { id },
@@ -105,6 +114,7 @@ export const updateCourse = async (req: Request, res: Response) => {
                 hours: parsedHours,
                 thumbnail, 
                 category,
+                ...(instructorId !== undefined ? { instructorId } : {}),
                 // TEMPORARY FIX: Prisma 5 + Supabase JSON array bug (08P01) 
                 // tags: Array.isArray(tags) ? tags : undefined 
             },
@@ -238,6 +248,22 @@ export const enrollInCourse = async (req: Request, res: Response) => {
         const enrollment = await prisma.enrollment.create({
             data: { userId, courseId: courseId },
         });
+
+        // Send enrollment notification to the assigned instructor (or all admins if unassigned)
+        try {
+            const course = await prisma.course.findUnique({ where: { id: courseId }, select: { title: true } });
+            const student = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+            if (course) {
+                await createInstructorNotification(courseId, {
+                    title: 'New Enrollment',
+                    message: `${student?.name || 'A student'} has enrolled in "${course.title}".`,
+                    type: 'ENROLLMENT',
+                });
+            }
+        } catch (notifErr) {
+            console.warn('Failed to create enrollment notification:', notifErr);
+        }
+
         res.status(201).json(enrollment);
     } catch (error: any) {
         console.error('enrollInCourse error:', error);

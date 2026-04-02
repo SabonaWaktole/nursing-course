@@ -17,8 +17,9 @@ export interface Course {
     tag?: string | null;
     tags?: string[];
     price: number | null;
-    instructorId: string;
-    instructor: { id: string; name: string };
+    hours?: number | null;
+    instructorId?: string | null;
+    instructor?: { id: string; name: string } | null;
     createdAt: string;
     _count: { modules: number; quizzes: number; enrollments: number; lessons?: number };
 }

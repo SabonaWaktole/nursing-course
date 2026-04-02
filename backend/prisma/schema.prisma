@@ -41,8 +41,8 @@ model Course {
   tags        Json?
   price       Float?   @default(0)
   hours       Int?     @default(0)
-  instructorId String
-  instructor  User     @relation(fields: [instructorId], references: [id])
+  instructorId String?
+  instructor  User?    @relation(fields: [instructorId], references: [id])
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -132,6 +132,7 @@ model Certificate {
   directorName         String?
   directorTitle        String?
   providerId           String?
+  instructorId         String? // Option A: Direct assignment to instructor at time of issuance
 }
 
 enum CertificateStatus {

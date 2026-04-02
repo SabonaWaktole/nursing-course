@@ -97,10 +97,19 @@ export const getAllUsers = async (req: Request, res: Response) => {
 
 export const getAllCertificates = async (req: Request, res: Response) => {
     try {
+        const adminId = (req as any).user?.userId;
         const certificates = await prisma.certificate.findMany({
+            where: {
+                course: {
+                    OR: [
+                        { instructorId: adminId },
+                        { instructorId: null },
+                    ],
+                },
+            },
             include: {
                 user: { select: { id: true, name: true, email: true } },
-                course: { select: { id: true, title: true } },
+                course: { select: { id: true, title: true, instructorId: true, instructor: { select: { id: true, name: true } } } },
             },
             orderBy: { issuedAt: 'desc' },
         });
@@ -117,6 +126,16 @@ export const approveCertificate = async (req: Request, res: Response) => {
 
         const p = prisma as any;
         const adminId = (req as any).user?.userId;
+
+        // Authorization check: admin must be assigned to the course, or course must be unassigned
+        const certCheck = await prisma.certificate.findUnique({
+            where: { id },
+            include: { course: { select: { instructorId: true } } },
+        });
+        if (!certCheck) return res.status(404).json({ message: 'Certificate not found' });
+        if (certCheck.course.instructorId && certCheck.course.instructorId !== adminId) {
+            return res.status(403).json({ message: 'You are not authorized to manage certificates for this course.' });
+        }
 
         const result = await p.$transaction(async (tx: any) => {
             const dataToUpdate: any = { status };
@@ -188,6 +207,7 @@ export const approveCertificate = async (req: Request, res: Response) => {
 export const revokeCertificate = async (req: Request, res: Response) => {
     try {
         const id = req.params.id as string;
+        const adminId = (req as any).user?.userId;
 
         // Ensure Prisma client is typed as any to bypass mismatch issues
         const p = prisma as any;
@@ -200,6 +220,11 @@ export const revokeCertificate = async (req: Request, res: Response) => {
 
         if (!cert) {
             return res.status(404).json({ message: 'Certificate not found' });
+        }
+
+        // Authorization check: admin must be assigned to the course, or course must be unassigned
+        if (cert.course?.instructorId && cert.course.instructorId !== adminId) {
+            return res.status(403).json({ message: 'You are not authorized to manage certificates for this course.' });
         }
 
         // Wrap inside a transaction for DB safety
@@ -247,6 +272,17 @@ export const updateCertificate = async (req: Request, res: Response) => {
     try {
         const id = req.params.id as string;
         const { certificateNumber } = req.body;
+        const adminId = (req as any).user?.userId;
+
+        // Authorization check
+        const certCheck = await prisma.certificate.findUnique({
+            where: { id },
+            include: { course: { select: { instructorId: true } } },
+        });
+        if (!certCheck) return res.status(404).json({ message: 'Certificate not found' });
+        if (certCheck.course.instructorId && certCheck.course.instructorId !== adminId) {
+            return res.status(403).json({ message: 'You are not authorized to manage certificates for this course.' });
+        }
 
         const cert = await prisma.certificate.update({
             where: { id },
@@ -263,16 +299,11 @@ export const updateCertificate = async (req: Request, res: Response) => {
 export const getNotifications = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user?.userId;
-        const userRole = (req as any).user?.role;
 
-        // Admins see system-wide notifications (userId=null)
-        // Students only see notifications addressed to them
-        const whereClause = userRole === 'ADMIN'
-            ? { OR: [{ userId: null }, { userId }] }
-            : { userId };
-
+        // Each user only sees notifications addressed specifically to them.
+        // Instructor-scoped notifications are created per-user by the notificationHelper.
         const notifications = await (prisma as any).notification.findMany({
-            where: whereClause,
+            where: { userId },
             orderBy: { createdAt: 'desc' },
             take: 20
         });
@@ -299,12 +330,8 @@ export const markNotificationRead = async (req: Request, res: Response) => {
 export const markAllNotificationsRead = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user?.userId;
-        const userRole = (req as any).user?.role;
-        const whereClause = userRole === 'ADMIN'
-            ? { OR: [{ userId: null }, { userId }], read: false }
-            : { userId, read: false };
         await (prisma as any).notification.updateMany({
-            where: whereClause,
+            where: { userId, read: false },
             data: { read: true }
         });
         res.json({ success: true });
@@ -316,12 +343,8 @@ export const markAllNotificationsRead = async (req: Request, res: Response) => {
 export const clearAllNotifications = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user?.userId;
-        const userRole = (req as any).user?.role;
-        const whereClause = userRole === 'ADMIN'
-            ? { OR: [{ userId: null }, { userId }] }
-            : { userId };
         await (prisma as any).notification.deleteMany({
-            where: whereClause
+            where: { userId }
         });
         res.json({ success: true });
     } catch (error: any) {
