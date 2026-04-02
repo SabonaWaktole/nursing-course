@@ -116,11 +116,24 @@ export const approveCertificate = async (req: Request, res: Response) => {
         const { status } = req.body; // 'APPROVED' or 'REJECTED'
 
         const p = prisma as any;
+        const adminId = (req as any).user?.userId;
 
         const result = await p.$transaction(async (tx: any) => {
+            const dataToUpdate: any = { status };
+            
+            if (status === 'APPROVED' && adminId) {
+                const approvingAdmin = await tx.user.findUnique({ where: { id: adminId } });
+                if (approvingAdmin?.directorName) {
+                    dataToUpdate.directorName = approvingAdmin.directorName;
+                }
+                if (approvingAdmin?.directorTitle) {
+                    dataToUpdate.directorTitle = approvingAdmin.directorTitle;
+                }
+            }
+
             const cert = await tx.certificate.update({
                 where: { id },
-                data: { status },
+                data: dataToUpdate,
                 include: { user: true, course: true }
             });
 

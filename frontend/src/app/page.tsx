@@ -517,7 +517,7 @@ function ServicesSection() {
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold mb-4 text-primary">What We Offer</h2>
           <p className="max-w-2xl mx-auto text-slate-600 dark:text-slate-400">
-            Industry-leading SaaS platform for professional development. Access state-approved courses, expert-led training, and career advancement tools.
+            Accreditation and State Board Approval
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -825,7 +825,7 @@ function ContactSection() {
               </div>
               <div>
                 <h4 className="font-semibold text-slate-900 dark:text-white mb-1">Email</h4>
-                <p className="text-slate-600 dark:text-slate-400">info@excelcommunityliving.com</p>
+                <p className="text-slate-600 dark:text-slate-400">admin@excelcommunityliving.com</p>
               </div>
             </div>
             <div className="flex items-start gap-4">
@@ -834,7 +834,7 @@ function ContactSection() {
               </div>
               <div>
                 <h4 className="font-semibold text-slate-900 dark:text-white mb-1">Phone</h4>
-                <p className="text-slate-600 dark:text-slate-400">+1 (800) 555-0199</p>
+                <p className="text-slate-600 dark:text-slate-400">+1 (661) 600-5354</p>
               </div>
             </div>
             <div className="flex items-start gap-4">

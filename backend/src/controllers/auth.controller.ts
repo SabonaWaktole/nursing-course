@@ -31,7 +31,7 @@ export const register = async (req: Request, res: Response) => {
 
         res.status(201).json({
             token,
-            user: { id: user.id, email: user.email, name: user.name, role: user.role },
+            user: { id: user.id, email: user.email, name: user.name, role: user.role, directorName: user.directorName, directorTitle: user.directorTitle },
         });
     } catch (error: any) {
         console.error('Register error:', error);
@@ -61,7 +61,7 @@ export const login = async (req: Request, res: Response) => {
 
         res.json({
             token,
-            user: { id: user.id, email: user.email, name: user.name, role: user.role },
+            user: { id: user.id, email: user.email, name: user.name, role: user.role, directorName: user.directorName, directorTitle: user.directorTitle },
         });
     } catch (error: any) {
         console.error('Login error:', error);
@@ -76,7 +76,7 @@ export const getMe = async (req: Request, res: Response) => {
 
         const user = await prisma.user.findUnique({
             where: { id: userId },
-            select: { id: true, email: true, name: true, role: true, createdAt: true },
+            select: { id: true, email: true, name: true, role: true, createdAt: true, directorName: true, directorTitle: true },
         });
         if (!user) return res.status(404).json({ message: 'User not found' });
 
@@ -89,7 +89,7 @@ export const getMe = async (req: Request, res: Response) => {
 export const updateProfile = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user?.userId;
-        const { name, email } = req.body;
+        const { name, email, directorName, directorTitle } = req.body;
 
         if (!userId) return res.status(401).json({ message: 'Unauthorized' });
 
@@ -103,8 +103,8 @@ export const updateProfile = async (req: Request, res: Response) => {
 
         const user = await prisma.user.update({
             where: { id: userId },
-            data: { name, email },
-            select: { id: true, email: true, name: true, role: true, createdAt: true },
+            data: { name, email, directorName, directorTitle },
+            select: { id: true, email: true, name: true, role: true, createdAt: true, directorName: true, directorTitle: true },
         });
 
         res.json({ user });

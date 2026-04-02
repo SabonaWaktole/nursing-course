@@ -4,6 +4,8 @@ export interface User {
     name: string;
     role: 'STUDENT' | 'ADMIN';
     createdAt?: string;
+    directorName?: string | null;
+    directorTitle?: string | null;
 }
 
 export interface Course {
