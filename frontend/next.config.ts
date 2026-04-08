@@ -9,6 +9,13 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
+
+  // Required for react-pdf: alias canvas to false to prevent SSR bundling errors
+  turbopack: {
+    resolveAlias: {
+      canvas: { browser: './empty-module.js' },
+    },
+  },
   
   // NOTE: If your app is deployed to a subdirectory on Hostinger (e.g., domain.com/frontend)
   // uncomment the basePath below and set it to your subdirectory name:

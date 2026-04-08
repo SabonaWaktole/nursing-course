@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -8,6 +8,7 @@ import { CourseDetail, Module, Lesson } from '@/lib/types';
 import Link from 'next/link';
 import { getFileUrl } from '@/lib/url-utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import PdfViewer from '@/components/PdfViewer';
 
 export default function CourseDetailPage() {
     const { id } = useParams();
@@ -23,24 +24,7 @@ export default function CourseDetailPage() {
     const [completing, setCompleting] = useState(false);
     const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
     const [progress, setProgress] = useState(0);
-    const [isFullscreen, setIsFullscreen] = useState(false);
     const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
-    const pdfContainerRef = useRef<HTMLDivElement>(null);
-
-    const toggleFullscreen = useCallback(() => {
-        if (!pdfContainerRef.current) return;
-        if (!document.fullscreenElement) {
-            pdfContainerRef.current.requestFullscreen().catch(() => {});
-        } else {
-            document.exitFullscreen().catch(() => {});
-        }
-    }, []);
-
-    useEffect(() => {
-        const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
-        document.addEventListener('fullscreenchange', onFsChange);
-        return () => document.removeEventListener('fullscreenchange', onFsChange);
-    }, []);
 
     useEffect(() => {
         api.get(`/courses/${id}`).then((r) => {
@@ -272,19 +256,25 @@ export default function CourseDetailPage() {
                                         const maxCompletedIdx = progress >= 100 ? totalLessons : Math.floor((progress / 100) * totalLessons);
                                         const isCompleted = globalIdx < maxCompletedIdx;
 
-                                        return (
-                                            <button
-                                                key={lesson.id}
-                                                onClick={() => setActiveLesson(lesson.id)}
-                                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all relative overflow-hidden group ${isActive ? 'bg-white dark:bg-slate-800 shadow-sm text-slate-900 dark:text-white font-medium border border-slate-200/50 dark:border-slate-700/50' : 'text-slate-500 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 hover:text-slate-800 dark:hover:text-slate-200'}`}
-                                            >
-                                                {isActive && <motion.div layoutId="activeLesson" className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />}
-                                                <span className={`material-symbols-outlined text-lg ${isCompleted ? 'text-emerald-500' : isActive ? 'text-primary drop-shadow-[0_0_8px_rgba(56,189,248,0.5)]' : 'text-slate-400'}`}>
-                                                    {isCompleted ? 'check_circle' : isActive ? 'play_circle' : 'radio_button_unchecked'}
-                                                </span>
-                                                <span className="truncate whitespace-nowrap text-left">{lesson.title}</span>
-                                            </button>
-                                        );
+                                            return (
+                                                <button
+                                                    key={lesson.id}
+                                                    onClick={() => setActiveLesson(lesson.id)}
+                                                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all relative overflow-hidden group ${isActive ? 'bg-white dark:bg-slate-800 shadow-sm text-slate-900 dark:text-white font-medium border border-slate-200/50 dark:border-slate-700/50' : 'text-slate-500 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 hover:text-slate-800 dark:hover:text-slate-200'}`}
+                                                >
+                                                    {isActive && <motion.div layoutId="activeLesson" className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />}
+                                                    <span className={`material-symbols-outlined text-lg ${isCompleted ? 'text-emerald-500' : isActive ? 'text-primary drop-shadow-[0_0_8px_rgba(56,189,248,0.5)]' : 'text-slate-400'}`}>
+                                                        {isCompleted ? 'check_circle' : isActive ? 'play_circle' : 'radio_button_unchecked'}
+                                                    </span>
+                                                    <span className="truncate whitespace-nowrap text-left flex-1">{lesson.title}</span>
+                                                    {lesson.materialUrl && lesson.materialUrl.toLowerCase().endsWith('.pdf') && (
+                                                        <span className={`material-symbols-outlined text-[14px] shrink-0 ${isActive ? 'text-sky-400' : 'text-slate-400/60'}`} title="PDF Material">picture_as_pdf</span>
+                                                    )}
+                                                    {lesson.videoUrl && (
+                                                        <span className={`material-symbols-outlined text-[14px] shrink-0 ${isActive ? 'text-emerald-400' : 'text-slate-400/60'}`} title="Video Lesson">videocam</span>
+                                                    )}
+                                                </button>
+                                            );
                                     })}
                                     {mod.quizzes?.map((quiz) => (
                                         <Link key={quiz.id} href={`/quiz/${quiz.id}`} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-500 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 hover:text-slate-800 dark:hover:text-slate-200 transition-all">
@@ -311,7 +301,7 @@ export default function CourseDetailPage() {
             </motion.aside>
 
             {/* Main Content Area */}
-            <main className="flex-1 relative z-10 overflow-y-auto h-screen scroll-smooth">
+            <main className="flex-1 relative z-10 h-screen overflow-hidden">
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={activeLesson || 'enrollment'}
@@ -319,7 +309,7 @@ export default function CourseDetailPage() {
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 1.02, y: -15 }}
                         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                        className="min-h-full flex flex-col p-4 md:p-8 lg:p-10 xl:p-12"
+                        className="h-full flex flex-col"
                     >
                         {!enrolled && user ? (
                             <div className="flex-1 flex flex-col items-center justify-center">
@@ -345,122 +335,29 @@ export default function CourseDetailPage() {
                                 </div>
                             </div>
                         ) : currentLesson ? (
-                            <div className="w-full max-w-7xl mx-auto">
-                                
-                                {/* Hero Header - Glassmorphic */}
-                                <header className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl p-6 md:p-8 rounded-[2rem] border border-white/40 dark:border-slate-700/50 shadow-sm mb-8 relative overflow-hidden group">
-                                    <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
-                                        <span className="material-symbols-outlined text-9xl text-primary transform rotate-12">local_library</span>
-                                    </div>
-                                    <div className="relative z-10 flex flex-col md:flex-row gap-6 justify-between items-start md:items-end">
-                                        <div className="flex-1">
-                                            <nav className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary mb-4 bg-primary/10 w-fit px-3 py-1 rounded-full">
-                                                <Link href="/courses" className="hover:text-primary transition-colors">Courses</Link>
-                                                <span className="material-symbols-outlined text-[10px]">arrow_forward</span>
-                                                <span className="truncate">{findModuleForLesson(currentLesson.id)?.title}</span>
-                                            </nav>
-                                            <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-2 leading-tight">
-                                                {currentLesson.title}
-                                            </h1>
-                                            {currentLesson.description && (
-                                                <p className="text-slate-500 dark:text-slate-400 text-sm md:text-base max-w-2xl line-clamp-2 leading-relaxed">
-                                                    {currentLesson.description}
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
-                                </header>
-
-                                {/* Immersive Material Viewer */}
+                            <div className="w-full h-full flex flex-col">
+                                {/* Material Viewer */}
                                 {currentLesson.videoUrl ? (
-                                    <div className="relative w-full rounded-[2rem] overflow-hidden shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] bg-black mb-12 ring-1 ring-slate-900/10 dark:ring-white/10 aspect-video group">
+                                    <div className="relative w-full rounded-2xl overflow-hidden shadow-lg bg-black ring-1 ring-slate-900/10 dark:ring-white/10 aspect-video">
                                         <video key={currentLesson.id} controls className="h-full w-full object-contain" src={getFileUrl(currentLesson.videoUrl)} />
                                     </div>
                                 ) : currentLesson.materialUrl && currentLesson.materialUrl.toLowerCase().endsWith('.pdf') ? (
-                                    <div ref={pdfContainerRef} className={`relative w-full overflow-hidden shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] mb-12 bg-slate-100 dark:bg-slate-950 transition-all duration-500 ${isFullscreen ? 'fixed inset-0 z-50 rounded-none' : 'rounded-[2rem] ring-1 ring-white/50 dark:ring-white/10'}`} style={{ height: isFullscreen ? '100vh' : '82vh', minHeight: '600px' }}>
-                                        <iframe key={currentLesson.id} src={getFileUrl(currentLesson.materialUrl)} className="w-full h-full border-none" title={currentLesson.title} />
-                                        
-                                        {/* Minimalist Floating Toolbar Overlay */}
-                                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1 p-2 bg-slate-900/80 dark:bg-black/60 backdrop-blur-xl border border-white/10 rounded-full shadow-2xl opacity-80 hover:opacity-100 transition-opacity">
-                                            <a href={getFileUrl(currentLesson.materialUrl)} download className="flex items-center justify-center w-10 h-10 rounded-full text-white hover:bg-white/20 transition-colors" title="Download">
-                                                <span className="material-symbols-outlined text-[20px]">download</span>
-                                            </a>
-                                            <a href={getFileUrl(currentLesson.materialUrl)} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-10 h-10 rounded-full text-white hover:bg-white/20 transition-colors" title="Open in New Tab">
-                                                <span className="material-symbols-outlined text-[20px]">open_in_new</span>
-                                            </a>
-                                            <div className="w-px h-6 bg-white/20 mx-1"></div>
-                                            <button onClick={toggleFullscreen} className="flex items-center justify-center w-10 h-10 rounded-full text-white hover:bg-white/20 transition-colors" title={isFullscreen ? "Exit" : "Fullscreen"}>
-                                                <span className="material-symbols-outlined text-[20px]">{isFullscreen ? 'fullscreen_exit' : 'fullscreen'}</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                ) : null}
-
-                                {/* Twin Cards: Materials & Tips */}
-                                <div className="grid md:grid-cols-2 gap-6 mb-32">
-                                    {(currentLesson.materialUrl || currentLesson.description) && (
-                                        <div className="group p-8 bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl rounded-[2rem] border border-white/50 dark:border-slate-800/50 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                                            <div className="flex items-center gap-4 mb-6">
-                                                <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center group-hover:bg-indigo-500 group-hover:text-white transition-colors">
-                                                    <span className="material-symbols-outlined">folder_open</span>
-                                                </div>
-                                                <h3 className="text-xl font-bold tracking-tight">Resources & Info</h3>
-                                            </div>
-                                            <p className="text-slate-600 dark:text-slate-400 leading-relaxed mb-6 text-sm">
-                                                {currentLesson.description || "Review all lesson materials thoroughly before continuing."}
-                                            </p>
-                                            {currentLesson.materialUrl && (
-                                                <a href={getFileUrl(currentLesson.materialUrl)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-slate-800 rounded-xl font-semibold text-sm shadow-sm border border-slate-200 dark:border-slate-700 hover:border-indigo-500 hover:text-indigo-500 transition-all">
-                                                    <span className="material-symbols-outlined text-[18px]">download</span>
-                                                    Download Artifacts
-                                                </a>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    <div className="group p-8 bg-gradient-to-br from-primary/5 to-emerald-500/5 backdrop-blur-xl rounded-[2rem] border border-primary/10 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                                        <div className="flex items-center gap-4 mb-6">
-                                            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-colors">
-                                                <span className="material-symbols-outlined">lightbulb</span>
-                                            </div>
-                                            <h3 className="text-xl font-bold tracking-tight">Best Practice Tip</h3>
-                                        </div>
-                                        <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm">
-                                            Focus on mastery rather than completion speed. Pause the video or PDF frequently, take physical or digital notes, and refer back to these materials during the final examination.
-                                        </p>
-                                    </div>
-                                </div>
-
-                                {/* Floating Master CTA */}
-                                <div className="fixed bottom-8 right-8 z-50 flex items-center gap-4 animate-fade-in-up">
-                                    {currentLessonIndex > 0 && (
-                                        <button onClick={() => {
+                                    <PdfViewer
+                                        key={currentLesson.id}
+                                        url={getFileUrl(currentLesson.materialUrl)}
+                                        filename={currentLesson.materialUrl.split('/').pop() || currentLesson.title}
+                                        onClose={() => router.push('/courses')}
+                                        onBack={currentLessonIndex > 0 ? () => {
                                             const prev = allLessons[currentLessonIndex - 1];
                                             setActiveLesson(prev.id);
                                             const mod = findModuleForLesson(prev.id);
                                             if (mod) setExpandedModules(p => new Set([...p, mod.id]));
-                                        }} className="w-14 h-14 rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl shadow-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:scale-110 transition-all hover:text-primary">
-                                            <span className="material-symbols-outlined">arrow_back</span>
-                                        </button>
-                                    )}
-                                    
-                                    {currentLessonIndex < allLessons.length - 1 ? (
-                                        <button onClick={handleNext} className="flex flex-row-reverse items-center gap-3 h-14 pl-5 pr-6 bg-gradient-to-r from-primary to-sky-500 text-white font-bold rounded-2xl hover:scale-105 transition-transform shadow-[0_20px_40px_-10px_rgba(14,165,233,0.5)] group">
-                                            <span className="material-symbols-outlined transform group-hover:translate-x-1 transition-transform">arrow_forward</span>
-                                            Next Module
-                                        </button>
-                                    ) : course.quizzes?.length > 0 ? (
-                                        <button onClick={handleNext} className="flex flex-row-reverse items-center gap-3 h-14 pl-5 pr-6 bg-gradient-to-r from-emerald-500 to-teal-400 text-white font-bold rounded-2xl hover:scale-105 transition-transform shadow-[0_20px_40px_-10px_rgba(16,185,129,0.5)] group">
-                                            <span className="material-symbols-outlined transform group-hover:translate-x-1 transition-transform">arrow_forward</span>
-                                            Take Meta Quiz
-                                        </button>
-                                    ) : (
-                                        <button onClick={handleNext} disabled={completing} className="flex flex-row-reverse items-center gap-3 h-14 pl-5 pr-6 bg-gradient-to-r from-slate-800 to-slate-900 text-white font-bold rounded-2xl hover:scale-105 transition-transform shadow-2xl disabled:opacity-50">
-                                            <span className="material-symbols-outlined text-amber-500">workspace_premium</span>
-                                            {completing ? 'Completing...' : 'Finish Course'}
-                                        </button>
-                                    )}
-                                </div>
+                                        } : undefined}
+                                        onNext={handleNext}
+                                        backLabel="« Back"
+                                        nextLabel={currentLessonIndex < allLessons.length - 1 ? 'Next »' : course.quizzes?.length > 0 ? 'Take Meta Quiz »' : 'Finish Course »'}
+                                    />
+                                ) : null}
                             </div>
                         ) : (
                             <div className="flex-1 flex items-center justify-center text-slate-400">

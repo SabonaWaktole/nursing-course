@@ -469,3 +469,55 @@ export const reorderLessons = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Error reordering lessons' });
     }
 };
+
+// Move PDF (materialUrl) from one lesson to another atomically
+export const movePdf = async (req: Request, res: Response) => {
+    try {
+        const { sourceLessonId, targetLessonId } = req.body;
+
+        if (!sourceLessonId || !targetLessonId) {
+            return res.status(400).json({ message: 'sourceLessonId and targetLessonId are required' });
+        }
+
+        if (sourceLessonId === targetLessonId) {
+            return res.status(400).json({ message: 'Source and target lessons must be different' });
+        }
+
+        // Fetch source lesson to get the materialUrl
+        const sourceLesson = await prisma.lesson.findUnique({
+            where: { id: sourceLessonId },
+            select: { materialUrl: true },
+        });
+
+        if (!sourceLesson || !sourceLesson.materialUrl) {
+            return res.status(404).json({ message: 'Source lesson has no PDF to move' });
+        }
+
+        // Fetch target lesson to confirm it exists
+        const targetLesson = await prisma.lesson.findUnique({
+            where: { id: targetLessonId },
+            select: { id: true },
+        });
+
+        if (!targetLesson) {
+            return res.status(404).json({ message: 'Target lesson not found' });
+        }
+
+        // Atomically move the PDF: clear source, set target
+        await prisma.$transaction([
+            prisma.lesson.update({
+                where: { id: sourceLessonId },
+                data: { materialUrl: null },
+            }),
+            prisma.lesson.update({
+                where: { id: targetLessonId },
+                data: { materialUrl: sourceLesson.materialUrl },
+            }),
+        ]);
+
+        res.json({ message: 'PDF moved successfully', materialUrl: sourceLesson.materialUrl });
+    } catch (error: any) {
+        console.error('movePdf error:', error);
+        res.status(500).json({ message: 'Error moving PDF' });
+    }
+};
