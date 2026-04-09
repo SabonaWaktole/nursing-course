@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -55,6 +55,18 @@ export default function AdminDashboard() {
     const [results, setResults] = useState<any[]>([]);
     const [notifications, setNotifications] = useState<any[]>([]);
     const [showNotifications, setShowNotifications] = useState(false);
+    const notifRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+                setShowNotifications(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
     const unreadCount = notifications.filter(n => !n.read).length;
 
     // User management
@@ -814,7 +826,7 @@ export default function AdminDashboard() {
                 <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-background-light dark:bg-background-dark">
 
                     {/* Header — Premium glassmorphic design matching global Navbar */}
-                    <header className="h-[72px] flex items-center justify-between px-4 sm:px-6 lg:px-8 border-b border-slate-200/50 dark:border-white/[0.06] bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.05)] dark:shadow-[0_4px_30px_rgba(0,0,0,0.4)] z-10 shrink-0 transition-all duration-500">
+                    <header className="h-[72px] flex items-center justify-between px-4 sm:px-6 lg:px-8 border-b border-slate-200/50 dark:border-white/[0.06] bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.05)] dark:shadow-[0_4px_30px_rgba(0,0,0,0.4)] z-50 relative shrink-0 transition-all duration-500">
                         <div className="flex-1 flex items-center">
                             {/* Mobile Toggle */}
                             <motion.button
@@ -879,7 +891,7 @@ export default function AdminDashboard() {
 
                             <div className="flex items-center gap-1 sm:gap-2 relative">
                                 {/* Notifications Link/Dropdown */}
-                                <div className="relative">
+                                <div className="relative" ref={notifRef}>
                                     <motion.button
                                         whileHover={{ scale: 1.05 }}
                                         whileTap={{ scale: 0.95 }}

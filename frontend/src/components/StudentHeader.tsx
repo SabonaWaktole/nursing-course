@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import api from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import Link from 'next/link';
@@ -20,6 +20,17 @@ export default function StudentHeader({ title, subtitle, icon, onMobileMenuOpen 
     const [notifications, setNotifications] = useState<any[]>([]);
     const [showNotifications, setShowNotifications] = useState(false);
     const [isDark, setIsDark] = useState(false);
+    const notifRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+                setShowNotifications(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     useEffect(() => {
         setIsDark(document.documentElement.classList.contains('dark'));
@@ -72,7 +83,7 @@ export default function StudentHeader({ title, subtitle, icon, onMobileMenuOpen 
     ];
 
     return (
-        <header className="h-[72px] flex items-center justify-between px-4 sm:px-6 lg:px-8 border-b border-slate-200/50 dark:border-white/[0.06] bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.05)] dark:shadow-[0_4px_30px_rgba(0,0,0,0.4)] z-20 shrink-0 transition-all duration-500">
+        <header className="h-[72px] flex items-center justify-between px-4 sm:px-6 lg:px-8 border-b border-slate-200/50 dark:border-white/[0.06] bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.05)] dark:shadow-[0_4px_30px_rgba(0,0,0,0.4)] z-50 relative shrink-0 transition-all duration-500">
             <div className="flex-1 flex items-center gap-4">
                 {/* Mobile menu toggle */}
                 <motion.button
@@ -128,7 +139,7 @@ export default function StudentHeader({ title, subtitle, icon, onMobileMenuOpen 
 
             <div className="flex items-center gap-2 sm:gap-3 relative">
                 {/* Notifications Link/Dropdown */}
-                <div className="relative">
+                <div className="relative" ref={notifRef}>
                     <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
