@@ -16,6 +16,9 @@ import {
     getMyActivity,
     reorderModules,
     reorderLessons,
+    movePdf,
+    removeMaterial,
+    reorderPdfs,
 } from '../controllers/course.controller';
 import { authenticate, requireAdmin } from '../middleware/auth.middleware';
 
@@ -45,6 +48,9 @@ router.delete('/modules/:moduleId', authenticate, requireAdmin, deleteModule);
 // Admin - Lessons (under modules)
 router.post('/modules/:moduleId/lessons', authenticate, requireAdmin, addLesson);
 router.put('/modules/:moduleId/lessons/reorder', authenticate, requireAdmin, reorderLessons);
+router.put('/lessons/move-pdf', authenticate, requireAdmin, movePdf);
+router.put('/lessons/:lessonId/remove-material', authenticate, requireAdmin, removeMaterial);
+router.put('/lessons/:lessonId/reorder-pdfs', authenticate, requireAdmin, reorderPdfs);
 router.put('/lessons/:lessonId', authenticate, requireAdmin, updateLesson);
 router.delete('/lessons/:lessonId', authenticate, requireAdmin, deleteLesson);
 

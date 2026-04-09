@@ -72,6 +72,15 @@ export default function AdminDashboard() {
     const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
     const [dragModuleId, setDragModuleId] = useState<string | null>(null);
 
+    // PDF drag-and-drop across lessons
+    const [pdfDragSourceId, setPdfDragSourceId] = useState<string | null>(null);
+    const [pdfDragUrl, setPdfDragUrl] = useState<string | null>(null);
+    const [pdfDragOverLessonId, setPdfDragOverLessonId] = useState<string | null>(null);
+    const [pdfMoveToast, setPdfMoveToast] = useState<string | null>(null);
+
+    // Inline PDF preview state (tracks specific PDF url, not lesson)
+    const [previewPdfUrl, setPreviewPdfUrl] = useState<string | null>(null);
+
     // Search & filter state
     const [adminSearch, setAdminSearch] = useState('');
     const [courseFilter, setCourseFilter] = useState('');
@@ -416,6 +425,143 @@ export default function AdminDashboard() {
 
     const handleDragEnd = () => {
         setDragIndex(null); setDragOverIndex(null); setDragType(null); setDragModuleId(null);
+        setPdfDragSourceId(null); setPdfDragUrl(null); setPdfDragOverLessonId(null);
+    };
+
+    // PDF drag-and-drop handlers
+    const handlePdfDragStart = (e: React.DragEvent, lessonId: string, pdfUrl: string) => {
+        e.stopPropagation();
+        e.dataTransfer.setData('application/pdf-move', JSON.stringify({ sourceLessonId: lessonId, pdfUrl }));
+        e.dataTransfer.effectAllowed = 'move';
+        setPdfDragSourceId(lessonId);
+        setPdfDragUrl(pdfUrl);
+        // Prevent lesson reorder drag from firing
+        setDragType(null);
+    };
+
+    const handlePdfDragOverLesson = (e: React.DragEvent, lessonId: string) => {
+        if (!pdfDragSourceId || pdfDragSourceId === lessonId) return;
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = 'move';
+        setPdfDragOverLessonId(lessonId);
+    };
+
+    const handlePdfDragLeaveLesson = (e: React.DragEvent) => {
+        e.stopPropagation();
+        setPdfDragOverLessonId(null);
+    };
+
+    const handlePdfDrop = async (e: React.DragEvent, targetLessonId: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+        let sourceLessonId = '';
+        let pdfUrl = '';
+        try {
+            const data = JSON.parse(e.dataTransfer.getData('application/pdf-move'));
+            sourceLessonId = data.sourceLessonId;
+            pdfUrl = data.pdfUrl;
+        } catch { return; }
+        setPdfDragSourceId(null);
+        setPdfDragUrl(null);
+        setPdfDragOverLessonId(null);
+
+        if (!sourceLessonId || !pdfUrl || sourceLessonId === targetLessonId) return;
+
+        // Optimistic UI update for multi-pdf
+        if (courseDetails) {
+            const updatedModules = courseDetails.modules.map((mod: any) => ({
+                ...mod,
+                lessons: mod.lessons.map((l: any) => {
+                    if (l.id === sourceLessonId) {
+                        const pdfs = (l.materialUrl || '').split(',').filter(Boolean);
+                        const remaining = pdfs.filter((u: string) => u.trim() !== pdfUrl.trim());
+                        return { ...l, materialUrl: remaining.length > 0 ? remaining.join(',') : null };
+                    }
+                    if (l.id === targetLessonId) {
+                        const existing = l.materialUrl ? l.materialUrl.split(',').filter(Boolean) : [];
+                        existing.push(pdfUrl.trim());
+                        return { ...l, materialUrl: existing.join(',') };
+                    }
+                    return l;
+                }),
+            }));
+            setCourseDetails({ ...courseDetails, modules: updatedModules });
+        }
+
+        try {
+            await api.put('/courses/lessons/move-pdf', { sourceLessonId, targetLessonId, pdfUrl });
+            setPdfMoveToast('PDF moved successfully!');
+            setTimeout(() => setPdfMoveToast(null), 3000);
+            if (courseDetails) loadCourseDetail(courseDetails.id);
+        } catch (err: any) {
+            alert(err.response?.data?.message || 'Error moving PDF');
+            if (courseDetails) loadCourseDetail(courseDetails.id);
+        }
+    };
+
+    // Remove material (video or specific PDF)
+    const handleRemoveMaterial = async (lessonId: string, type: 'video' | 'pdf', url?: string) => {
+        if (!confirm(`Remove this ${type === 'video' ? 'video' : 'PDF'}?`)) return;
+
+        // Optimistic UI
+        if (courseDetails) {
+            const updatedModules = courseDetails.modules.map((mod: any) => ({
+                ...mod,
+                lessons: mod.lessons.map((l: any) => {
+                    if (l.id !== lessonId) return l;
+                    if (type === 'video') return { ...l, videoUrl: null };
+                    const pdfs = (l.materialUrl || '').split(',').filter(Boolean);
+                    const remaining = pdfs.filter((u: string) => u.trim() !== (url || '').trim());
+                    return { ...l, materialUrl: remaining.length > 0 ? remaining.join(',') : null };
+                }),
+            }));
+            setCourseDetails({ ...courseDetails, modules: updatedModules });
+        }
+
+        try {
+            await api.put(`/courses/lessons/${lessonId}/remove-material`, { type, url });
+            setPdfMoveToast(`${type === 'video' ? 'Video' : 'PDF'} removed!`);
+            setTimeout(() => setPdfMoveToast(null), 3000);
+            if (courseDetails) loadCourseDetail(courseDetails.id);
+        } catch (err: any) {
+            alert(err.response?.data?.message || 'Error removing material');
+            if (courseDetails) loadCourseDetail(courseDetails.id);
+        }
+    };
+
+    // Reorder a PDF within the same lesson (move up/down)
+    const handleReorderPdf = async (lessonId: string, pdfUrl: string, direction: 'up' | 'down') => {
+        // Find the lesson across all modules
+        const lesson = courseDetails?.modules.flatMap((m: any) => m.lessons).find((l: any) => l.id === lessonId);
+        if (!lesson || !lesson.materialUrl) return;
+
+        const pdfs = lesson.materialUrl.split(',').filter(Boolean).map((u: string) => u.trim());
+        const idx = pdfs.findIndex((u: string) => u === pdfUrl.trim());
+        if (idx < 0) return;
+
+        const newIdx = direction === 'up' ? idx - 1 : idx + 1;
+        if (newIdx < 0 || newIdx >= pdfs.length) return;
+
+        // Swap
+        [pdfs[idx], pdfs[newIdx]] = [pdfs[newIdx], pdfs[idx]];
+        const newMaterialUrl = pdfs.join(',');
+
+        // Optimistic UI
+        if (courseDetails) {
+            const updatedModules = courseDetails.modules.map((mod: any) => ({
+                ...mod,
+                lessons: mod.lessons.map((l: any) => l.id === lessonId ? { ...l, materialUrl: newMaterialUrl } : l),
+            }));
+            setCourseDetails({ ...courseDetails, modules: updatedModules });
+        }
+
+        try {
+            await api.put(`/courses/lessons/${lessonId}/reorder-pdfs`, { orderedUrls: pdfs });
+        } catch (err: any) {
+            alert(err.response?.data?.message || 'Error reordering PDFs');
+            if (courseDetails) loadCourseDetail(courseDetails.id);
+        }
     };
 
     const handleSaveQuiz = async (targetId: string, type: 'course' | 'module') => {
@@ -1321,29 +1467,155 @@ export default function AdminDashboard() {
                                                                                         {mod.lessons?.map((lesson: any, li: number) => (
                                                                                             <div
                                                                                                 key={lesson.id}
-                                                                                                draggable
-                                                                                                onDragStart={(e) => { e.stopPropagation(); handleLessonDragStart(mod.id, li); }}
-                                                                                                onDragOver={(e) => { e.stopPropagation(); handleLessonDragOver(e, mod.id, li); }}
-                                                                                                onDrop={(e) => { e.stopPropagation(); handleLessonDrop(e, mod.id, li); }}
+                                                                                                draggable={!pdfDragSourceId}
+                                                                                                onDragStart={(e) => { if (pdfDragSourceId) { e.preventDefault(); return; } e.stopPropagation(); handleLessonDragStart(mod.id, li); }}
+                                                                                                onDragOver={(e) => {
+                                                                                                    if (pdfDragSourceId) { handlePdfDragOverLesson(e, lesson.id); return; }
+                                                                                                    e.stopPropagation(); handleLessonDragOver(e, mod.id, li);
+                                                                                                }}
+                                                                                                onDragLeave={(e) => { if (pdfDragSourceId) handlePdfDragLeaveLesson(e); }}
+                                                                                                onDrop={(e) => {
+                                                                                                    if (pdfDragSourceId) { handlePdfDrop(e, lesson.id); return; }
+                                                                                                    e.stopPropagation(); handleLessonDrop(e, mod.id, li);
+                                                                                                }}
                                                                                                 onDragEnd={handleDragEnd}
-                                                                                                className={`flex justify-between items-center p-2 rounded-lg group/lesson transition-all shadow-sm border ${
-                                                                                                    dragType === 'lesson' && dragModuleId === mod.id && dragOverIndex === li
-                                                                                                        ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
-                                                                                                        : 'bg-slate-50 dark:bg-slate-950/50 border-transparent hover:bg-white dark:hover:bg-slate-900 hover:border-slate-200 dark:hover:border-slate-800'
+                                                                                                className={`rounded-xl group/lesson transition-all duration-300 shadow-sm border overflow-hidden ${
+                                                                                                    pdfDragOverLessonId === lesson.id && pdfDragSourceId !== lesson.id
+                                                                                                        ? 'border-sky-400 bg-sky-50 dark:bg-sky-900/20 ring-2 ring-sky-400/30 shadow-[0_0_20px_rgba(14,165,233,0.15)] scale-[1.01]'
+                                                                                                        : pdfDragSourceId === lesson.id
+                                                                                                            ? 'border-sky-300 bg-sky-50/50 dark:bg-sky-900/10 opacity-60 scale-[0.98]'
+                                                                                                            : dragType === 'lesson' && dragModuleId === mod.id && dragOverIndex === li
+                                                                                                                ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                                                                                                                : 'bg-slate-50 dark:bg-slate-950/50 border-transparent hover:bg-white dark:hover:bg-slate-900 hover:border-slate-200 dark:hover:border-slate-800'
                                                                                                 }`}
                                                                                             >
-                                                                                                <div className="flex items-center gap-3">
-                                                                                                    <span className="material-symbols-outlined text-slate-300 hover:text-primary cursor-grab active:cursor-grabbing text-sm" title="Drag to reorder">drag_indicator</span>
-                                                                                                    <span className="material-symbols-outlined text-slate-400 text-sm">play_circle</span>
-                                                                                                    <div className="flex flex-col">
-                                                                                                        <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">{lesson.title}</span>
-                                                                                                        <div className="flex gap-2">
-                                                                                                            {lesson.videoUrl && <span className="text-[9px] font-black uppercase text-emerald-500 flex items-center gap-0.5"><span className="material-symbols-outlined text-[10px]">videocam</span> Video</span>}
-                                                                                                            {lesson.materialUrl && <span className="text-[9px] font-black uppercase text-sky-500 flex items-center gap-0.5"><span className="material-symbols-outlined text-[10px]">description</span> PDF</span>}
+                                                                                                <div className="flex justify-between items-center p-2">
+                                                                                                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                                                                        <span className="material-symbols-outlined text-slate-300 hover:text-primary cursor-grab active:cursor-grabbing text-sm shrink-0" title="Drag to reorder">drag_indicator</span>
+                                                                                                        <span className={`material-symbols-outlined text-sm shrink-0 ${lesson.videoUrl ? 'text-emerald-500' : lesson.materialUrl ? 'text-sky-500' : 'text-slate-400'}`}>{lesson.videoUrl ? 'videocam' : lesson.materialUrl ? 'picture_as_pdf' : 'play_circle'}</span>
+                                                                                                        <div className="flex flex-col min-w-0">
+                                                                                                            <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate">{lesson.title}</span>
+                                                                                                            <div className="flex gap-2 items-center flex-wrap">
+                                                                                                                {/* Video badge with delete */}
+                                                                                                                {lesson.videoUrl && (
+                                                                                                                    <span className="text-[9px] font-black uppercase text-emerald-500 flex items-center gap-0.5 px-1.5 py-0.5 rounded-md border border-transparent hover:border-emerald-200 dark:hover:border-emerald-800 transition-all group/vid">
+                                                                                                                        <span className="material-symbols-outlined text-[10px]">videocam</span>
+                                                                                                                        <span>Video</span>
+                                                                                                                        <button
+                                                                                                                            onClick={(e) => { e.stopPropagation(); handleRemoveMaterial(lesson.id, 'video'); }}
+                                                                                                                            className="ml-0.5 opacity-0 group-hover/vid:opacity-100 text-red-400 hover:text-red-600 transition-all"
+                                                                                                                            title="Remove video"
+                                                                                                                        >
+                                                                                                                            <span className="material-symbols-outlined text-[10px]">close</span>
+                                                                                                                        </button>
+                                                                                                                    </span>
+                                                                                                                )}
+                                                                                                                {/* Multiple PDF badges with drag + delete + reorder */}
+                                                                                                                {lesson.materialUrl && (() => {
+                                                                                                                    const pdfList = lesson.materialUrl.split(',').filter(Boolean);
+                                                                                                                    return pdfList.map((pdfUrl: string, pi: number) => (
+                                                                                                                    <span
+                                                                                                                        key={pi}
+                                                                                                                        draggable
+                                                                                                                        onDragStart={(e) => handlePdfDragStart(e, lesson.id, pdfUrl.trim())}
+                                                                                                                        className="text-[9px] font-black uppercase text-sky-500 flex items-center gap-0.5 cursor-grab active:cursor-grabbing hover:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900/30 px-1.5 py-0.5 rounded-md border border-transparent hover:border-sky-200 dark:hover:border-sky-800 transition-all select-none group/pdf"
+                                                                                                                        title="Drag this PDF to move it to another lesson"
+                                                                                                                    >
+                                                                                                                        <span className="material-symbols-outlined text-[10px]">description</span>
+                                                                                                                        <span className="max-w-[60px] truncate">{pdfUrl.trim().split('/').pop() || `PDF ${pi + 1}`}</span>
+                                                                                                                        <span className="material-symbols-outlined text-[8px] ml-0.5 opacity-60">drag_indicator</span>
+                                                                                                                        {/* Reorder arrows (only when multiple PDFs) */}
+                                                                                                                        {pdfList.length > 1 && (
+                                                                                                                            <span className="opacity-0 group-hover/pdf:opacity-100 flex items-center ml-0.5 transition-all">
+                                                                                                                                {pi > 0 && (
+                                                                                                                                    <button
+                                                                                                                                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleReorderPdf(lesson.id, pdfUrl.trim(), 'up'); }}
+                                                                                                                                        className="text-sky-400 hover:text-sky-600 transition-colors"
+                                                                                                                                        title="Move up"
+                                                                                                                                    >
+                                                                                                                                        <span className="material-symbols-outlined text-[10px]">arrow_upward</span>
+                                                                                                                                    </button>
+                                                                                                                                )}
+                                                                                                                                {pi < pdfList.length - 1 && (
+                                                                                                                                    <button
+                                                                                                                                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleReorderPdf(lesson.id, pdfUrl.trim(), 'down'); }}
+                                                                                                                                        className="text-sky-400 hover:text-sky-600 transition-colors"
+                                                                                                                                        title="Move down"
+                                                                                                                                    >
+                                                                                                                                        <span className="material-symbols-outlined text-[10px]">arrow_downward</span>
+                                                                                                                                    </button>
+                                                                                                                                )}
+                                                                                                                            </span>
+                                                                                                                        )}
+                                                                                                                        <button
+                                                                                                                            onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleRemoveMaterial(lesson.id, 'pdf', pdfUrl.trim()); }}
+                                                                                                                            className="ml-0.5 opacity-0 group-hover/pdf:opacity-100 text-red-400 hover:text-red-600 transition-all"
+                                                                                                                            title="Remove this PDF"
+                                                                                                                        >
+                                                                                                                            <span className="material-symbols-outlined text-[10px]">close</span>
+                                                                                                                        </button>
+                                                                                                                    </span>
+                                                                                                                    ));
+                                                                                                                })()}
+                                                                                                            </div>
                                                                                                         </div>
                                                                                                     </div>
+                                                                                                    <div className="flex items-center gap-1 shrink-0">
+                                                                                                        {lesson.materialUrl && lesson.materialUrl.split(',').some((u: string) => u.trim().toLowerCase().endsWith('.pdf')) && (
+                                                                                                            <button
+                                                                                                                onClick={(e) => {
+                                                                                                                    e.stopPropagation();
+                                                                                                                    const firstPdf = lesson.materialUrl.split(',').find((u: string) => u.trim().toLowerCase().endsWith('.pdf'))?.trim();
+                                                                                                                    if (firstPdf) setPreviewPdfUrl(previewPdfUrl === firstPdf ? null : firstPdf);
+                                                                                                                }}
+                                                                                                                className={`p-1 rounded-md transition-all ${previewPdfUrl && lesson.materialUrl?.includes(previewPdfUrl) ? 'text-sky-500 bg-sky-50 dark:bg-sky-900/30' : 'text-slate-400 hover:text-sky-500 opacity-0 group-hover/lesson:opacity-100'}`}
+                                                                                                                title="Preview PDFs"
+                                                                                                            >
+                                                                                                                <span className="material-symbols-outlined text-sm">{previewPdfUrl && lesson.materialUrl?.includes(previewPdfUrl) ? 'visibility_off' : 'visibility'}</span>
+                                                                                                            </button>
+                                                                                                        )}
+                                                                                                        <button onClick={() => handleDeleteLesson(lesson.id)} className="opacity-0 group-hover/lesson:opacity-100 p-1 text-slate-400 hover:text-red-500 transition-opacity"><span className="material-symbols-outlined text-sm">delete</span></button>
+                                                                                                    </div>
                                                                                                 </div>
-                                                                                                <button onClick={() => handleDeleteLesson(lesson.id)} className="opacity-0 group-hover/lesson:opacity-100 p-1 text-slate-400 hover:text-red-500 transition-opacity"><span className="material-symbols-outlined text-sm">delete</span></button>
+
+                                                                                                {/* Inline PDF Previews — stacked for each PDF */}
+                                                                                                {lesson.materialUrl && lesson.materialUrl.split(',').filter(Boolean).map((pUrl: string, pi: number) => {
+                                                                                                    const trimUrl = pUrl.trim();
+                                                                                                    if (!trimUrl.toLowerCase().endsWith('.pdf')) return null;
+                                                                                                    if (previewPdfUrl !== trimUrl) return null;
+                                                                                                    return (
+                                                                                                        <motion.div
+                                                                                                            key={pi}
+                                                                                                            initial={{ height: 0, opacity: 0 }}
+                                                                                                            animate={{ height: 320, opacity: 1 }}
+                                                                                                            exit={{ height: 0, opacity: 0 }}
+                                                                                                            transition={{ duration: 0.35, ease: [0.25, 0.8, 0.25, 1] }}
+                                                                                                            className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 relative"
+                                                                                                        >
+                                                                                                            <iframe
+                                                                                                                src={getFileUrl(trimUrl)}
+                                                                                                                className="w-full h-full border-none"
+                                                                                                                title={`PDF Preview - ${lesson.title} (${pi + 1})`}
+                                                                                                            />
+                                                                                                            <div className="absolute bottom-2 right-2 flex items-center gap-1">
+                                                                                                                <a href={getFileUrl(trimUrl)} target="_blank" rel="noopener noreferrer" className="p-1.5 bg-slate-900/70 backdrop-blur-sm text-white rounded-lg hover:bg-slate-900/90 transition-colors" title="Open in new tab">
+                                                                                                                    <span className="material-symbols-outlined text-sm">open_in_new</span>
+                                                                                                                </a>
+                                                                                                                <a href={getFileUrl(trimUrl)} download className="p-1.5 bg-slate-900/70 backdrop-blur-sm text-white rounded-lg hover:bg-slate-900/90 transition-colors" title="Download">
+                                                                                                                    <span className="material-symbols-outlined text-sm">download</span>
+                                                                                                                </a>
+                                                                                                            </div>
+                                                                                                        </motion.div>
+                                                                                                    );
+                                                                                                })}
+
+                                                                                                {/* PDF Drop Zone Indicator */}
+                                                                                                {pdfDragSourceId && pdfDragSourceId !== lesson.id && pdfDragOverLessonId === lesson.id && (
+                                                                                                    <div className="px-3 py-2 bg-sky-50 dark:bg-sky-900/20 border-t border-sky-200 dark:border-sky-800 flex items-center gap-2 text-sky-600 dark:text-sky-400 animate-pulse">
+                                                                                                        <span className="material-symbols-outlined text-sm">file_download</span>
+                                                                                                        <span className="text-[10px] font-bold uppercase tracking-wider">Drop PDF here</span>
+                                                                                                    </div>
+                                                                                                )}
                                                                                             </div>
                                                                                         ))}
                                                                                         {mod.quizzes?.map((quiz: any) => (
@@ -1951,6 +2223,22 @@ export default function AdminDashboard() {
                     </div>
                 </main>
             </motion.div>
+
+                {/* PDF Move Toast */}
+                <AnimatePresence>
+                    {pdfMoveToast && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 40, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+                            transition={{ duration: 0.3, ease: [0.25, 0.8, 0.25, 1] }}
+                            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[200] flex items-center gap-3 px-6 py-3 bg-slate-900/90 dark:bg-white/90 backdrop-blur-xl text-white dark:text-slate-900 rounded-2xl shadow-2xl border border-white/10 dark:border-slate-200"
+                        >
+                            <span className="material-symbols-outlined text-emerald-400 dark:text-emerald-600">check_circle</span>
+                            <span className="text-sm font-bold">{pdfMoveToast}</span>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
         </RoleGuard>
     );
 }

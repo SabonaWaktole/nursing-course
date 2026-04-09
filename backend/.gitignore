@@ -11,3 +11,4 @@ old_db_backup/*
 
 uploads/*
 old_db_backup/*
+*.sql

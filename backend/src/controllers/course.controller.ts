@@ -469,3 +469,129 @@ export const reorderLessons = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Error reordering lessons' });
     }
 };
+
+// Move a specific PDF (materialUrl) from one lesson to another atomically
+// Supports comma-separated multi-PDF in materialUrl
+export const movePdf = async (req: Request, res: Response) => {
+    try {
+        const { sourceLessonId, targetLessonId, pdfUrl } = req.body;
+
+        if (!sourceLessonId || !targetLessonId || !pdfUrl) {
+            return res.status(400).json({ message: 'sourceLessonId, targetLessonId, and pdfUrl are required' });
+        }
+
+        if (sourceLessonId === targetLessonId) {
+            return res.status(400).json({ message: 'Source and target lessons must be different' });
+        }
+
+        // Fetch both lessons
+        const [sourceLesson, targetLesson] = await Promise.all([
+            prisma.lesson.findUnique({ where: { id: sourceLessonId }, select: { materialUrl: true } }),
+            prisma.lesson.findUnique({ where: { id: targetLessonId }, select: { id: true, materialUrl: true } }),
+        ]);
+
+        if (!sourceLesson || !sourceLesson.materialUrl) {
+            return res.status(404).json({ message: 'Source lesson has no PDF to move' });
+        }
+        if (!targetLesson) {
+            return res.status(404).json({ message: 'Target lesson not found' });
+        }
+
+        // Remove the specific pdfUrl from source's comma-separated list
+        const sourcePdfs = sourceLesson.materialUrl.split(',').filter(Boolean);
+        const newSourcePdfs = sourcePdfs.filter(u => u.trim() !== pdfUrl.trim());
+        const newSourceUrl = newSourcePdfs.length > 0 ? newSourcePdfs.join(',') : null;
+
+        // Append to target's comma-separated list
+        const targetPdfs = targetLesson.materialUrl ? targetLesson.materialUrl.split(',').filter(Boolean) : [];
+        targetPdfs.push(pdfUrl.trim());
+        const newTargetUrl = targetPdfs.join(',');
+
+        // Atomically update both lessons
+        await prisma.$transaction([
+            prisma.lesson.update({
+                where: { id: sourceLessonId },
+                data: { materialUrl: newSourceUrl },
+            }),
+            prisma.lesson.update({
+                where: { id: targetLessonId },
+                data: { materialUrl: newTargetUrl },
+            }),
+        ]);
+
+        res.json({ message: 'PDF moved successfully', materialUrl: pdfUrl });
+    } catch (error: any) {
+        console.error('movePdf error:', error);
+        res.status(500).json({ message: 'Error moving PDF' });
+    }
+};
+
+// Remove a specific material (video or pdf) from a lesson
+export const removeMaterial = async (req: Request, res: Response) => {
+    try {
+        const lessonId = req.params.lessonId as string;
+        const { type, url } = req.body; // type: 'video' | 'pdf'
+
+        if (!type || !['video', 'pdf'].includes(type)) {
+            return res.status(400).json({ message: 'type must be "video" or "pdf"' });
+        }
+
+        const lesson = await prisma.lesson.findUnique({
+            where: { id: lessonId },
+            select: { videoUrl: true, materialUrl: true },
+        });
+
+        if (!lesson) {
+            return res.status(404).json({ message: 'Lesson not found' });
+        }
+
+        if (type === 'video') {
+            await prisma.lesson.update({
+                where: { id: lessonId },
+                data: { videoUrl: null },
+            });
+        } else {
+            // Remove specific PDF from comma-separated list
+            if (!url) {
+                return res.status(400).json({ message: 'url is required for pdf removal' });
+            }
+            const pdfs = (lesson.materialUrl || '').split(',').filter(Boolean);
+            const newPdfs = pdfs.filter(u => u.trim() !== url.trim());
+            const newMaterialUrl = newPdfs.length > 0 ? newPdfs.join(',') : null;
+
+            await prisma.lesson.update({
+                where: { id: lessonId },
+                data: { materialUrl: newMaterialUrl },
+            });
+        }
+
+        res.json({ message: `${type === 'video' ? 'Video' : 'PDF'} removed successfully` });
+    } catch (error: any) {
+        console.error('removeMaterial error:', error);
+        res.status(500).json({ message: 'Error removing material' });
+    }
+};
+
+// Reorder PDFs within a lesson
+export const reorderPdfs = async (req: Request, res: Response) => {
+    try {
+        const lessonId = req.params.lessonId as string;
+        const { orderedUrls } = req.body; // string[]
+
+        if (!Array.isArray(orderedUrls) || orderedUrls.length === 0) {
+            return res.status(400).json({ message: 'orderedUrls array is required' });
+        }
+
+        const newMaterialUrl = orderedUrls.map((u: string) => u.trim()).filter(Boolean).join(',');
+
+        await prisma.lesson.update({
+            where: { id: lessonId },
+            data: { materialUrl: newMaterialUrl || null },
+        });
+
+        res.json({ message: 'PDFs reordered successfully' });
+    } catch (error: any) {
+        console.error('reorderPdfs error:', error);
+        res.status(500).json({ message: 'Error reordering PDFs' });
+    }
+};

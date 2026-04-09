@@ -22,7 +22,7 @@ export default function ClientProviders({ children }: { children: ReactNode }) {
     return (
         <AuthProvider>
             {!hideGlobalNav && <Navbar />}
-            <main className={hasDashboardLayout ? "h-screen overflow-hidden" : "min-h-screen"}>
+            <main suppressHydrationWarning className={hasDashboardLayout ? "h-screen overflow-hidden" : "min-h-screen"}>
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={pathname}

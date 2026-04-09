@@ -8,9 +8,9 @@ To properly generate the schema and push it to the remote database whenever you 
 Add or modify your models in `backend/prisma/schema.prisma` as needed while the provider is set to `postgresql`.
 
 ### Step 2: Update your Local Database
-Sync your changes to your local PostgreSQL database so your dev environment is up to date:
+Sync your changes to your local PostgreSQL database so your dev environment is up to date. *(We use `--skip-generate` here to bypass `EPERM` file-lock errors if your `npm run dev` server is actively running in the background).*
 ```bash
-npx prisma db push
+npx prisma db push --skip-generate
 ```
 
 ### Step 3: Switch to the MySQL Provider
@@ -23,9 +23,9 @@ datasource db {
 ```
 
 ### Step 4: Push to the Remote Database
-Use `dotenv-cli` to explicitly load your production variables and push the schema to the remote database. *(`db push` compares the schema against the actual database and applies the necessary changes without needing a migration history folder).*
+Use `dotenv-cli` to explicitly load your production variables and push the schema to the remote database. *(`db push` compares the schema against the actual database and safely adds missing columns without needing a migration history folder. The `--skip-generate` flag is used again because we don't want MySQL client bindings overwriting our local Postgres bindings).*
 ```bash
-npx dotenv-cli -e .env.production -- npx prisma db push
+npx dotenv-cli -e .env.production -- npx prisma db push --skip-generate
 ```
 
 ### Step 5: Switch back to PostgreSQL
