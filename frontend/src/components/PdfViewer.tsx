@@ -33,6 +33,7 @@ export default function PdfViewer({
     const [fitWidth, setFitWidth] = useState<boolean>(true);
     const [containerWidth, setContainerWidth] = useState<number>(800);
     const [loading, setLoading] = useState<boolean>(true);
+    const [viewMode, setViewMode] = useState<'paginated' | 'continuous'>('paginated');
     const containerRef = useRef<HTMLDivElement>(null);
 
     // Measure container width for fit-to-width mode
@@ -125,33 +126,53 @@ export default function PdfViewer({
 
                 {/* Center: Page Navigation */}
                 <div className="flex items-center gap-1">
+                    {viewMode === 'paginated' && (
+                        <>
+                            <button
+                                onClick={() => goToPage(pageNumber - 1)}
+                                disabled={pageNumber <= 1}
+                                className="w-7 h-7 flex items-center justify-center rounded hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                title="Previous page"
+                            >
+                                <span className="text-[16px]">&lt;</span>
+                            </button>
+                            <button
+                                onClick={() => goToPage(pageNumber + 1)}
+                                disabled={pageNumber >= numPages}
+                                className="w-7 h-7 flex items-center justify-center rounded hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                title="Next page"
+                            >
+                                <span className="text-[16px]">&gt;</span>
+                            </button>
+                            <div className="flex items-center gap-1.5 ml-2">
+                                <input
+                                    type="text"
+                                    value={pageInputValue}
+                                    onChange={handlePageInputChange}
+                                    onKeyDown={handlePageInputSubmit}
+                                    onBlur={handlePageInputBlur}
+                                    className="w-[42px] h-[26px] bg-[#4a4d50] border border-[#6b6e71] rounded text-center text-[13px] text-white focus:outline-none focus:border-blue-400 transition-colors"
+                                />
+                                <span className="text-[13px] text-gray-300">of {numPages}</span>
+                            </div>
+                        </>
+                    )}
                     <button
-                        onClick={() => goToPage(pageNumber - 1)}
-                        disabled={pageNumber <= 1}
-                        className="w-7 h-7 flex items-center justify-center rounded hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                        title="Previous page"
+                        onClick={() => setViewMode(prev => prev === 'paginated' ? 'continuous' : 'paginated')}
+                        className={`w-7 h-7 flex items-center justify-center rounded hover:bg-white/10 transition-colors ml-1 ${viewMode === 'continuous' ? 'bg-white/15' : ''}`}
+                        title={viewMode === 'paginated' ? 'Switch to continuous view' : 'Switch to paginated view'}
                     >
-                        <span className="text-[16px]">&lt;</span>
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            {viewMode === 'paginated' ? (
+                                <>
+                                    <rect x="3" y="1" width="10" height="6" rx="1" stroke="currentColor" strokeWidth="1.2" fill="none" />
+                                    <rect x="3" y="9" width="10" height="6" rx="1" stroke="currentColor" strokeWidth="1.2" fill="none" />
+                                </>
+                            ) : (
+                                <rect x="3" y="1" width="10" height="14" rx="1" stroke="currentColor" strokeWidth="1.2" fill="none" />
+                            )}
+                        </svg>
                     </button>
-                    <button
-                        onClick={() => goToPage(pageNumber + 1)}
-                        disabled={pageNumber >= numPages}
-                        className="w-7 h-7 flex items-center justify-center rounded hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                        title="Next page"
-                    >
-                        <span className="text-[16px]">&gt;</span>
-                    </button>
-                    <div className="flex items-center gap-1.5 ml-2">
-                        <input
-                            type="text"
-                            value={pageInputValue}
-                            onChange={handlePageInputChange}
-                            onKeyDown={handlePageInputSubmit}
-                            onBlur={handlePageInputBlur}
-                            className="w-[42px] h-[26px] bg-[#4a4d50] border border-[#6b6e71] rounded text-center text-[13px] text-white focus:outline-none focus:border-blue-400 transition-colors"
-                        />
-                        <span className="text-[13px] text-gray-300">of {numPages}</span>
-                    </div>
                 </div>
 
                 {/* Right: Zoom controls + Close */}
@@ -204,19 +225,38 @@ export default function PdfViewer({
                     loading=""
                     className="py-4"
                 >
-                    <Page
-                        pageNumber={pageNumber}
-                        scale={fitWidth ? undefined : scale}
-                        width={fitWidth ? containerWidth : undefined}
-                        renderTextLayer={true}
-                        renderAnnotationLayer={true}
-                        className="shadow-lg mx-auto"
-                        loading={
-                            <div className="flex items-center justify-center" style={{ width: containerWidth, height: 600 }}>
-                                <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                            </div>
-                        }
-                    />
+                    {viewMode === 'continuous' ? (
+                        Array.from({ length: numPages }, (_, i) => (
+                            <Page
+                                key={`page_${i + 1}`}
+                                pageNumber={i + 1}
+                                scale={fitWidth ? undefined : scale}
+                                width={fitWidth ? containerWidth : undefined}
+                                renderTextLayer={true}
+                                renderAnnotationLayer={true}
+                                className="shadow-lg mx-auto mb-4"
+                                loading={
+                                    <div className="flex items-center justify-center" style={{ width: containerWidth, height: 600 }}>
+                                        <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                    </div>
+                                }
+                            />
+                        ))
+                    ) : (
+                        <Page
+                            pageNumber={pageNumber}
+                            scale={fitWidth ? undefined : scale}
+                            width={fitWidth ? containerWidth : undefined}
+                            renderTextLayer={true}
+                            renderAnnotationLayer={true}
+                            className="shadow-lg mx-auto"
+                            loading={
+                                <div className="flex items-center justify-center" style={{ width: containerWidth, height: 600 }}>
+                                    <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                </div>
+                            }
+                        />
+                    )}
                 </Document>
             </div>
 

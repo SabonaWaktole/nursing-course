@@ -8,7 +8,9 @@ import { CourseDetail, Module, Lesson } from '@/lib/types';
 import Link from 'next/link';
 import { getFileUrl } from '@/lib/url-utils';
 import { motion, AnimatePresence } from 'framer-motion';
-import PdfViewer from '@/components/PdfViewer';
+import dynamic from 'next/dynamic';
+
+const PdfViewer = dynamic(() => import('@/components/PdfViewer'), { ssr: false });
 
 export default function CourseDetailPage() {
     const { id } = useParams();
@@ -25,10 +27,18 @@ export default function CourseDetailPage() {
     const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
     const [progress, setProgress] = useState(0);
     const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
+    const [materialIndex, setMaterialIndex] = useState(0);
 
     useEffect(() => {
         api.get(`/courses/${id}`).then((r) => {
             const data = r.data as CourseDetail;
+            if (data.modules) {
+                // Filter out lessons with no material, and then filter out empty modules
+                data.modules = data.modules.map(mod => ({
+                    ...mod,
+                    lessons: mod.lessons?.filter(l => l.videoUrl || l.materialUrl) || []
+                })).filter(mod => mod.lessons.length > 0 || (mod.quizzes && mod.quizzes.length > 0));
+            }
             setCourse(data);
 
             if (fromQuiz) {
@@ -143,9 +153,36 @@ export default function CourseDetailPage() {
 
     const totalLessons = allLessons.length;
 
+    // Build sequential materials list for current lesson: PDFs first, then video
+    const currentMaterials: { type: 'pdf' | 'video'; url: string }[] = [];
+    if (currentLesson) {
+        if (currentLesson.materialUrl) {
+            currentLesson.materialUrl.split(',').filter(Boolean).forEach((u: string) => {
+                const trimmed = u.trim();
+                if (trimmed) currentMaterials.push({ type: 'pdf', url: trimmed });
+            });
+        }
+        if (currentLesson.videoUrl) {
+            currentMaterials.push({ type: 'video', url: currentLesson.videoUrl });
+        }
+    }
+
+    // Reset material index when lesson changes
+    useEffect(() => {
+        setMaterialIndex(0);
+    }, [activeLesson]);
+
+    // Navigate to next material within lesson, or next lesson
     const handleNext = async () => {
         if (!course || currentLessonIndex < 0) return;
 
+        // If there are more materials within this lesson, go to the next one
+        if (materialIndex < currentMaterials.length - 1) {
+            setMaterialIndex(materialIndex + 1);
+            return;
+        }
+
+        // All materials in this lesson viewed — advance to next lesson
         const newProgress = Math.min(
             Math.round(((currentLessonIndex + 1) / totalLessons) * 100),
             99
@@ -177,6 +214,35 @@ export default function CourseDetailPage() {
                 setCompleting(false);
             } catch { setCompleting(false); }
         }
+    };
+
+    // Navigate to previous material within lesson, or previous lesson
+    const handleBack = () => {
+        if (materialIndex > 0) {
+            setMaterialIndex(materialIndex - 1);
+            return;
+        }
+        // Go to previous lesson (last material)
+        if (currentLessonIndex > 0) {
+            const prev = allLessons[currentLessonIndex - 1];
+            setActiveLesson(prev.id);
+            const mod = findModuleForLesson(prev.id);
+            if (mod) setExpandedModules(p => new Set([...p, mod.id]));
+            // materialIndex will reset to 0 via useEffect, but we want the last material of the prev lesson
+            // We'll set a special flag — actually, since we can't know prev lesson's material count
+            // until it renders, we'll just go to the start of the previous lesson (index 0).
+        }
+    };
+
+    const isFirstMaterialOverall = currentLessonIndex <= 0 && materialIndex <= 0;
+    const isLastMaterialInLesson = materialIndex >= currentMaterials.length - 1;
+    const isLastLessonOverall = currentLessonIndex >= allLessons.length - 1;
+
+    const getNextLabel = () => {
+        if (!isLastMaterialInLesson) return 'Next Material »';
+        if (!isLastLessonOverall) return 'Next Lesson »';
+        if (course?.quizzes?.length && course.quizzes.length > 0) return 'Take Meta Quiz »';
+        return 'Finish Course »';
     };
 
     if (!course) return (
@@ -334,30 +400,78 @@ export default function CourseDetailPage() {
                                     </Link>
                                 </div>
                             </div>
-                        ) : currentLesson ? (
+                        ) : currentLesson && currentMaterials.length > 0 ? (
                             <div className="w-full h-full flex flex-col">
-                                {/* Material Viewer */}
-                                {currentLesson.videoUrl ? (
-                                    <div className="relative w-full rounded-2xl overflow-hidden shadow-lg bg-black ring-1 ring-slate-900/10 dark:ring-white/10 aspect-video">
-                                        <video key={currentLesson.id} controls className="h-full w-full object-contain" src={getFileUrl(currentLesson.videoUrl)} />
-                                    </div>
-                                ) : currentLesson.materialUrl && currentLesson.materialUrl.toLowerCase().endsWith('.pdf') ? (
-                                    <PdfViewer
-                                        key={currentLesson.id}
-                                        url={getFileUrl(currentLesson.materialUrl)}
-                                        filename={currentLesson.materialUrl.split('/').pop() || currentLesson.title}
-                                        onClose={() => router.push('/courses')}
-                                        onBack={currentLessonIndex > 0 ? () => {
-                                            const prev = allLessons[currentLessonIndex - 1];
-                                            setActiveLesson(prev.id);
-                                            const mod = findModuleForLesson(prev.id);
-                                            if (mod) setExpandedModules(p => new Set([...p, mod.id]));
-                                        } : undefined}
-                                        onNext={handleNext}
-                                        backLabel="« Back"
-                                        nextLabel={currentLessonIndex < allLessons.length - 1 ? 'Next »' : course.quizzes?.length > 0 ? 'Take Meta Quiz »' : 'Finish Course »'}
-                                    />
-                                ) : null}
+                                {/* Material Viewer — sequential: PDFs first, then video */}
+                                {(() => {
+                                    const mat = currentMaterials[materialIndex];
+                                    if (!mat) return null;
+
+                                    if (mat.type === 'video') {
+                                        return (
+                                            <div className="flex flex-col h-full w-full bg-black overflow-hidden">
+                                                {/* ─── Top Toolbar ─── */}
+                                                <div className="flex items-center justify-between h-[42px] min-h-[42px] bg-[#323639] text-white text-sm px-4 select-none shrink-0 border-b border-white/10 shadow-sm z-10 relative">
+                                                    <div className="flex items-center gap-2 min-w-0 flex-shrink overflow-hidden">
+                                                        <span className="truncate text-[13px] text-gray-200 font-medium max-w-[280px]">{currentLesson.title}</span>
+                                                        {currentMaterials.length > 1 && (
+                                                            <span className="text-[11px] text-gray-400 ml-2">({materialIndex + 1}/{currentMaterials.length})</span>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center gap-1">
+                                                        <button
+                                                            onClick={() => router.push('/my-courses')}
+                                                            className="px-3 h-7 rounded hover:bg-white/10 transition-colors text-[13px] text-gray-200 font-medium"
+                                                        >
+                                                            Close
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                {/* ─── Video Area ─── */}
+                                                <div className="flex-1 overflow-auto flex justify-center items-center bg-black p-4 md:p-8">
+                                                    <div className="w-full h-full max-w-[1200px] flex justify-center items-center">
+                                                        <video key={`${currentLesson.id}-${materialIndex}`} controls className="max-h-full max-w-full rounded-xl shadow-2xl ring-1 ring-white/10" src={getFileUrl(mat.url)} />
+                                                    </div>
+                                                </div>
+
+                                                {/* ─── Bottom Navigation Bar ─── */}
+                                                <div className="flex items-center justify-between h-[40px] min-h-[40px] bg-[#f0f0f0] dark:bg-[#2a2d31] border-t border-gray-300 dark:border-gray-600 px-5 shrink-0 z-10 relative">
+                                                    {!isFirstMaterialOverall ? (
+                                                        <button
+                                                            onClick={handleBack}
+                                                            className="text-[13px] text-blue-700 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 font-medium transition-colors"
+                                                        >
+                                                            « Back
+                                                        </button>
+                                                    ) : (
+                                                        <div />
+                                                    )}
+                                                    <button
+                                                        onClick={handleNext}
+                                                        className="text-[13px] text-blue-700 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 font-medium transition-colors"
+                                                    >
+                                                        {getNextLabel()}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        );
+                                    }
+
+                                    // PDF material
+                                    return (
+                                        <PdfViewer
+                                            key={`${currentLesson.id}-${materialIndex}`}
+                                            url={getFileUrl(mat.url)}
+                                            filename={mat.url.split('/').pop() || `${currentLesson.title} - PDF`}
+                                            onClose={() => router.push('/my-courses')}
+                                            onBack={!isFirstMaterialOverall ? handleBack : undefined}
+                                            onNext={handleNext}
+                                            backLabel="« Back"
+                                            nextLabel={getNextLabel()}
+                                        />
+                                    );
+                                })()}
                             </div>
                         ) : (
                             <div className="flex-1 flex items-center justify-center text-slate-400">
