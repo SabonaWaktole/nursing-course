@@ -76,7 +76,7 @@ export default function CertificationsPage() {
                         </span>
                     </h1>
                     <p className="text-lg text-slate-600 dark:text-slate-400 max-w-xl mx-auto">
-                        Enter the unique Certificate ID to instantly verify the authenticity and status of any credential issued by Excelcommunity Living Inc.
+                        Enter the unique Certificate ID to instantly verify the authenticity and status of any credential issued by Excel Community Living Inc.
                     </p>
                 </motion.div>
 

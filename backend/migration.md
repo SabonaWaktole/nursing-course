@@ -27,6 +27,10 @@ Use `dotenv-cli` to explicitly load your production variables and push the schem
 ```bash
 npx dotenv-cli -e .env.production -- npx prisma db push --skip-generate
 ```
+or run this command.
+```bash
+npx dotenv-cli -e .env.production -- npx prisma db push --skip-generate --accept-data-loss
+```
 
 ### Step 5: Switch back to PostgreSQL
 Revert your `backend/prisma/schema.prisma` back to `postgresql` so your local development doesn't break:

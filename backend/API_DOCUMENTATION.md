@@ -1,4 +1,4 @@
-# Excelcommunity Living Inc — Backend API Documentation
+# Excel Community Living Inc — Backend API Documentation
 
 **Base URL:** `http://localhost:4000`
 

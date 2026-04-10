@@ -177,7 +177,7 @@ model ActivityLog {
 
 model AdminSettings {
   id                  String   @id @default("singleton")
-  organizationName    String   @default("Excelcommunity Living Inc")
+  organizationName    String   @default("Excel Community Living Inc")
   organizationAddress String   @default("")
   organizationPhone   String   @default("")
   directorName        String   @default("Administrator")

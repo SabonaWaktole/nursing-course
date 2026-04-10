@@ -63,7 +63,7 @@ export default function CertificatesPage() {
                                 className="mb-10"
                             >
                                 <h1 className="text-4xl font-black tracking-tight text-slate-900 dark:text-white mb-2">My Certifications</h1>
-                                <p className="text-slate-500 dark:text-slate-400 text-lg">Official training records and credentials earned through Excelcommunity Living Inc.</p>
+                                <p className="text-slate-500 dark:text-slate-400 text-lg">Official training records and credentials earned through Excel Community Living Inc.</p>
                             </motion.header>
 
                             {certificates.length === 0 ? (

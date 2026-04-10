@@ -52,7 +52,7 @@ export default function RegisterPage() {
                     </motion.div>
                     <div className="flex flex-col">
                         <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white group-hover:text-primary transition-colors duration-300">
-                            Excelcommunity Living
+                            Excel Community Living
                         </span>
                         <span className="text-[10px] italic text-slate-500 dark:text-slate-300 group-hover:text-primary/80 transition-colors duration-300 leading-none mt-0.5">
                             Knowledge produces quality care

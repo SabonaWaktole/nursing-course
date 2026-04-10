@@ -136,7 +136,7 @@ export default function AdminSettingsTab() {
                                     value={settings.organizationName}
                                     onChange={handleChange}
                                     className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none focus:ring-2 focus:ring-primary/50 transition-all text-sm font-medium"
-                                    placeholder="e.g. Excelcommunity Living Inc"
+                                    placeholder="e.g. Excel Community Living Inc"
                                     required
                                 />
                             </div>

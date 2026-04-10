@@ -155,7 +155,7 @@ export const downloadCertificate = async (req: Request, res: Response) => {
                 dirTitle = liveSettings.directorTitle;
                 provId = liveSettings.providerId;
             } else {
-                orgName = 'Excelcommunity Living Inc';
+                orgName = 'Excel Community Living Inc';
                 dirName = 'Administrator';
                 dirTitle = 'Program Director';
             }
@@ -362,7 +362,7 @@ export const verifyCertificate = async (req: Request, res: Response) => {
                 dirTitle = liveSettings.directorTitle;
                 provId = liveSettings.providerId;
             } else {
-                orgName = 'Excelcommunity Living Inc';
+                orgName = 'Excel Community Living Inc';
                 dirName = 'Administrator';
                 dirTitle = 'Program Director';
             }

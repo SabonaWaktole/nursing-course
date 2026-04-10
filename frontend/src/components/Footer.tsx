@@ -29,7 +29,7 @@ export default function Footer() {
                             >
                                 medical_services
                             </motion.span>
-                            <span className="text-xl font-bold tracking-tight">Excelcommunity Living Inc</span>
+                            <span className="text-xl font-bold tracking-tight">Excel Community Living Inc</span>
                         </Link>
                         <p className="text-sm leading-relaxed mb-6">
                             Providing top-tier professional development and certification training for the next generation of healthcare heroes. Empowering care everywhere.
@@ -108,7 +108,7 @@ export default function Footer() {
                     transition={{ duration: 0.5, delay: 0.3 }}
                     className="pt-6 border-t border-slate-800/70 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-500"
                 >
-                    <p>© {new Date().getFullYear()} Excelcommunity Living Inc. All rights reserved.</p>
+                    <p>© {new Date().getFullYear()} Excel Community Living Inc. All rights reserved.</p>
                     <div className="flex gap-6">
                         <span className="flex items-center gap-1">
                             <span className="material-symbols-outlined text-[12px] text-emerald-400">check_circle</span>
