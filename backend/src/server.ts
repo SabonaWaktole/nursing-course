@@ -59,7 +59,7 @@ app.use('/uploads', express.static(serveUploadDir));
 
 // Health check
 app.get('/', (req, res) => {
-  res.json({ status: 'ok', message: 'Excelcommunity Living Inc API is running' });
+  res.json({ status: 'ok', message: 'Excel Community Living Inc API is running' });
 });
 
 // API Routes

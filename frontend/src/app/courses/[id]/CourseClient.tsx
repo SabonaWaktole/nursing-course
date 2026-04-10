@@ -153,17 +153,20 @@ export default function CourseDetailPage() {
 
     const totalLessons = allLessons.length;
 
-    // Build sequential materials list for current lesson: PDFs first, then video
+    // Build sequential materials list for current lesson: respect videoFirst ordering
     const currentMaterials: { type: 'pdf' | 'video'; url: string }[] = [];
     if (currentLesson) {
-        if (currentLesson.materialUrl) {
-            currentLesson.materialUrl.split(',').filter(Boolean).forEach((u: string) => {
-                const trimmed = u.trim();
-                if (trimmed) currentMaterials.push({ type: 'pdf', url: trimmed });
-            });
+        const videoMaterial = currentLesson.videoUrl ? { type: 'video' as const, url: currentLesson.videoUrl } : null;
+        const pdfMaterials = (currentLesson.materialUrl || '').split(',').filter(Boolean).map(u => ({ type: 'pdf' as const, url: u.trim() })).filter(m => m.url);
+        
+        if ((currentLesson as any).videoFirst && videoMaterial) {
+            currentMaterials.push(videoMaterial);
         }
-        if (currentLesson.videoUrl) {
-            currentMaterials.push({ type: 'video', url: currentLesson.videoUrl });
+        
+        currentMaterials.push(...pdfMaterials);
+        
+        if (!(currentLesson as any).videoFirst && videoMaterial) {
+            currentMaterials.push(videoMaterial);
         }
     }
 

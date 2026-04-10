@@ -77,7 +77,7 @@ export default function VerifyClient({ uniqueId }: { uniqueId: string }) {
                 <div className="flex items-center gap-4">
                     <Link href="/" className="flex items-center gap-2 text-primary">
                         <span className="material-symbols-outlined text-3xl">medical_services</span>
-                        <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Excelcommunity Living Inc</span>
+                        <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Excel Community Living Inc</span>
                     </Link>
                 </div>
                 <nav className="hidden md:flex items-center gap-9">
@@ -141,7 +141,7 @@ export default function VerifyClient({ uniqueId }: { uniqueId: string }) {
                             {/* Header Section */}
                             <div className="w-full flex justify-between items-start">
                                 <div className="text-left max-w-[200px]">
-                                    <h3 className="text-primary font-bold text-lg leading-tight">{cert.organizationName || 'Excelcommunity Living Inc'}</h3>
+                                    <h3 className="text-primary font-bold text-lg leading-tight">{cert.organizationName || 'Excel Community Living Inc'}</h3>
                                     <p className="text-[10px] text-slate-600 mt-1 leading-snug whitespace-pre-wrap">
                                         {cert.organizationAddress || '123 Health Ave, Suite 100\nCity, State 12345'}
                                     </p>

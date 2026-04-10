@@ -30,7 +30,7 @@ export default function SettingsPage() {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     // Admin Settings State
-    const [orgName, setOrgName] = useState('Excelcommunity Living Inc');
+    const [orgName, setOrgName] = useState('Excel Community Living Inc');
     const [orgAddress, setOrgAddress] = useState('');
     const [orgPhone, setOrgPhone] = useState('');
     const [providerId, setProviderId] = useState('');
@@ -45,7 +45,7 @@ export default function SettingsPage() {
         if (user?.role === 'ADMIN') {
             api.get('/settings').then(res => {
                 if (res.data) {
-                    setOrgName(res.data.organizationName || 'Excelcommunity Living Inc');
+                    setOrgName(res.data.organizationName || 'Excel Community Living Inc');
                     setOrgAddress(res.data.organizationAddress || '');
                     setOrgPhone(res.data.organizationPhone || '');
                     setProviderId(res.data.providerId || '');

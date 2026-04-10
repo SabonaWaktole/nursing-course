@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -26,7 +26,7 @@ export default function AdminDashboard() {
 
     // Course form
     const [showCourseForm, setShowCourseForm] = useState(false);
-    const [courseForm, setCourseForm] = useState({ title: '', description: '', price: '0', category: 'Nursing', thumbnail: '', tags: [] as string[], instructorId: '' });
+    const [courseForm, setCourseForm] = useState({ title: '', description: '', price: '0', category: '', thumbnail: '', tags: [] as string[], instructorId: '' });
     const [editingCourse, setEditingCourse] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
 
@@ -55,6 +55,18 @@ export default function AdminDashboard() {
     const [results, setResults] = useState<any[]>([]);
     const [notifications, setNotifications] = useState<any[]>([]);
     const [showNotifications, setShowNotifications] = useState(false);
+    const notifRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+                setShowNotifications(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
     const unreadCount = notifications.filter(n => !n.read).length;
 
     // User management
@@ -197,7 +209,7 @@ export default function AdminDashboard() {
             } else {
                 await api.post('/courses', courseForm);
             }
-            setCourseForm({ title: '', description: '', price: '0', category: 'Nursing', thumbnail: '', tags: [], instructorId: '' });
+            setCourseForm({ title: '', description: '', price: '0', category: '', thumbnail: '', tags: [], instructorId: '' });
             setShowCourseForm(false);
             loadData();
         } catch (err: any) {
@@ -289,7 +301,7 @@ export default function AdminDashboard() {
             title: course.title,
             description: course.description,
             price: (course.price || 0).toString(),
-            category: course.category || 'Nursing',
+            category: course.category || '',
             thumbnail: course.thumbnail || '',
             tags: course.tags || [],
             instructorId: course.instructor?.id || course.instructorId || ''
@@ -564,6 +576,24 @@ export default function AdminDashboard() {
         }
     };
 
+    const handleToggleVideoFirst = async (lesson: any, newValue: boolean) => {
+        // Optimistic UI
+        if (courseDetails) {
+            const updatedModules = courseDetails.modules.map((mod: any) => ({
+                ...mod,
+                lessons: mod.lessons.map((l: any) => l.id === lesson.id ? { ...l, videoFirst: newValue } : l),
+            }));
+            setCourseDetails({ ...courseDetails, modules: updatedModules });
+        }
+
+        try {
+            await api.put(`/courses/lessons/${lesson.id}`, { videoFirst: newValue });
+        } catch (err: any) {
+            alert(err.response?.data?.message || 'Error updating order');
+            if (courseDetails) loadCourseDetail(courseDetails.id);
+        }
+    };
+
     const handleSaveQuiz = async (targetId: string, type: 'course' | 'module') => {
         // Validate that all questions have a correct answer selected
         const unansweredOptions = quizForm.questions.findIndex(q => q.correctAnswer === -1);
@@ -814,7 +844,7 @@ export default function AdminDashboard() {
                 <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-background-light dark:bg-background-dark">
 
                     {/* Header — Premium glassmorphic design matching global Navbar */}
-                    <header className="h-[72px] flex items-center justify-between px-4 sm:px-6 lg:px-8 border-b border-slate-200/50 dark:border-white/[0.06] bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.05)] dark:shadow-[0_4px_30px_rgba(0,0,0,0.4)] z-10 shrink-0 transition-all duration-500">
+                    <header className="h-[72px] flex items-center justify-between px-4 sm:px-6 lg:px-8 border-b border-slate-200/50 dark:border-white/[0.06] bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.05)] dark:shadow-[0_4px_30px_rgba(0,0,0,0.4)] z-50 relative shrink-0 transition-all duration-500">
                         <div className="flex-1 flex items-center">
                             {/* Mobile Toggle */}
                             <motion.button
@@ -879,7 +909,7 @@ export default function AdminDashboard() {
 
                             <div className="flex items-center gap-1 sm:gap-2 relative">
                                 {/* Notifications Link/Dropdown */}
-                                <div className="relative">
+                                <div className="relative" ref={notifRef}>
                                     <motion.button
                                         whileHover={{ scale: 1.05 }}
                                         whileTap={{ scale: 0.95 }}
@@ -1136,13 +1166,14 @@ export default function AdminDashboard() {
                                                 <button
                                                     onClick={() => {
                                                         setEditingCourse(null);
-                                                        setCourseForm({ title: '', description: '', price: '0', category: 'Nursing', thumbnail: '', tags: [], instructorId: '' });
+                                                        setCourseForm({ title: '', description: '', price: '0', category: '', thumbnail: '', tags: [], instructorId: '' });
                                                         setShowCourseForm(!showCourseForm);
                                                     }}
-                                                    className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-sky-500 text-white rounded-lg text-sm font-medium transition-all shadow-lg shadow-primary/20"
+                                                    className="flex items-center justify-center gap-2 px-6 py-2.5 bg-gradient-to-r from-primary to-cyan-500 hover:from-sky-400 hover:to-cyan-400 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-primary/30 hover:shadow-primary/40 hover:-translate-y-0.5 w-full sm:w-auto overflow-hidden relative group"
                                                 >
-                                                    <span className="material-symbols-outlined text-lg">add</span>
-                                                    Add New Course
+                                                    <div className="absolute inset-0 bg-white/20 translate-x-[-150%] skew-x-[-20deg] group-hover:translate-x-[150%] transition-transform duration-700 ease-in-out"></div>
+                                                    <span className="material-symbols-outlined text-xl relative z-10">add_circle</span>
+                                                    <span className="relative z-10">Add New Course</span>
                                                 </button>
                                             </div>
 
@@ -1169,7 +1200,8 @@ export default function AdminDashboard() {
                                                         <div className="grid grid-cols-2 gap-4">
                                                             <div>
                                                                 <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 block">Category</label>
-                                                                <select value={courseForm.category} onChange={(e) => setCourseForm({ ...courseForm, category: e.target.value })} className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all">
+                                                                <select value={courseForm.category || ''} onChange={(e) => setCourseForm({ ...courseForm, category: e.target.value })} className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all">
+                                                                    <option value="">No Category</option>
                                                                     <option value="Nursing">Nursing</option>
                                                                     <option value="CNA Prep">CNA Prep</option>
                                                                     <option value="Clinical Skills">Clinical Skills</option>
@@ -1318,11 +1350,13 @@ export default function AdminDashboard() {
                                                                         </div>
                                                                     )}
                                                                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60"></div>
-                                                                    <div className="absolute bottom-3 left-3 flex gap-2">
-                                                                        <span className="backdrop-blur-md bg-white/20 dark:bg-black/40 border border-white/20 text-white px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg">
-                                                                            {course.category}
-                                                                        </span>
-                                                                    </div>
+                                                                    {course.category && (
+                                                                        <div className="absolute bottom-3 left-3 flex gap-2">
+                                                                            <span className="backdrop-blur-md bg-white/20 dark:bg-black/40 border border-white/20 text-white px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg">
+                                                                                {course.category}
+                                                                            </span>
+                                                                        </div>
+                                                                    )}
                                                                 </div>
 
                                                                 {/* Content Details */}
@@ -1339,9 +1373,9 @@ export default function AdminDashboard() {
                                                                         <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-2 max-w-3xl">{course.description}</p>
                                                                     </div>
 
-                                                                    <div className="mt-auto pt-5 border-t border-slate-100 dark:border-slate-800/60 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                                                    <div className="mt-auto pt-5 border-t border-slate-100 dark:border-slate-800/60 flex flex-wrap lg:flex-nowrap items-center justify-between gap-4 lg:gap-6">
                                                                         {/* Advanced Stats Row */}
-                                                                        <div className="flex items-center gap-6 xl:gap-8">
+                                                                        <div className="flex items-center gap-4 sm:gap-6 lg:gap-8 flex-wrap">
                                                                             <div className="flex items-center gap-3">
                                                                                 <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-500 flex items-center justify-center border border-blue-100 dark:border-blue-800/30">
                                                                                     <span className="material-symbols-outlined text-lg">groups</span>
@@ -1373,11 +1407,11 @@ export default function AdminDashboard() {
                                                                             </div>
                                                                         </div>
 
-                                                                        {/* Premium Action Bar */}
-                                                                        <div className="flex items-center gap-2">
-                                                                            <div className="flex items-center bg-slate-50 dark:bg-slate-800/40 p-1 rounded-xl border border-slate-200/60 dark:border-slate-700/50">
-                                                                                <button onClick={() => handleEditCourseInfo(course)} className="p-2.5 rounded-lg text-slate-400 hover:text-primary hover:bg-white dark:hover:bg-slate-700 transition-all shadow-sm hover:shadow-md" title="Edit Info">
-                                                                                    <span className="material-symbols-outlined text-lg">edit</span>
+                                                                        {/* Premium Responsive Action Bar */}
+                                                                        <div className="flex flex-wrap sm:flex-nowrap items-center justify-start lg:justify-end gap-2 sm:gap-3 w-full lg:w-auto mt-2 lg:mt-0 shrink-0">
+                                                                            <div className="flex w-full sm:w-auto sm:flex-none items-center justify-evenly bg-white dark:bg-slate-900/80 p-1 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm backdrop-blur-md relative overflow-hidden group">
+                                                                                <button onClick={() => handleEditCourseInfo(course)} className="p-2.5 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/5 transition-all w-full sm:w-auto flex justify-center hover:scale-105 active:scale-95" title="Edit Info">
+                                                                                    <span className="material-symbols-outlined text-[20px]">edit</span>
                                                                                 </button>
                                                                                 <button
                                                                                     onClick={() => {
@@ -1387,16 +1421,17 @@ export default function AdminDashboard() {
                                                                                         }
                                                                                         setShowModuleForm(showModuleForm === course.id ? null : course.id);
                                                                                     }}
-                                                                                    className="p-2.5 rounded-lg text-slate-400 hover:text-primary hover:bg-white dark:hover:bg-slate-700 transition-all shadow-sm hover:shadow-md"
+                                                                                    className="p-2.5 rounded-lg text-slate-400 hover:text-sky-500 hover:bg-sky-50 dark:hover:bg-sky-500/10 transition-all w-full sm:w-auto flex justify-center hover:scale-105 active:scale-95"
                                                                                     title="Add Module"
                                                                                 >
-                                                                                    <span className="material-symbols-outlined text-lg">create_new_folder</span>
+                                                                                    <span className="material-symbols-outlined text-[20px]">create_new_folder</span>
                                                                                 </button>
-                                                                                <button onClick={() => handleCourseQuizClick(course.id, course._count?.quizzes > 0)} className="p-2.5 rounded-lg text-slate-400 hover:text-emerald-500 hover:bg-white dark:hover:bg-slate-700 transition-all shadow-sm hover:shadow-md" title={course._count?.quizzes > 0 ? "Edit Final Exam" : "Add Final Exam"}>
-                                                                                    <span className="material-symbols-outlined text-lg">quiz</span>
+                                                                                <button onClick={() => handleCourseQuizClick(course.id, course._count?.quizzes > 0)} className="p-2.5 rounded-lg text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-all w-full sm:w-auto flex justify-center hover:scale-105 active:scale-95" title={course._count?.quizzes > 0 ? "Edit Final Exam" : "Add Final Exam"}>
+                                                                                    <span className="material-symbols-outlined text-[20px]">quiz</span>
                                                                                 </button>
-                                                                                <button onClick={() => handleDeleteCourse(course.id)} className="p-2.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-white dark:hover:bg-slate-700 transition-all shadow-sm hover:shadow-md" title="Delete Course">
-                                                                                    <span className="material-symbols-outlined text-lg">delete</span>
+                                                                                <div className="w-px h-5 bg-slate-200 dark:bg-slate-700 mx-1 hidden sm:block"></div>
+                                                                                <button onClick={() => handleDeleteCourse(course.id)} className="p-2.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all w-full sm:w-auto flex justify-center hover:scale-105 active:scale-95" title="Delete Course">
+                                                                                    <span className="material-symbols-outlined text-[20px]">delete</span>
                                                                                 </button>
                                                                             </div>
                                                                             <button
@@ -1404,10 +1439,13 @@ export default function AdminDashboard() {
                                                                                     if (expandedCourse === course.id) { setExpandedCourse(null); setCourseDetails(null); }
                                                                                     else { setExpandedCourse(course.id); loadCourseDetail(course.id); }
                                                                                 }}
-                                                                                className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm border ${expandedCourse === course.id ? 'bg-primary border-primary text-white shadow-primary/30 hover:bg-primary/90' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-primary/50 hover:text-primary hover:shadow-md'}`}
+                                                                                className={`relative overflow-hidden flex items-center justify-center gap-2 px-6 py-3 sm:py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm border w-full sm:w-auto group ${expandedCourse === course.id ? 'bg-gradient-to-r from-primary to-cyan-500 border-transparent text-white shadow-primary/30 hover:shadow-primary/40 hover:-translate-y-0.5' : 'bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-primary/50 hover:text-primary backdrop-blur-md hover:-translate-y-0.5'}`}
                                                                             >
-                                                                                <span className="material-symbols-outlined text-lg">{expandedCourse === course.id ? 'expand_less' : 'stream'}</span>
-                                                                                <span className="hidden sm:inline">{expandedCourse === course.id ? 'Close' : 'Manage Content'}</span>
+                                                                                {expandedCourse !== course.id && (
+                                                                                    <div className="absolute inset-0 bg-primary/5 translate-y-[100%] group-hover:translate-y-[0%] transition-transform duration-300 ease-in-out"></div>
+                                                                                )}
+                                                                                <span className="material-symbols-outlined text-[20px] relative z-10">{expandedCourse === course.id ? 'expand_less' : 'stream'}</span>
+                                                                                <span className="relative z-10">{expandedCourse === course.id ? 'Close' : 'Manage Content'}</span>
                                                                             </button>
                                                                         </div>
                                                                     </div>
@@ -1496,66 +1534,129 @@ export default function AdminDashboard() {
                                                                                                         <div className="flex flex-col min-w-0">
                                                                                                             <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate">{lesson.title}</span>
                                                                                                             <div className="flex gap-2 items-center flex-wrap">
-                                                                                                                {/* Video badge with delete */}
-                                                                                                                {lesson.videoUrl && (
-                                                                                                                    <span className="text-[9px] font-black uppercase text-emerald-500 flex items-center gap-0.5 px-1.5 py-0.5 rounded-md border border-transparent hover:border-emerald-200 dark:hover:border-emerald-800 transition-all group/vid">
-                                                                                                                        <span className="material-symbols-outlined text-[10px]">videocam</span>
-                                                                                                                        <span>Video</span>
-                                                                                                                        <button
-                                                                                                                            onClick={(e) => { e.stopPropagation(); handleRemoveMaterial(lesson.id, 'video'); }}
-                                                                                                                            className="ml-0.5 opacity-0 group-hover/vid:opacity-100 text-red-400 hover:text-red-600 transition-all"
-                                                                                                                            title="Remove video"
+                                                                                                                {/* Render either Video or PDFs first based on lesson.videoFirst */}
+                                                                                                                {(() => {
+                                                                                                                    const renderVideoBadge = () => lesson.videoUrl && (
+                                                                                                                        <span className="text-[9px] font-black uppercase text-emerald-500 flex items-center gap-0.5 px-1.5 py-0.5 rounded-md border border-transparent hover:border-emerald-200 dark:hover:border-emerald-800 transition-all group/vid">
+                                                                                                                            <span className="material-symbols-outlined text-[10px]">videocam</span>
+                                                                                                                            <span>Video</span>
+                                                                                                                            {/* Swap arrows for video to toggle with PDFs */}
+                                                                                                                            {lesson.materialUrl && (
+                                                                                                                                <span className="opacity-0 group-hover/vid:opacity-100 flex items-center ml-0.5 transition-all">
+                                                                                                                                    {!lesson.videoFirst && (
+                                                                                                                                        <button
+                                                                                                                                            onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleToggleVideoFirst(lesson, true); }}
+                                                                                                                                            className="text-emerald-400 hover:text-emerald-600 transition-colors"
+                                                                                                                                            title="Show Video First"
+                                                                                                                                        >
+                                                                                                                                            <span className="material-symbols-outlined text-[10px]">arrow_upward</span>
+                                                                                                                                        </button>
+                                                                                                                                    )}
+                                                                                                                                    {lesson.videoFirst && (
+                                                                                                                                        <button
+                                                                                                                                            onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleToggleVideoFirst(lesson, false); }}
+                                                                                                                                            className="text-emerald-400 hover:text-emerald-600 transition-colors"
+                                                                                                                                            title="Show PDF First"
+                                                                                                                                        >
+                                                                                                                                            <span className="material-symbols-outlined text-[10px]">arrow_downward</span>
+                                                                                                                                        </button>
+                                                                                                                                    )}
+                                                                                                                                </span>
+                                                                                                                            )}
+                                                                                                                            <button
+                                                                                                                                onClick={(e) => { e.stopPropagation(); handleRemoveMaterial(lesson.id, 'video'); }}
+                                                                                                                                className="ml-0.5 opacity-0 group-hover/vid:opacity-100 text-red-400 hover:text-red-600 transition-all"
+                                                                                                                                title="Remove video"
+                                                                                                                            >
+                                                                                                                                <span className="material-symbols-outlined text-[10px]">close</span>
+                                                                                                                            </button>
+                                                                                                                        </span>
+                                                                                                                    );
+
+                                                                                                                    const renderPdfBadges = () => lesson.materialUrl && (() => {
+                                                                                                                        const pdfList = lesson.materialUrl.split(',').filter(Boolean);
+                                                                                                                        return pdfList.map((pdfUrl: string, pi: number) => (
+                                                                                                                        <span
+                                                                                                                            key={pi}
+                                                                                                                            draggable
+                                                                                                                            onDragStart={(e) => handlePdfDragStart(e, lesson.id, pdfUrl.trim())}
+                                                                                                                            className="text-[9px] font-black uppercase text-sky-500 flex items-center gap-0.5 cursor-grab active:cursor-grabbing hover:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900/30 px-1.5 py-0.5 rounded-md border border-transparent hover:border-sky-200 dark:hover:border-sky-800 transition-all select-none group/pdf"
+                                                                                                                            title="Drag this PDF to move it to another lesson"
                                                                                                                         >
-                                                                                                                            <span className="material-symbols-outlined text-[10px]">close</span>
-                                                                                                                        </button>
-                                                                                                                    </span>
-                                                                                                                )}
-                                                                                                                {/* Multiple PDF badges with drag + delete + reorder */}
-                                                                                                                {lesson.materialUrl && (() => {
-                                                                                                                    const pdfList = lesson.materialUrl.split(',').filter(Boolean);
-                                                                                                                    return pdfList.map((pdfUrl: string, pi: number) => (
-                                                                                                                    <span
-                                                                                                                        key={pi}
-                                                                                                                        draggable
-                                                                                                                        onDragStart={(e) => handlePdfDragStart(e, lesson.id, pdfUrl.trim())}
-                                                                                                                        className="text-[9px] font-black uppercase text-sky-500 flex items-center gap-0.5 cursor-grab active:cursor-grabbing hover:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900/30 px-1.5 py-0.5 rounded-md border border-transparent hover:border-sky-200 dark:hover:border-sky-800 transition-all select-none group/pdf"
-                                                                                                                        title="Drag this PDF to move it to another lesson"
-                                                                                                                    >
-                                                                                                                        <span className="material-symbols-outlined text-[10px]">description</span>
-                                                                                                                        <span className="max-w-[60px] truncate">{pdfUrl.trim().split('/').pop() || `PDF ${pi + 1}`}</span>
-                                                                                                                        <span className="material-symbols-outlined text-[8px] ml-0.5 opacity-60">drag_indicator</span>
-                                                                                                                        {/* Reorder arrows (only when multiple PDFs) */}
-                                                                                                                        {pdfList.length > 1 && (
-                                                                                                                            <span className="opacity-0 group-hover/pdf:opacity-100 flex items-center ml-0.5 transition-all">
-                                                                                                                                {pi > 0 && (
-                                                                                                                                    <button
-                                                                                                                                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleReorderPdf(lesson.id, pdfUrl.trim(), 'up'); }}
-                                                                                                                                        className="text-sky-400 hover:text-sky-600 transition-colors"
-                                                                                                                                        title="Move up"
-                                                                                                                                    >
-                                                                                                                                        <span className="material-symbols-outlined text-[10px]">arrow_upward</span>
-                                                                                                                                    </button>
-                                                                                                                                )}
-                                                                                                                                {pi < pdfList.length - 1 && (
-                                                                                                                                    <button
-                                                                                                                                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleReorderPdf(lesson.id, pdfUrl.trim(), 'down'); }}
-                                                                                                                                        className="text-sky-400 hover:text-sky-600 transition-colors"
-                                                                                                                                        title="Move down"
-                                                                                                                                    >
-                                                                                                                                        <span className="material-symbols-outlined text-[10px]">arrow_downward</span>
-                                                                                                                                    </button>
-                                                                                                                                )}
-                                                                                                                            </span>
-                                                                                                                        )}
-                                                                                                                        <button
-                                                                                                                            onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleRemoveMaterial(lesson.id, 'pdf', pdfUrl.trim()); }}
-                                                                                                                            className="ml-0.5 opacity-0 group-hover/pdf:opacity-100 text-red-400 hover:text-red-600 transition-all"
-                                                                                                                            title="Remove this PDF"
-                                                                                                                        >
-                                                                                                                            <span className="material-symbols-outlined text-[10px]">close</span>
-                                                                                                                        </button>
-                                                                                                                    </span>
-                                                                                                                    ));
+                                                                                                                            <span className="material-symbols-outlined text-[10px]">description</span>
+                                                                                                                            <span className="max-w-[60px] truncate">{pdfUrl.trim().split('/').pop() || `PDF ${pi + 1}`}</span>
+                                                                                                                            <span className="material-symbols-outlined text-[8px] ml-0.5 opacity-60">drag_indicator</span>
+                                                                                                                            {/* Reorder arrows (only when multiple PDFs) */}
+                                                                                                                            {pdfList.length > 1 && (
+                                                                                                                                <span className="opacity-0 group-hover/pdf:opacity-100 flex items-center ml-0.5 transition-all">
+                                                                                                                                    {pi > 0 && (
+                                                                                                                                        <button
+                                                                                                                                            onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleReorderPdf(lesson.id, pdfUrl.trim(), 'up'); }}
+                                                                                                                                            className="text-sky-400 hover:text-sky-600 transition-colors"
+                                                                                                                                            title="Move up"
+                                                                                                                                        >
+                                                                                                                                            <span className="material-symbols-outlined text-[10px]">arrow_upward</span>
+                                                                                                                                        </button>
+                                                                                                                                    )}
+                                                                                                                                    {pi < pdfList.length - 1 && (
+                                                                                                                                        <button
+                                                                                                                                            onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleReorderPdf(lesson.id, pdfUrl.trim(), 'down'); }}
+                                                                                                                                            className="text-sky-400 hover:text-sky-600 transition-colors"
+                                                                                                                                            title="Move down"
+                                                                                                                                        >
+                                                                                                                                            <span className="material-symbols-outlined text-[10px]">arrow_downward</span>
+                                                                                                                                        </button>
+                                                                                                                                    )}
+                                                                                                                                </span>
+                                                                                                                            )}
+                                                                                                                            {lesson.videoUrl && pi === 0 && lesson.videoFirst && (
+                                                                                                                               <span className="opacity-0 group-hover/pdf:opacity-100 flex items-center ml-0.5 transition-all">
+                                                                                                                                  <button
+                                                                                                                                      onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleToggleVideoFirst(lesson, false); }}
+                                                                                                                                      className="text-sky-400 hover:text-sky-600 transition-colors"
+                                                                                                                                      title="Move Above Video"
+                                                                                                                                  >
+                                                                                                                                      <span className="material-symbols-outlined text-[10px]">arrow_upward</span>
+                                                                                                                                  </button>
+                                                                                                                               </span>
+                                                                                                                            )}
+                                                                                                                            {lesson.videoUrl && pi === pdfList.length - 1 && !lesson.videoFirst && (
+                                                                                                                                <span className="opacity-0 group-hover/pdf:opacity-100 flex items-center ml-0.5 transition-all">
+                                                                                                                                  <button
+                                                                                                                                      onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleToggleVideoFirst(lesson, true); }}
+                                                                                                                                      className="text-sky-400 hover:text-sky-600 transition-colors"
+                                                                                                                                      title="Move Below Video"
+                                                                                                                                  >
+                                                                                                                                      <span className="material-symbols-outlined text-[10px]">arrow_downward</span>
+                                                                                                                                  </button>
+                                                                                                                               </span>
+                                                                                                                            )}
+                                                                                                                            <button
+                                                                                                                                onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleRemoveMaterial(lesson.id, 'pdf', pdfUrl.trim()); }}
+                                                                                                                                className="ml-0.5 opacity-0 group-hover/pdf:opacity-100 text-red-400 hover:text-red-600 transition-all"
+                                                                                                                                title="Remove this PDF"
+                                                                                                                            >
+                                                                                                                                <span className="material-symbols-outlined text-[10px]">close</span>
+                                                                                                                            </button>
+                                                                                                                        </span>
+                                                                                                                        ));
+                                                                                                                    })();
+
+                                                                                                                    return (
+                                                                                                                        <>
+                                                                                                                            {lesson.videoFirst ? (
+                                                                                                                                <>
+                                                                                                                                    {renderVideoBadge()}
+                                                                                                                                    {renderPdfBadges()}
+                                                                                                                                </>
+                                                                                                                            ) : (
+                                                                                                                                <>
+                                                                                                                                    {renderPdfBadges()}
+                                                                                                                                    {renderVideoBadge()}
+                                                                                                                                </>
+                                                                                                                            )}
+                                                                                                                        </>
+                                                                                                                    );
                                                                                                                 })()}
                                                                                                             </div>
                                                                                                         </div>

@@ -271,9 +271,11 @@ export default function MyCoursesPage() {
                                                             />
                                                             <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                                                             <div className="absolute top-3 left-3">
-                                                                <span className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg text-slate-700 dark:text-slate-200 border border-slate-200/50 dark:border-slate-700/50">
-                                                                    {enrollment.course.tags?.[0] || enrollment.course.category || 'COURSE'}
-                                                                </span>
+                                                                {(enrollment.course.tags?.[0] || enrollment.course.category) && (
+                                                                    <span className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg text-slate-700 dark:text-slate-200 border border-slate-200/50 dark:border-slate-700/50">
+                                                                        {enrollment.course.tags?.[0] || enrollment.course.category}
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                             {enrollment.completed && (
                                                                 <div className="absolute top-3 right-3">

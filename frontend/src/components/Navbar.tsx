@@ -62,7 +62,7 @@ export default function Navbar() {
                         </motion.div>
                         <div className="flex flex-col">
                             <span className="text-lg font-bold tracking-tight text-white group-hover:text-primary transition-colors duration-300">
-                                Excelcommunity Living
+                                Excel Community Living
                             </span>
                             <span className="text-[10px] italic text-slate-300 group-hover:text-primary/80 transition-colors duration-300">
                                 Knowledge produces quality care

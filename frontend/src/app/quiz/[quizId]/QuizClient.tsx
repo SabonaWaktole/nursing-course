@@ -127,7 +127,7 @@ export default function QuizPage() {
                                     medical_services
                                 </motion.span>
                                 <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white group-hover:text-primary transition-colors">
-                                    Excelcommunity Living Inc
+                                    Excel Community Living Inc
                                 </span>
                             </Link>
 
@@ -369,7 +369,7 @@ function QuizResultScreen({ result, user, quiz, onRetry, courseCompleted, nextEx
                                 medical_services
                             </motion.span>
                             <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white group-hover:text-primary transition-colors">
-                                Excelcommunity Living Inc
+                                Excel Community Living Inc
                             </span>
                         </Link>
 
@@ -598,7 +598,7 @@ function QuizResultScreen({ result, user, quiz, onRetry, courseCompleted, nextEx
             </main>
 
             <footer className="bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 py-8 text-center mt-auto">
-                <p className="text-slate-400 text-sm">© {new Date().getFullYear()} Excelcommunity Living Inc. Clinical Academy of Nursing Professionals.</p>
+                <p className="text-slate-400 text-sm">© {new Date().getFullYear()} Excel Community Living Inc. Clinical Academy of Nursing Professionals.</p>
             </footer>
         </motion.div>
     );

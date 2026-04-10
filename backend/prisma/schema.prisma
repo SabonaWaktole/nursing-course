@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 model User {
@@ -69,6 +69,7 @@ model Lesson {
   description String?  @db.Text
   videoUrl    String?  @db.Text
   materialUrl String?  @db.Text
+  videoFirst  Boolean  @default(false)
   order       Int      @default(0)
   moduleId    String
   module      Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
@@ -177,7 +178,7 @@ model ActivityLog {
 
 model AdminSettings {
   id                  String   @id @default("singleton")
-  organizationName    String   @default("Excelcommunity Living Inc")
+  organizationName    String   @default("Excel Community Living Inc")
   organizationAddress String   @default("")
   organizationPhone   String   @default("")
   directorName        String   @default("Administrator")

@@ -75,9 +75,8 @@ export const createCourse = async (req: Request, res: Response) => {
                 price: parseFloat(price) || 0,
                 hours: parseInt(hours) || 0,
                 thumbnail,
-                category,
-                // TEMPORARY FIX: Prisma 5 + Supabase JSON array bug (08P01)
-                // tags: Array.isArray(tags) ? tags : [],
+                category: category || null,
+                tags: Array.isArray(tags) && tags.length > 0 ? tags : null,
                 instructorId,
             },
         });
@@ -113,10 +112,9 @@ export const updateCourse = async (req: Request, res: Response) => {
                 price: parsedPrice, 
                 hours: parsedHours,
                 thumbnail, 
-                category,
+                ...(category !== undefined ? { category: category || null } : {}),
                 ...(instructorId !== undefined ? { instructorId } : {}),
-                // TEMPORARY FIX: Prisma 5 + Supabase JSON array bug (08P01) 
-                // tags: Array.isArray(tags) ? tags : undefined 
+                ...(tags !== undefined ? { tags: Array.isArray(tags) && tags.length > 0 ? tags : null } : {}),
             },
         });
         res.json(course);
@@ -212,11 +210,17 @@ export const addLesson = async (req: Request, res: Response) => {
 export const updateLesson = async (req: Request, res: Response) => {
     try {
         const lessonId = req.params.lessonId as string;
-        const { title, description, videoUrl, materialUrl } = req.body;
+        const { title, description, videoUrl, materialUrl, videoFirst } = req.body;
 
         const lesson = await prisma.lesson.update({
             where: { id: lessonId },
-            data: { title, description, videoUrl, materialUrl },
+            data: { 
+                title, 
+                description, 
+                videoUrl, 
+                materialUrl,
+                ...(videoFirst !== undefined && { videoFirst })
+            },
         });
         res.json(lesson);
     } catch (error: any) {

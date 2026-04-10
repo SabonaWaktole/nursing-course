@@ -63,7 +63,7 @@ const ABOUT_TABS: Record<string, { title: string; icon: React.ReactNode; content
     title: 'Background',
     icon: <Clock size={32} />,
     content: [
-      { title: 'Industry-Leading Platform', description: 'Excelcommunity Living Inc has built a comprehensive SaaS platform for healthcare professional development and certification training.' },
+      { title: 'Industry-Leading Platform', description: 'Excel Community Living Inc has built a comprehensive SaaS platform for healthcare professional development and certification training.' },
       { title: 'Trusted by Professionals', description: 'Excel Community living CNA CEUS are accredited by California department of public health CDPH. We follow the guidelines and curriculum given by CDPH.' },
       { title: 'Proven Results', description: 'Facilities using our training have seen measurable improvements in patient satisfaction scores and staff competency.' },
     ],
@@ -91,7 +91,7 @@ const TESTIMONIALS = [
     id: 2,
     name: 'Michael Rivera',
     role: 'Director of Nursing, City Clinic',
-    quote: 'As a facility manager, training my staff has never been easier. We\'ve seen a 15% increase in patient satisfaction scores since starting with Excelcommunity Living Inc.',
+    quote: 'As a facility manager, training my staff has never been easier. We\'ve seen a 15% increase in patient satisfaction scores since starting with Excel Community Living Inc.',
     rating: 5,
   },
   {
@@ -146,7 +146,7 @@ export default function LandingPage() {
       <StatsSection />
       <ServicesSection />
       <AboutSection />
-      <TestimonialsSection />
+      {/* <TestimonialsSection /> */}
       <CoursesSection />
       <CTASection />
       <ContactSection />
@@ -186,7 +186,7 @@ function HeroSection() {
     document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const title = 'Excelcommunity Living';
+  const title = 'Excel Community Living';
   const subtitle = '24 hour Continuing Education Courses For CNA’S';
   const tagline = `The most affordable, high quality, and simplified Continuing Education Courses for CNA's Complete your continuing education requirements from the comfort of your home anywhere any time at an affordable price. Don’t lose your CNA certificate. Start your continuing education courses TODAY!`;
 
@@ -544,7 +544,7 @@ function AboutSection() {
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold mb-4 text-primary">About Us</h2>
           <p className="max-w-2xl mx-auto text-slate-600 dark:text-slate-400">
-            Learn more about Excelcommunity Living Inc&apos;s mission, vision, and the core values that drive our commitment to healthcare education.
+            Learn more about Excel Community Living Inc&apos;s mission, vision, and the core values that drive our commitment to healthcare education.
           </p>
         </div>
 
@@ -612,7 +612,7 @@ function TestimonialsSection() {
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold mb-4 text-primary">Trusted by Caregivers</h2>
           <p className="max-w-2xl mx-auto text-slate-600 dark:text-slate-400">
-            Hear from professionals who advanced their careers with Excelcommunity Living Inc.
+            Hear from professionals who advanced their careers with Excel Community Living Inc.
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
