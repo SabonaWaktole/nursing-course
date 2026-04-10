@@ -27,7 +27,7 @@ Use `dotenv-cli` to explicitly load your production variables and push the schem
 ```bash
 npx dotenv-cli -e .env.production -- npx prisma db push --skip-generate
 ```
-or run this command.
+or run this command. if you dont care too much about the data in the database.
 ```bash
 npx dotenv-cli -e .env.production -- npx prisma db push --skip-generate --accept-data-loss
 ```

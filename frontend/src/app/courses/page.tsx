@@ -349,7 +349,7 @@ export default function CoursesPage() {
                                 overview={course.description}
                                 thumbnail={course.thumbnail ? getFileUrl(course.thumbnail) : PLACEHOLDER_IMAGES[idx % PLACEHOLDER_IMAGES.length]}
                                 link={`/courses/${course.id}`}
-                                category={course.tags && course.tags.length > 0 ? course.tags[0] : (course.category || 'Course')}
+                                category={course.tags && course.tags.length > 0 ? course.tags[0] : (course.category || undefined)}
                                 price={course.price ?? undefined}
                                 modules={course._count?.modules || 1}
                                 rating={4.8 + (idx % 2)}

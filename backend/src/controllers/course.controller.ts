@@ -210,11 +210,17 @@ export const addLesson = async (req: Request, res: Response) => {
 export const updateLesson = async (req: Request, res: Response) => {
     try {
         const lessonId = req.params.lessonId as string;
-        const { title, description, videoUrl, materialUrl } = req.body;
+        const { title, description, videoUrl, materialUrl, videoFirst } = req.body;
 
         const lesson = await prisma.lesson.update({
             where: { id: lessonId },
-            data: { title, description, videoUrl, materialUrl },
+            data: { 
+                title, 
+                description, 
+                videoUrl, 
+                materialUrl,
+                ...(videoFirst !== undefined && { videoFirst })
+            },
         });
         res.json(lesson);
     } catch (error: any) {

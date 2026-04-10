@@ -576,6 +576,24 @@ export default function AdminDashboard() {
         }
     };
 
+    const handleToggleVideoFirst = async (lesson: any, newValue: boolean) => {
+        // Optimistic UI
+        if (courseDetails) {
+            const updatedModules = courseDetails.modules.map((mod: any) => ({
+                ...mod,
+                lessons: mod.lessons.map((l: any) => l.id === lesson.id ? { ...l, videoFirst: newValue } : l),
+            }));
+            setCourseDetails({ ...courseDetails, modules: updatedModules });
+        }
+
+        try {
+            await api.put(`/courses/lessons/${lesson.id}`, { videoFirst: newValue });
+        } catch (err: any) {
+            alert(err.response?.data?.message || 'Error updating order');
+            if (courseDetails) loadCourseDetail(courseDetails.id);
+        }
+    };
+
     const handleSaveQuiz = async (targetId: string, type: 'course' | 'module') => {
         // Validate that all questions have a correct answer selected
         const unansweredOptions = quizForm.questions.findIndex(q => q.correctAnswer === -1);
@@ -1516,66 +1534,129 @@ export default function AdminDashboard() {
                                                                                                         <div className="flex flex-col min-w-0">
                                                                                                             <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate">{lesson.title}</span>
                                                                                                             <div className="flex gap-2 items-center flex-wrap">
-                                                                                                                {/* Video badge with delete */}
-                                                                                                                {lesson.videoUrl && (
-                                                                                                                    <span className="text-[9px] font-black uppercase text-emerald-500 flex items-center gap-0.5 px-1.5 py-0.5 rounded-md border border-transparent hover:border-emerald-200 dark:hover:border-emerald-800 transition-all group/vid">
-                                                                                                                        <span className="material-symbols-outlined text-[10px]">videocam</span>
-                                                                                                                        <span>Video</span>
-                                                                                                                        <button
-                                                                                                                            onClick={(e) => { e.stopPropagation(); handleRemoveMaterial(lesson.id, 'video'); }}
-                                                                                                                            className="ml-0.5 opacity-0 group-hover/vid:opacity-100 text-red-400 hover:text-red-600 transition-all"
-                                                                                                                            title="Remove video"
+                                                                                                                {/* Render either Video or PDFs first based on lesson.videoFirst */}
+                                                                                                                {(() => {
+                                                                                                                    const renderVideoBadge = () => lesson.videoUrl && (
+                                                                                                                        <span className="text-[9px] font-black uppercase text-emerald-500 flex items-center gap-0.5 px-1.5 py-0.5 rounded-md border border-transparent hover:border-emerald-200 dark:hover:border-emerald-800 transition-all group/vid">
+                                                                                                                            <span className="material-symbols-outlined text-[10px]">videocam</span>
+                                                                                                                            <span>Video</span>
+                                                                                                                            {/* Swap arrows for video to toggle with PDFs */}
+                                                                                                                            {lesson.materialUrl && (
+                                                                                                                                <span className="opacity-0 group-hover/vid:opacity-100 flex items-center ml-0.5 transition-all">
+                                                                                                                                    {!lesson.videoFirst && (
+                                                                                                                                        <button
+                                                                                                                                            onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleToggleVideoFirst(lesson, true); }}
+                                                                                                                                            className="text-emerald-400 hover:text-emerald-600 transition-colors"
+                                                                                                                                            title="Show Video First"
+                                                                                                                                        >
+                                                                                                                                            <span className="material-symbols-outlined text-[10px]">arrow_upward</span>
+                                                                                                                                        </button>
+                                                                                                                                    )}
+                                                                                                                                    {lesson.videoFirst && (
+                                                                                                                                        <button
+                                                                                                                                            onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleToggleVideoFirst(lesson, false); }}
+                                                                                                                                            className="text-emerald-400 hover:text-emerald-600 transition-colors"
+                                                                                                                                            title="Show PDF First"
+                                                                                                                                        >
+                                                                                                                                            <span className="material-symbols-outlined text-[10px]">arrow_downward</span>
+                                                                                                                                        </button>
+                                                                                                                                    )}
+                                                                                                                                </span>
+                                                                                                                            )}
+                                                                                                                            <button
+                                                                                                                                onClick={(e) => { e.stopPropagation(); handleRemoveMaterial(lesson.id, 'video'); }}
+                                                                                                                                className="ml-0.5 opacity-0 group-hover/vid:opacity-100 text-red-400 hover:text-red-600 transition-all"
+                                                                                                                                title="Remove video"
+                                                                                                                            >
+                                                                                                                                <span className="material-symbols-outlined text-[10px]">close</span>
+                                                                                                                            </button>
+                                                                                                                        </span>
+                                                                                                                    );
+
+                                                                                                                    const renderPdfBadges = () => lesson.materialUrl && (() => {
+                                                                                                                        const pdfList = lesson.materialUrl.split(',').filter(Boolean);
+                                                                                                                        return pdfList.map((pdfUrl: string, pi: number) => (
+                                                                                                                        <span
+                                                                                                                            key={pi}
+                                                                                                                            draggable
+                                                                                                                            onDragStart={(e) => handlePdfDragStart(e, lesson.id, pdfUrl.trim())}
+                                                                                                                            className="text-[9px] font-black uppercase text-sky-500 flex items-center gap-0.5 cursor-grab active:cursor-grabbing hover:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900/30 px-1.5 py-0.5 rounded-md border border-transparent hover:border-sky-200 dark:hover:border-sky-800 transition-all select-none group/pdf"
+                                                                                                                            title="Drag this PDF to move it to another lesson"
                                                                                                                         >
-                                                                                                                            <span className="material-symbols-outlined text-[10px]">close</span>
-                                                                                                                        </button>
-                                                                                                                    </span>
-                                                                                                                )}
-                                                                                                                {/* Multiple PDF badges with drag + delete + reorder */}
-                                                                                                                {lesson.materialUrl && (() => {
-                                                                                                                    const pdfList = lesson.materialUrl.split(',').filter(Boolean);
-                                                                                                                    return pdfList.map((pdfUrl: string, pi: number) => (
-                                                                                                                    <span
-                                                                                                                        key={pi}
-                                                                                                                        draggable
-                                                                                                                        onDragStart={(e) => handlePdfDragStart(e, lesson.id, pdfUrl.trim())}
-                                                                                                                        className="text-[9px] font-black uppercase text-sky-500 flex items-center gap-0.5 cursor-grab active:cursor-grabbing hover:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900/30 px-1.5 py-0.5 rounded-md border border-transparent hover:border-sky-200 dark:hover:border-sky-800 transition-all select-none group/pdf"
-                                                                                                                        title="Drag this PDF to move it to another lesson"
-                                                                                                                    >
-                                                                                                                        <span className="material-symbols-outlined text-[10px]">description</span>
-                                                                                                                        <span className="max-w-[60px] truncate">{pdfUrl.trim().split('/').pop() || `PDF ${pi + 1}`}</span>
-                                                                                                                        <span className="material-symbols-outlined text-[8px] ml-0.5 opacity-60">drag_indicator</span>
-                                                                                                                        {/* Reorder arrows (only when multiple PDFs) */}
-                                                                                                                        {pdfList.length > 1 && (
-                                                                                                                            <span className="opacity-0 group-hover/pdf:opacity-100 flex items-center ml-0.5 transition-all">
-                                                                                                                                {pi > 0 && (
-                                                                                                                                    <button
-                                                                                                                                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleReorderPdf(lesson.id, pdfUrl.trim(), 'up'); }}
-                                                                                                                                        className="text-sky-400 hover:text-sky-600 transition-colors"
-                                                                                                                                        title="Move up"
-                                                                                                                                    >
-                                                                                                                                        <span className="material-symbols-outlined text-[10px]">arrow_upward</span>
-                                                                                                                                    </button>
-                                                                                                                                )}
-                                                                                                                                {pi < pdfList.length - 1 && (
-                                                                                                                                    <button
-                                                                                                                                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleReorderPdf(lesson.id, pdfUrl.trim(), 'down'); }}
-                                                                                                                                        className="text-sky-400 hover:text-sky-600 transition-colors"
-                                                                                                                                        title="Move down"
-                                                                                                                                    >
-                                                                                                                                        <span className="material-symbols-outlined text-[10px]">arrow_downward</span>
-                                                                                                                                    </button>
-                                                                                                                                )}
-                                                                                                                            </span>
-                                                                                                                        )}
-                                                                                                                        <button
-                                                                                                                            onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleRemoveMaterial(lesson.id, 'pdf', pdfUrl.trim()); }}
-                                                                                                                            className="ml-0.5 opacity-0 group-hover/pdf:opacity-100 text-red-400 hover:text-red-600 transition-all"
-                                                                                                                            title="Remove this PDF"
-                                                                                                                        >
-                                                                                                                            <span className="material-symbols-outlined text-[10px]">close</span>
-                                                                                                                        </button>
-                                                                                                                    </span>
-                                                                                                                    ));
+                                                                                                                            <span className="material-symbols-outlined text-[10px]">description</span>
+                                                                                                                            <span className="max-w-[60px] truncate">{pdfUrl.trim().split('/').pop() || `PDF ${pi + 1}`}</span>
+                                                                                                                            <span className="material-symbols-outlined text-[8px] ml-0.5 opacity-60">drag_indicator</span>
+                                                                                                                            {/* Reorder arrows (only when multiple PDFs) */}
+                                                                                                                            {pdfList.length > 1 && (
+                                                                                                                                <span className="opacity-0 group-hover/pdf:opacity-100 flex items-center ml-0.5 transition-all">
+                                                                                                                                    {pi > 0 && (
+                                                                                                                                        <button
+                                                                                                                                            onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleReorderPdf(lesson.id, pdfUrl.trim(), 'up'); }}
+                                                                                                                                            className="text-sky-400 hover:text-sky-600 transition-colors"
+                                                                                                                                            title="Move up"
+                                                                                                                                        >
+                                                                                                                                            <span className="material-symbols-outlined text-[10px]">arrow_upward</span>
+                                                                                                                                        </button>
+                                                                                                                                    )}
+                                                                                                                                    {pi < pdfList.length - 1 && (
+                                                                                                                                        <button
+                                                                                                                                            onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleReorderPdf(lesson.id, pdfUrl.trim(), 'down'); }}
+                                                                                                                                            className="text-sky-400 hover:text-sky-600 transition-colors"
+                                                                                                                                            title="Move down"
+                                                                                                                                        >
+                                                                                                                                            <span className="material-symbols-outlined text-[10px]">arrow_downward</span>
+                                                                                                                                        </button>
+                                                                                                                                    )}
+                                                                                                                                </span>
+                                                                                                                            )}
+                                                                                                                            {lesson.videoUrl && pi === 0 && lesson.videoFirst && (
+                                                                                                                               <span className="opacity-0 group-hover/pdf:opacity-100 flex items-center ml-0.5 transition-all">
+                                                                                                                                  <button
+                                                                                                                                      onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleToggleVideoFirst(lesson, false); }}
+                                                                                                                                      className="text-sky-400 hover:text-sky-600 transition-colors"
+                                                                                                                                      title="Move Above Video"
+                                                                                                                                  >
+                                                                                                                                      <span className="material-symbols-outlined text-[10px]">arrow_upward</span>
+                                                                                                                                  </button>
+                                                                                                                               </span>
+                                                                                                                            )}
+                                                                                                                            {lesson.videoUrl && pi === pdfList.length - 1 && !lesson.videoFirst && (
+                                                                                                                                <span className="opacity-0 group-hover/pdf:opacity-100 flex items-center ml-0.5 transition-all">
+                                                                                                                                  <button
+                                                                                                                                      onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleToggleVideoFirst(lesson, true); }}
+                                                                                                                                      className="text-sky-400 hover:text-sky-600 transition-colors"
+                                                                                                                                      title="Move Below Video"
+                                                                                                                                  >
+                                                                                                                                      <span className="material-symbols-outlined text-[10px]">arrow_downward</span>
+                                                                                                                                  </button>
+                                                                                                                               </span>
+                                                                                                                            )}
+                                                                                                                            <button
+                                                                                                                                onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleRemoveMaterial(lesson.id, 'pdf', pdfUrl.trim()); }}
+                                                                                                                                className="ml-0.5 opacity-0 group-hover/pdf:opacity-100 text-red-400 hover:text-red-600 transition-all"
+                                                                                                                                title="Remove this PDF"
+                                                                                                                            >
+                                                                                                                                <span className="material-symbols-outlined text-[10px]">close</span>
+                                                                                                                            </button>
+                                                                                                                        </span>
+                                                                                                                        ));
+                                                                                                                    })();
+
+                                                                                                                    return (
+                                                                                                                        <>
+                                                                                                                            {lesson.videoFirst ? (
+                                                                                                                                <>
+                                                                                                                                    {renderVideoBadge()}
+                                                                                                                                    {renderPdfBadges()}
+                                                                                                                                </>
+                                                                                                                            ) : (
+                                                                                                                                <>
+                                                                                                                                    {renderPdfBadges()}
+                                                                                                                                    {renderVideoBadge()}
+                                                                                                                                </>
+                                                                                                                            )}
+                                                                                                                        </>
+                                                                                                                    );
                                                                                                                 })()}
                                                                                                             </div>
                                                                                                         </div>
