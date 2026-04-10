@@ -117,23 +117,39 @@ export const downloadCertificate = async (req: Request, res: Response) => {
         res.setHeader('Content-Disposition', `attachment; filename=certificate-${certificate.uniqueId}.pdf`);
         doc.pipe(res);
 
-        // Register Great Vibes font for cursive text
-        const fontPath = path.join(__dirname, '..', 'fonts', 'GreatVibes-Regular.ttf');
-        doc.registerFont('GreatVibes', fontPath);
+        // Register fonts
+        const greatVibesPath = path.join(__dirname, '..', 'fonts', 'GreatVibes-Regular.ttf');
+        doc.registerFont('GreatVibes', greatVibesPath);
+
+        // Try to register Playfair Display italic; fall back to Times-Italic
+        const playfairItalicPath = path.join(__dirname, '..', 'fonts', 'PlayfairDisplay-Italic.ttf');
+        let titleFont = 'Times-Italic';
+        let courseTitleFont = 'Times-Italic';
+        try {
+            doc.registerFont('PlayfairItalic', playfairItalicPath);
+            titleFont = 'PlayfairItalic';
+            courseTitleFont = 'PlayfairItalic';
+        } catch (e) {
+            // Playfair not available, use Times-Italic
+        }
 
         const W = doc.page.width;   // 842
         const H = doc.page.height;  // 595
 
-        // Theme colors matching the website
-        const primary = '#0db9f2';     // --color-primary (teal/cyan)
-        const primaryDark = '#0a96c5'; // darker shade for accents
+        // Colors matching the redesigned frontend certificate
         const dark = '#1e293b';        // slate-800
         const slate700 = '#334155';
-        const slate500 = '#64748b';
         const slate400 = '#94a3b8';
-        const borderLight = '#e2e8f0';
-        const badgeBg = '#f0f9ff';     // primary/5 equivalent
-        const badgeBorder = '#bae6fd';  // primary/20 equivalent
+        const slate300 = '#cbd5e1';
+        const courseBlue = '#5a8fa8';  // muted blue for course title
+        const qrBlue = '#4a8da8';     // QR code color
+        const borderColor = '#e2e8f0';
+
+        // Triangle accent colors (matching SVG in frontend)
+        const tri1 = '#c8dce8';
+        const tri2 = '#b4cede';
+        const tri3 = '#a0bfd4';
+        const tri4 = '#8db3c9';
 
         // Fallback info for old certificates without snapshot data
         const title = certificate.courseTitle || certificate.course.title;
@@ -144,163 +160,156 @@ export const downloadCertificate = async (req: Request, res: Response) => {
         let dirTitle = certificate.directorTitle;
         let provId = certificate.providerId;
 
-        if (!orgName) {
-            // Try to fetch live settings for fallback
+        if (!orgName || !dirName) {
+            // Try to fetch live settings for fallback on missing fields
             const liveSettings = await prisma.adminSettings.findUnique({ where: { id: 'singleton' } });
             if (liveSettings) {
-                orgName = liveSettings.organizationName;
-                orgAddress = liveSettings.organizationAddress;
-                orgPhone = liveSettings.organizationPhone;
-                dirName = liveSettings.directorName;
-                dirTitle = liveSettings.directorTitle;
-                provId = liveSettings.providerId;
-            } else {
-                orgName = 'Excel Community Living Inc';
-                dirName = 'Administrator';
-                dirTitle = 'Program Director';
+                if (!orgName) orgName = liveSettings.organizationName;
+                if (!orgAddress) orgAddress = liveSettings.organizationAddress;
+                if (!orgPhone) orgPhone = liveSettings.organizationPhone;
+                if (!dirName) dirName = liveSettings.directorName;
+                if (!dirTitle) dirTitle = liveSettings.directorTitle;
+                if (!provId) provId = liveSettings.providerId;
             }
         }
 
         // ============ BACKGROUND ============
         doc.rect(0, 0, W, H).fill('#ffffff');
 
-        // ============ DECORATIVE DOUBLE BORDER ============
-        doc.lineWidth(3);
-        doc.rect(18, 18, W - 36, H - 36).strokeOpacity(0.2).stroke(primary);
-        doc.strokeOpacity(1);
-        doc.lineWidth(0.75);
-        doc.rect(28, 28, W - 56, H - 56).strokeOpacity(0.1).stroke(primary);
+        // ============ SUBTLE OUTER BORDER ============
+        doc.lineWidth(0.5);
+        doc.rect(0, 0, W, H).strokeOpacity(0.3).stroke(borderColor);
         doc.strokeOpacity(1);
 
-        // ============ CORNER GRADIENT ACCENTS ============
+        // ============ GEOMETRIC TRIANGLES — TOP LEFT ============
+        // Large faint triangle
         doc.save();
-        doc.opacity(0.08);
-        doc.moveTo(18, 18).lineTo(150, 18).lineTo(18, 150).closePath().fill(primary);
+        doc.opacity(0.25);
+        doc.moveTo(0, 0).lineTo(240, 0).lineTo(0, 220).closePath().fill(tri1);
         doc.restore();
+        // Medium triangle
         doc.save();
-        doc.opacity(0.08);
-        doc.moveTo(W - 18, H - 18).lineTo(W - 150, H - 18).lineTo(W - 18, H - 150).closePath().fill(primary);
+        doc.opacity(0.20);
+        doc.moveTo(0, 0).lineTo(180, 0).lineTo(0, 160).closePath().fill(tri2);
+        doc.restore();
+        // Small darker triangle
+        doc.save();
+        doc.opacity(0.22);
+        doc.moveTo(0, 0).lineTo(110, 0).lineTo(0, 100).closePath().fill(tri3);
+        doc.restore();
+        // Tiny accent triangle
+        doc.save();
+        doc.opacity(0.18);
+        doc.moveTo(0, 0).lineTo(55, 0).lineTo(0, 50).closePath().fill(tri4);
         doc.restore();
 
-        // ============ HEADER: BRANDING & ORG INFO ============
+        // ============ SUBTLE BOTTOM-RIGHT TRIANGLES ============
+        doc.save();
+        doc.opacity(0.12);
+        doc.moveTo(W, H).lineTo(W, H - 80).lineTo(W - 80, H).closePath().fill(tri1);
+        doc.restore();
+        doc.save();
+        doc.opacity(0.10);
+        doc.moveTo(W, H).lineTo(W, H - 50).lineTo(W - 60, H).closePath().fill(tri2);
+        doc.restore();
+
+        // ============ ORG INFO — TOP LEFT ============
         const topY = 40;
-        doc.font('Helvetica-Bold').fontSize(14).fillColor(primary)
-            .text(`✚  ${orgName}`, 0, topY, { align: 'center' });
-        
-        let orgDetails = '';
-        if (orgAddress) orgDetails += orgAddress;
-        if (orgPhone) orgDetails += orgDetails ? ` | ${orgPhone}` : orgPhone;
-        if (provId) orgDetails += orgDetails ? ` | ID: ${provId}` : `ID: ${provId}`;
-        
-        if (orgDetails) {
-            doc.font('Helvetica').fontSize(9).fillColor(slate500)
-                .text(orgDetails, 0, topY + 18, { align: 'center' });
+        const leftX = 50;
+
+        if (orgName) {
+            doc.font('Helvetica-Bold').fontSize(13).fillColor(dark)
+                .text(orgName, leftX, topY);
+        }
+        if (orgAddress) {
+            doc.font('Helvetica').fontSize(9).fillColor(slate400)
+                .text(orgAddress, leftX, topY + 18);
         }
 
-        // ============ TITLE ============
-        doc.font('Times-Bold').fontSize(26).fillColor(dark)
-            .text('Certificate of Completion', 0, topY + 40, { align: 'center' });
-        
-        if (certificate.certificateNumber) {
-            doc.font('Times-Roman').fontSize(14).fillColor(primaryDark)
-                .text(`Certificate No: ${certificate.certificateNumber}`, 0, topY + 70, { align: 'center' });
-        }
-
-        // ============ DECORATIVE LINE ============
-        const lineY = topY + 95;
-        doc.save();
-        doc.roundedRect(W / 2 - 48, lineY, 96, 4, 2).fill(primary);
-        doc.restore();
+        // ============ CERTIFICATE TITLE ============
+        const titleY = 105;
+        doc.font(titleFont).fontSize(32).fillColor(dark)
+            .text('Certificate of Completion', 0, titleY, { align: 'center' });
 
         // ============ "THIS IS TO CERTIFY THAT" ============
-        doc.font('Helvetica').fontSize(11).fillColor(slate500)
-            .text('THIS IS TO CERTIFY THAT', 0, lineY + 22, {
-                align: 'center', characterSpacing: 4,
+        const certifyY = titleY + 55;
+        doc.font('Helvetica').fontSize(9).fillColor(slate400)
+            .text('THIS IS TO CERTIFY THAT', 0, certifyY, {
+                align: 'center', characterSpacing: 3,
             });
 
         // ============ STUDENT NAME ============
-        doc.font('GreatVibes').fontSize(40).fillColor(dark)
-            .text(certificate.user.name || 'Student', 0, lineY + 42, { align: 'center' });
-
-        // ============ UNDERLINE BELOW NAME ============
-        const nameUnderY = lineY + 95;
-        doc.moveTo(W / 2 - 120, nameUnderY).lineTo(W / 2 + 120, nameUnderY)
-            .lineWidth(0.5).stroke(borderLight);
+        const nameY = certifyY + 25;
+        doc.font('GreatVibes').fontSize(44).fillColor(dark)
+            .text(certificate.user.name || 'Student', 0, nameY, { align: 'center' });
 
         // ============ "HAS SUCCESSFULLY COMPLETED..." ============
-        doc.font('Helvetica').fontSize(10).fillColor(slate500)
-            .text('HAS SUCCESSFULLY COMPLETED THE TRAINING PROGRAM FOR', 0, nameUnderY + 12, {
+        const completedY = nameY + 65;
+        doc.font('Helvetica').fontSize(9).fillColor(slate400)
+            .text('HAS SUCCESSFULLY COMPLETED THE TRAINING PROGRAM', 0, completedY, {
                 align: 'center', characterSpacing: 2,
             });
 
         // ============ COURSE TITLE ============
-        doc.font('Helvetica-Bold').fontSize(20).fillColor(primary)
-            .text(title, 80, nameUnderY + 30, {
-                align: 'center', width: W - 160,
-            });
-            
-        // ============ HOURS ============
-        if (certificate.hoursAttended) {
-            doc.font('Helvetica').fontSize(10).fillColor(slate700)
-                .text(`Total Hours: ${certificate.hoursAttended}`, 0, nameUnderY + 58, { align: 'center' });
-        }
-
-        // ============ AUTHENTICATED BADGE ============
-        const badgeY = nameUnderY + 75;
-        const badgeW = 200;
-        const badgeH = 24;
-        const badgeX = W / 2 - badgeW / 2;
-        doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 6).fill(badgeBg);
-        doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 6).lineWidth(0.5).stroke(badgeBorder);
-        doc.font('Helvetica-Bold').fontSize(9).fillColor(primaryDark)
-            .text('✓  Authenticated Record', badgeX, badgeY + 7, {
-                width: badgeW, align: 'center',
+        const courseY = completedY + 22;
+        doc.font(courseTitleFont).fontSize(20).fillColor(courseBlue)
+            .text(title, 100, courseY, {
+                align: 'center', width: W - 200,
             });
 
-        // ============ BOTTOM SECTION: DATE | SEAL | SIGNATURE ============
-        const bottomY = H - 125;
+        // ============ BOTTOM SECTION: DATE | QR CODE | SIGNATURE ============
+        const bottomY = H - 150;
 
         // --- Date (left) ---
         const dateStr = certificate.issuedAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-        doc.font('Helvetica-Bold').fontSize(13).fillColor(dark)
-            .text(dateStr, 60, bottomY, { width: 200, align: 'center' });
-        doc.moveTo(60, bottomY + 20).lineTo(260, bottomY + 20).lineWidth(0.5).stroke('#cbd5e1');
-        doc.font('Helvetica').fontSize(7).fillColor(slate500)
-            .text('DATE ISSUED', 60, bottomY + 26, {
-                width: 200, align: 'center', characterSpacing: 2,
+        const dateLeftX = 60;
+        const dateWidth = 200;
+        doc.font(titleFont).fontSize(13).fillColor(slate700)
+            .text(dateStr, dateLeftX, bottomY, { width: dateWidth, align: 'center' });
+        doc.moveTo(dateLeftX, bottomY + 20).lineTo(dateLeftX + dateWidth, bottomY + 20)
+            .lineWidth(0.5).stroke(slate300);
+        doc.font('Helvetica').fontSize(7).fillColor(slate400)
+            .text('DATE ISSUED', dateLeftX, bottomY + 27, {
+                width: dateWidth, align: 'center', characterSpacing: 2,
             });
 
-        // --- Seal (center) ---
+        // --- QR Code (center) ---
         const baseUrl = process.env.NODE_ENV === 'production'
             ? process.env.FRONTEND_URL || 'https://cnaceus.excelcommunityliving.website'
             : 'http://localhost:3000';
 
         const verifyUrl = `${baseUrl}/certificate/verify/${certificate.uniqueId}`;
-        const qrCodeDataUrl = await QRCode.toDataURL(verifyUrl, { margin: 1, width: 80, color: { dark: primaryDark, light: '#ffffff' } });
+        const qrCodeDataUrl = await QRCode.toDataURL(verifyUrl, { margin: 1, width: 80, color: { dark: qrBlue, light: '#ffffff' } });
 
         const cx = W / 2;
-        const cy = bottomY;
-        doc.image(qrCodeDataUrl, cx - 40, cy - 20, { width: 80 });
-        doc.font('Helvetica-Bold').fontSize(7).fillColor(primaryDark)
-            .text('SCAN TO VERIFY', cx - 50, cy + 65, { width: 100, align: 'center', characterSpacing: 1 });
+        doc.image(qrCodeDataUrl, cx - 40, bottomY - 20, { width: 80 });
+        doc.font('Helvetica-Bold').fontSize(7).fillColor(qrBlue)
+            .text('SCAN TO VERIFY', cx - 50, bottomY + 65, { width: 100, align: 'center', characterSpacing: 1 });
 
         // --- Signature (right) ---
-        doc.font('GreatVibes').fontSize(22).fillColor(dark)
-            .text(dirName || 'Administrator', W - 280, bottomY - 5, { width: 220, align: 'center' });
-        doc.moveTo(W - 280, bottomY + 20).lineTo(W - 60, bottomY + 20).lineWidth(0.5).stroke('#cbd5e1');
-        doc.font('Helvetica').fontSize(7).fillColor(slate500)
-            .text((dirTitle || 'PROGRAM DIRECTOR').toUpperCase(), W - 280, bottomY + 26, {
-                width: 220, align: 'center', characterSpacing: 2,
-            });
+        const sigRightX = W - 280;
+        const sigWidth = 220;
+        if (dirName) {
+            doc.font('GreatVibes').fontSize(24).fillColor(slate700)
+                .text(dirName, sigRightX, bottomY - 5, { width: sigWidth, align: 'center' });
+        }
+        doc.moveTo(sigRightX, bottomY + 20).lineTo(sigRightX + sigWidth, bottomY + 20)
+            .lineWidth(0.5).stroke(slate300);
+        if (dirTitle) {
+            doc.font('Helvetica').fontSize(7).fillColor(slate400)
+                .text(dirTitle.toUpperCase(), sigRightX, bottomY + 27, {
+                    width: sigWidth, align: 'center', characterSpacing: 1.5,
+                });
+        }
 
         // ============ FOOTER: RETENTION & CREDENTIAL ID ============
-        const footerText = "This record shall be retained by CNA or HHA for period of four (4) years starting from the date of enrollment.";
-        doc.font('Helvetica-Oblique').fontSize(8).fillColor(primaryDark)
-            .text(footerText, 0, H - 55, { align: 'center', width: W });
+        const footerText = "This record shall be retained by CNA or HHA employer for (4) years starting from the date of enrollment.";
+        doc.font('Helvetica-Oblique').fontSize(7.5).fillColor(slate400)
+            .text(footerText, 0, H - 50, { align: 'center', width: W });
 
-        doc.font('Courier').fontSize(8).fillColor(slate400)
-            .text(`Credential ID: ${certificate.uniqueId}  •  ${orgName}`,
-                0, H - 40, { align: 'center', width: W });
+        doc.font('Courier').fontSize(7).fillColor(slate300)
+            .text(`Credential ID: ${certificate.uniqueId}  •  ${orgName || ''}`,
+                0, H - 36, { align: 'center', width: W });
 
         doc.end();
     } catch (error: any) {
@@ -352,19 +361,15 @@ export const verifyCertificate = async (req: Request, res: Response) => {
         let dirTitle = certificate.directorTitle;
         let provId = certificate.providerId;
 
-        if (!orgName) {
+        if (!orgName || !dirName) {
             const liveSettings = await prisma.adminSettings.findUnique({ where: { id: 'singleton' } });
             if (liveSettings) {
-                orgName = liveSettings.organizationName;
-                orgAddress = liveSettings.organizationAddress;
-                orgPhone = liveSettings.organizationPhone;
-                dirName = liveSettings.directorName;
-                dirTitle = liveSettings.directorTitle;
-                provId = liveSettings.providerId;
-            } else {
-                orgName = 'Excel Community Living Inc';
-                dirName = 'Administrator';
-                dirTitle = 'Program Director';
+                if (!orgName) orgName = liveSettings.organizationName;
+                if (!orgAddress) orgAddress = liveSettings.organizationAddress;
+                if (!orgPhone) orgPhone = liveSettings.organizationPhone;
+                if (!dirName) dirName = liveSettings.directorName;
+                if (!dirTitle) dirTitle = liveSettings.directorTitle;
+                if (!provId) provId = liveSettings.providerId;
             }
         }
 
