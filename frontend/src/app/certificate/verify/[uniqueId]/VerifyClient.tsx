@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 
 export default function VerifyClient({ uniqueId }: { uniqueId: string }) {
     const [result, setResult] = useState<any>(null);
@@ -65,6 +66,7 @@ export default function VerifyClient({ uniqueId }: { uniqueId: string }) {
     }
 
     const cert = result.certificate;
+    const verifyUrl = currentUrl || `${typeof window !== 'undefined' ? window.location.origin : ''}/certificate/verify/${cert.uniqueId}`;
 
     return (
         <motion.div
@@ -113,7 +115,7 @@ export default function VerifyClient({ uniqueId }: { uniqueId: string }) {
                     </div>
                 </div>
 
-                {/* The Certificate Wrapper */}
+                {/* The Certificate */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -124,120 +126,142 @@ export default function VerifyClient({ uniqueId }: { uniqueId: string }) {
                         id="certificate-container"
                         className="relative bg-white text-slate-900 w-full max-w-[900px] aspect-[1.414/1] shadow-2xl rounded-sm overflow-hidden flex flex-col"
                     >
-                        {/* Borders - using primary teal color */}
-                        <div className="absolute inset-4 border-[3px] border-double border-primary/20 pointer-events-none z-10"></div>
-                        <div className="absolute inset-6 border border-primary/10 pointer-events-none z-10"></div>
+                        {/* Subtle outer border */}
+                        <div className="absolute inset-0 border border-slate-200/60 pointer-events-none z-10"></div>
 
-                        {/* Pattern Overlay */}
-                        <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-repeat"></div>
+                        {/* Geometric triangles in top-left corner */}
+                        <svg className="absolute top-0 left-0 pointer-events-none z-0" width="280" height="260" viewBox="0 0 280 260" fill="none">
+                            {/* Large faint triangle */}
+                            <polygon points="0,0 240,0 0,220" fill="#c8dce8" opacity="0.25" />
+                            {/* Medium triangle */}
+                            <polygon points="0,0 180,0 0,160" fill="#b4cede" opacity="0.20" />
+                            {/* Small darker triangle */}
+                            <polygon points="0,0 110,0 0,100" fill="#a0bfd4" opacity="0.22" />
+                            {/* Tiny accent triangle */}
+                            <polygon points="0,0 55,0 0,50" fill="#8db3c9" opacity="0.18" />
+                        </svg>
 
-                        {/* Corner Accents - teal primary */}
-                        <div className="absolute top-0 left-0 size-32 bg-gradient-to-br from-primary/10 to-transparent pointer-events-none"></div>
-                        <div className="absolute bottom-0 right-0 size-32 bg-gradient-to-tl from-primary/10 to-transparent pointer-events-none"></div>
+                        {/* Subtle bottom-right geometric accent */}
+                        <svg className="absolute bottom-0 right-0 pointer-events-none z-0" width="120" height="110" viewBox="0 0 120 110" fill="none">
+                            <polygon points="120,110 120,30 40,110" fill="#c8dce8" opacity="0.12" />
+                            <polygon points="120,110 120,60 60,110" fill="#b4cede" opacity="0.10" />
+                        </svg>
 
                         {/* Content */}
-                        <div className="relative z-20 flex flex-col items-center justify-between h-full py-10 px-12 text-center">
-                            
-                            {/* Header Section */}
-                            <div className="w-full flex justify-between items-start">
-                                <div className="text-left max-w-[200px]">
-                                    <h3 className="text-primary font-bold text-lg leading-tight">{cert.organizationName || 'Excel Community Living Inc'}</h3>
-                                    <p className="text-[10px] text-slate-600 mt-1 leading-snug whitespace-pre-wrap">
-                                        {cert.organizationAddress || '123 Health Ave, Suite 100\nCity, State 12345'}
+                        <div className="relative z-20 flex flex-col items-center justify-between h-full py-[5%] px-[7%] text-center">
+
+                            {/* Header: Org info top-left */}
+                            <div className="w-full text-left mb-2">
+                                <h3 className="text-slate-800 font-bold text-[clamp(12px,1.6vw,16px)] leading-tight tracking-tight">
+                                    {cert.organizationName}
+                                </h3>
+                                {cert.organizationAddress && (
+                                    <p className="text-[clamp(8px,1vw,11px)] text-slate-400 mt-0.5 leading-snug">
+                                        {cert.organizationAddress}
                                     </p>
-                                    <p className="text-[10px] text-slate-600 mt-0.5">{cert.organizationPhone || '(555) 123-4567'}</p>
+                                )}
+                            </div>
+
+                            {/* Title */}
+                            <div className="flex flex-col items-center gap-1 mt-1">
+                                <h2
+                                    style={{ fontFamily: "'Playfair Display', serif" }}
+                                    className="text-[clamp(22px,3.5vw,36px)] font-semibold italic text-slate-800 tracking-wide leading-tight"
+                                >
+                                    Certificate of Completion
+                                </h2>
+                            </div>
+
+                            {/* Body */}
+                            <div className="flex flex-col items-center gap-2 w-full max-w-3xl -mt-1">
+                                {/* "This is to certify that" */}
+                                <p className="text-slate-400 text-[clamp(7px,1vw,11px)] uppercase tracking-[0.25em] font-medium">
+                                    This is to certify that
+                                </p>
+
+                                {/* Student name */}
+                                <div className="relative py-1 w-full">
+                                    <h3
+                                        style={{ fontFamily: "'Great Vibes', cursive" }}
+                                        className="text-[clamp(28px,5vw,52px)] text-slate-800 leading-tight"
+                                    >
+                                        {cert.studentName}
+                                    </h3>
                                 </div>
-                                <div className="flex flex-col items-end gap-1">
-                                    <div className="flex items-center justify-center p-2 rounded-lg bg-slate-50 border border-slate-100">
-                                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                                            <span className="material-symbols-outlined text-2xl">medical_services</span>
-                                        </div>
+
+                                {/* "Has successfully completed..." */}
+                                <p className="text-slate-400 text-[clamp(7px,1vw,11px)] uppercase tracking-[0.2em] font-medium mt-0">
+                                    Has successfully completed the training program
+                                </p>
+
+                                {/* Course name */}
+                                <h4
+                                    style={{ fontFamily: "'Playfair Display', serif" }}
+                                    className="text-[clamp(14px,2.2vw,22px)] font-medium italic text-[#5a8fa8] max-w-2xl mx-auto leading-snug mt-0"
+                                >
+                                    {cert.courseName}
+                                </h4>
+                            </div>
+
+                            {/* Bottom: Date | QR Code | Signature */}
+                            <div className="w-full flex items-end justify-between mb-[6%] px-[2%] relative z-20">
+                                {/* Date */}
+                                <div className="flex flex-col items-center gap-0.5 min-w-[25%]">
+                                    <p
+                                        style={{ fontFamily: "'Playfair Display', serif" }}
+                                        className="text-[clamp(10px,1.4vw,15px)] font-medium italic text-slate-700 pb-1.5 w-full text-center"
+                                    >
+                                        {new Date(cert.issuedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                                    </p>
+                                    <div className="w-full h-px bg-slate-300"></div>
+                                    <p className="text-[clamp(6px,0.8vw,9px)] uppercase tracking-[0.2em] text-slate-400 font-medium mt-1">
+                                        Date Issued
+                                    </p>
+                                </div>
+
+                                {/* QR Code */}
+                                <div className="flex flex-col items-center gap-1.5 mx-4">
+                                    <div className="p-1 border border-slate-100 rounded-md bg-white">
+                                        <QRCodeSVG
+                                            value={verifyUrl}
+                                            size={72}
+                                            level="M"
+                                            fgColor="#4a8da8"
+                                            bgColor="#ffffff"
+                                            className="w-[clamp(48px,8vw,72px)] h-[clamp(48px,8vw,72px)]"
+                                        />
                                     </div>
-                                    {cert.providerId && (
-                                        <p className="text-[10px] text-slate-500 font-mono mt-1">Provider ID: {cert.providerId}</p>
+                                    <p className="text-[clamp(5px,0.7vw,8px)] uppercase tracking-[0.15em] text-[#4a8da8] font-semibold">
+                                        Scan to Verify
+                                    </p>
+                                </div>
+
+                                {/* Signature */}
+                                <div className="flex flex-col items-center gap-0.5 min-w-[25%]">
+                                    <div className="w-full flex items-end justify-center pb-1.5">
+                                        <span
+                                            style={{ fontFamily: "'Great Vibes', cursive" }}
+                                            className="text-[clamp(16px,2.5vw,26px)] text-slate-700"
+                                        >
+                                            {cert.directorName}
+                                        </span>
+                                    </div>
+                                    <div className="w-full h-px bg-slate-300"></div>
+                                    {cert.directorTitle && (
+                                        <p className="text-[clamp(6px,0.8vw,9px)] uppercase tracking-[0.15em] text-slate-400 font-medium mt-1">
+                                            {cert.directorTitle}
+                                        </p>
                                     )}
                                 </div>
                             </div>
 
-                            {/* Title Section */}
-                            <div className="flex flex-col items-center gap-2 mt-4">
-                                <h2 className="text-3xl md:text-3xl font-serif font-bold text-slate-900 tracking-wide uppercase leading-tight">
-                                    Certificate of Completion<br />
-                                </h2>
-                                <div className="h-1 w-24 bg-primary rounded-full mb-1"></div>
-                            </div>
-
-                            {/* Student Section */}
-                            <div className="flex flex-col gap-3 w-full max-w-3xl mt-2">
-                                <p className="text-slate-500 text-sm uppercase tracking-widest font-medium">This is to certify that</p>
-                                <div className="relative py-1">
-                                    <h3 style={{ fontFamily: "'Great Vibes', cursive" }} className="text-5xl md:text-6xl text-slate-900 leading-tight p-2">
-                                        {cert.studentName}
-                                    </h3>
-                                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2/3 h-px bg-slate-300"></div>
-                                </div>
-                                
-                                <div className="space-y-4 mt-2">
-                                    <p className="text-slate-500 text-sm uppercase tracking-widest font-medium">Has successfully completed the approved training program for</p>
-                                    <h4 className="text-2xl font-bold text-primary max-w-2xl mx-auto leading-snug">
-                                        {cert.courseName}
-                                    </h4>
-                                    
-                                    <div className="flex justify-center items-center gap-6 mt-3 text-sm font-semibold text-slate-700">
-                                        {cert.hoursAttended && (
-                                            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-md">
-                                                <span className="material-symbols-outlined text-sm text-slate-400">schedule</span>
-                                                {cert.hoursAttended} Hours Attended
-                                            </div>
-                                        )}
-                                        {cert.certificateNumber && (
-                                            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-md font-mono">
-                                                <span className="material-symbols-outlined text-sm text-slate-400">pin</span>
-                                                No: {cert.certificateNumber}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Signatures Section */}
-                            <div className="w-full flex items-end justify-between mt-8 px-8 relative z-20">
-                                <div className="flex flex-col items-center gap-1 min-w-[160px]">
-                                    <p className="text-base font-semibold text-slate-800 border-b border-slate-400 pb-1 w-full text-center">
-                                        {new Date(cert.issuedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                                    </p>
-                                    <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Date Issued</p>
-                                </div>
-
-                                <div className="relative size-24">
-                                    <svg className="w-full h-full text-primary opacity-80" fill="none" viewBox="0 0 100 100">
-                                        <circle cx="50" cy="50" r="45" stroke="currentColor" strokeDasharray="4 2" strokeWidth="2"></circle>
-                                        <circle cx="50" cy="50" r="35" stroke="currentColor" strokeWidth="1"></circle>
-                                        <path d="M50 35V75M40 45H60" stroke="currentColor" strokeLinecap="round" strokeWidth="2"></path>
-                                    </svg>
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                        <div className="text-[8px] font-bold text-primary tracking-tighter uppercase text-center w-16 leading-tight mt-10">Official Seal</div>
-                                    </div>
-                                </div>
-
-                                <div className="flex flex-col items-center gap-1 min-w-[160px]">
-                                    <div className="h-10 w-full flex items-end justify-center relative">
-                                        <span style={{ fontFamily: "'Great Vibes', cursive" }} className="text-3xl text-slate-800 -rotate-2 transform relative top-2">
-                                            {cert.directorName || 'Administrator'}
-                                        </span>
-                                    </div>
-                                    <div className="border-b border-slate-400 w-full mt-1"></div>
-                                    <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">{cert.directorTitle || 'Program Director'}</p>
-                                </div>
-                            </div>
-
-                            {/* Footer & Retention Text */}
-                            <div className="absolute bottom-4 left-0 w-full flex flex-col items-center gap-1">
-                                <p className="text-[9px] text-slate-500 font-medium italic">
-                                    This record shall be retained by CNA or HHA for period of four(4) years starting from the date of enrollment.
+                            {/* Footer: Retention text + Credential ID */}
+                            <div className="w-full flex flex-col items-center gap-0.5 mt-3">
+                                <p className="text-[clamp(6px,0.75vw,9px)] text-slate-400 font-medium italic leading-snug">
+                                    This record shall be retained by CNA or HHA employer for (4) years starting from the date of enrollment.
                                 </p>
-                                <p className="font-mono text-[9px] text-slate-400">
-                                    Credential ID: {cert.uniqueId}
+                                <p className="font-mono text-[clamp(6px,0.7vw,8px)] text-slate-300">
+                                    Credential ID: {cert.uniqueId} &bull; {cert.organizationName}
                                 </p>
                             </div>
                         </div>
