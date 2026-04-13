@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { withConcurrencyLimit } from '../utils/concurrency';
 import {
     getAllCourses,
     getCourseById,
@@ -25,11 +26,11 @@ import { authenticate, requireAdmin } from '../middleware/auth.middleware';
 const router = Router();
 
 // Public
-router.get('/', getAllCourses);
+router.get('/', withConcurrencyLimit(5), getAllCourses);
 
 // Student (must be before /:id to prevent "my" matching as courseId)
 router.get('/my/enrollments', authenticate, getMyEnrollments);
-router.get('/my/activity', authenticate, getMyActivity);
+router.get('/my/activity', authenticate, withConcurrencyLimit(3), getMyActivity);
 
 router.get('/:id', getCourseById);
 router.post('/:courseId/enroll', authenticate, enrollInCourse);

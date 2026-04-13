@@ -348,9 +348,9 @@ export const updateProgress = async (req: Request, res: Response) => {
 export const getMyActivity = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user.userId;
-
-        // Get the start of the current week (Monday)
         const now = new Date();
+
+        // ── Weekly activity ──────────────────────────────────────────────
         const dayOfWeek = now.getDay(); // 0=Sun, 1=Mon, ...
         const diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
         const weekStart = new Date(now);
@@ -360,7 +360,7 @@ export const getMyActivity = async (req: Request, res: Response) => {
         const weekEnd = new Date(weekStart);
         weekEnd.setDate(weekStart.getDate() + 7);
 
-        // Fetch this week's activity logs
+        // Fetch this week's activity logs (single query)
         const logs = await (prisma as any).activityLog.findMany({
             where: {
                 userId,
@@ -371,57 +371,51 @@ export const getMyActivity = async (req: Request, res: Response) => {
 
         // Count events per day-of-week (Mon=0 .. Sun=6)
         const dayCounts = [0, 0, 0, 0, 0, 0, 0];
-        logs.forEach((log) => {
-            const d = log.createdAt.getDay(); // 0=Sun
-            const idx = d === 0 ? 6 : d - 1; // Map to Mon=0 .. Sun=6
+        logs.forEach((log: any) => {
+            const d = new Date(log.createdAt).getDay(); // 0=Sun
+            const idx = d === 0 ? 6 : d - 1;
             dayCounts[idx]++;
         });
 
-        // Normalize to percentages (0-100) relative to max day
         const maxCount = Math.max(...dayCounts, 1);
         const weeklyActivity = dayCounts.map((c) =>
             Math.round((c / maxCount) * 100)
         );
 
-        // Calculate streak: consecutive days with >= 1 activity going backwards from today
-        let streak = 0;
-        const checkDate = new Date(now);
-        checkDate.setHours(0, 0, 0, 0);
+        // ── Streak (single query instead of N+1 loop) ───────────────────
+        // Fetch all activity dates from the past year in ONE query
+        const yearAgo = new Date(now);
+        yearAgo.setFullYear(yearAgo.getFullYear() - 1);
+        yearAgo.setHours(0, 0, 0, 0);
 
-        // Check if there's any activity today first
-        const todayEnd = new Date(checkDate);
-        todayEnd.setDate(todayEnd.getDate() + 1);
-
-        const todayCount = await (prisma as any).activityLog.count({
+        const allLogs = await (prisma as any).activityLog.findMany({
             where: {
                 userId,
-                createdAt: { gte: checkDate, lt: todayEnd },
+                createdAt: { gte: yearAgo },
             },
+            select: { createdAt: true },
+            orderBy: { createdAt: 'desc' },
         });
 
-        if (todayCount > 0) {
-            streak = 1;
-            // Now check previous days
-            let prevDate = new Date(checkDate);
-            prevDate.setDate(prevDate.getDate() - 1);
+        // Build a Set of date strings (YYYY-MM-DD) that have activity
+        const activeDays = new Set<string>();
+        allLogs.forEach((log: any) => {
+            const d = new Date(log.createdAt);
+            activeDays.add(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`);
+        });
 
-            for (let i = 0; i < 365; i++) {
-                const dayEnd = new Date(prevDate);
-                dayEnd.setDate(dayEnd.getDate() + 1);
+        // Walk backwards from today counting consecutive active days
+        let streak = 0;
+        const cursor = new Date(now);
+        cursor.setHours(0, 0, 0, 0);
 
-                const count = await (prisma as any).activityLog.count({
-                    where: {
-                        userId,
-                        createdAt: { gte: prevDate, lt: dayEnd },
-                    },
-                });
-
-                if (count > 0) {
-                    streak++;
-                    prevDate.setDate(prevDate.getDate() - 1);
-                } else {
-                    break;
-                }
+        for (let i = 0; i < 366; i++) {
+            const key = `${cursor.getFullYear()}-${cursor.getMonth()}-${cursor.getDate()}`;
+            if (activeDays.has(key)) {
+                streak++;
+                cursor.setDate(cursor.getDate() - 1);
+            } else {
+                break;
             }
         }
 
