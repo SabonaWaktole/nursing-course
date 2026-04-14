@@ -13,6 +13,7 @@ export const getAllCourses = async (req: Request, res: Response) => {
                 description: true,
                 thumbnail: true,
                 price: true,
+                credit: true,
                 hours: true,
                 category: true,
                 createdAt: true,
@@ -64,7 +65,7 @@ export const getCourseById = async (req: Request, res: Response) => {
 
 export const createCourse = async (req: Request, res: Response) => {
     try {
-        const { title, description, price, hours, thumbnail, category, tags, instructorId: bodyInstructorId } = req.body;
+        const { title, description, price, credit, hours, thumbnail, category, tags, instructorId: bodyInstructorId } = req.body;
         // Use body instructorId if provided, otherwise null (unassigned)
         const instructorId = (bodyInstructorId && bodyInstructorId !== 'unassigned') ? bodyInstructorId : null;
 
@@ -73,6 +74,7 @@ export const createCourse = async (req: Request, res: Response) => {
                 title,
                 description,
                 price: parseFloat(price) || 0,
+                credit: parseFloat(credit) || 0,
                 hours: parseInt(hours) || 0,
                 thumbnail,
                 category: category || null,
@@ -93,9 +95,10 @@ export const createCourse = async (req: Request, res: Response) => {
 export const updateCourse = async (req: Request, res: Response) => {
     try {
         const id = req.params.id as string;
-        const { title, description, price, hours, thumbnail, category, tags, instructorId: bodyInstructorId } = req.body;
+        const { title, description, price, credit, hours, thumbnail, category, tags, instructorId: bodyInstructorId } = req.body;
 
         const parsedPrice = price !== undefined && price !== null && price !== '' ? parseFloat(price.toString()) : undefined;
+        const parsedCredit = credit !== undefined && credit !== null && credit !== '' ? parseFloat(credit.toString()) : undefined;
         const parsedHours = hours !== undefined && hours !== null && hours !== '' ? parseInt(hours.toString()) : undefined;
 
         // Resolve instructorId: 'unassigned' or empty string => null
@@ -110,6 +113,7 @@ export const updateCourse = async (req: Request, res: Response) => {
                 title, 
                 description, 
                 price: parsedPrice, 
+                credit: parsedCredit,
                 hours: parsedHours,
                 thumbnail, 
                 ...(category !== undefined ? { category: category || null } : {}),

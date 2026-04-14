@@ -39,6 +39,7 @@ model Course {
   category    String?
   tags        Json?
   price       Float?   @default(0)
+  credit      Float?   @default(0)
   hours       Int?     @default(0)
   instructorId String?
   instructor  User?    @relation(fields: [instructorId], references: [id])
