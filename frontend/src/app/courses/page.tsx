@@ -204,7 +204,6 @@ export default function CoursesPage() {
                                 className="flex items-center gap-2 text-primary font-black text-xs uppercase tracking-widest mb-4"
                             >
                                 <span className="material-symbols-outlined text-sm animate-pulse">auto_awesome</span>
-                                Most Popular This Month
                             </motion.div>
                             <motion.h3
                                 initial={{ opacity: 0, y: 16 }}
@@ -351,6 +350,7 @@ export default function CoursesPage() {
                                 link={`/courses/${course.id}`}
                                 category={course.tags && course.tags.length > 0 ? course.tags[0] : (course.category || undefined)}
                                 price={course.price ?? undefined}
+                                credit={course.credit ?? null}
                                 modules={course._count?.modules || 1}
                                 rating={4.8 + (idx % 2)}
                                 delay={idx * 0.15}

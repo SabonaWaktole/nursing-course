@@ -26,7 +26,7 @@ export default function AdminDashboard() {
 
     // Course form
     const [showCourseForm, setShowCourseForm] = useState(false);
-    const [courseForm, setCourseForm] = useState({ title: '', description: '', price: '0', category: '', thumbnail: '', tags: [] as string[], instructorId: '' });
+    const [courseForm, setCourseForm] = useState({ title: '', description: '', price: '0', credit: '0', category: '', thumbnail: '', tags: [] as string[], instructorId: '' });
     const [editingCourse, setEditingCourse] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
 
@@ -209,7 +209,7 @@ export default function AdminDashboard() {
             } else {
                 await api.post('/courses', courseForm);
             }
-            setCourseForm({ title: '', description: '', price: '0', category: '', thumbnail: '', tags: [], instructorId: '' });
+            setCourseForm({ title: '', description: '', price: '0', credit: '0', category: '', thumbnail: '', tags: [], instructorId: '' });
             setShowCourseForm(false);
             loadData();
         } catch (err: any) {
@@ -301,6 +301,7 @@ export default function AdminDashboard() {
             title: course.title,
             description: course.description,
             price: (course.price || 0).toString(),
+            credit: (course.credit !== undefined && course.credit !== null ? course.credit : 0).toString(),
             category: course.category || '',
             thumbnail: course.thumbnail || '',
             tags: course.tags || [],
@@ -308,8 +309,6 @@ export default function AdminDashboard() {
         });
         setEditingCourse(course.id);
         setShowCourseForm(true);
-        // Scroll to top or make sure the form is visible
-        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const handleDeleteCourse = async (id: string) => {
@@ -803,6 +802,157 @@ export default function AdminDashboard() {
         }
     };
 
+    const renderCourseFormUI = (isInline = false) => (
+        <div className={`relative w-full ${isInline ? 'bg-transparent' : 'max-w-2xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800'} overflow-hidden flex flex-col max-h-full`}>
+            <div className={`flex justify-between items-center p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 shrink-0 ${isInline ? 'rounded-t-[2rem]' : ''}`}>
+                <h3 className="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary">{editingCourse ? 'edit' : 'add_circle'}</span>
+                    {editingCourse ? 'Edit Course Details' : 'Create New Course'}
+                </h3>
+                {!isInline && (
+                    <button onClick={() => { setShowCourseForm(false); setEditingCourse(null); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                        <span className="material-symbols-outlined">close</span>
+                    </button>
+                )}
+            </div>
+            <div className={`p-5 sm:p-6 space-y-5 ${isInline ? '' : 'overflow-y-auto custom-scrollbar max-h-[60vh]'} flex-1`}>
+                <div>
+                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 block">Course Title</label>
+                    <input value={courseForm.title} onChange={(e) => setCourseForm({ ...courseForm, title: e.target.value })} placeholder="E.g., CNA Basics 101" className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all" />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                    <div>
+                        <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 block">Category</label>
+                        <select value={courseForm.category || ''} onChange={(e) => setCourseForm({ ...courseForm, category: e.target.value })} className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all">
+                            <option value="">No Category</option>
+                            <option value="Nursing">Nursing</option>
+                            <option value="CNA Prep">CNA Prep</option>
+                            <option value="Clinical Skills">Clinical Skills</option>
+                            <option value="Certification">Certification</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 block">Price ($)</label>
+                        <input type="number" value={courseForm.price} onChange={(e) => setCourseForm({ ...courseForm, price: e.target.value })} placeholder="E.g., 49.99" className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all" />
+                    </div>
+                    <div>
+                        <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 block">Credit (e.g. 1.5)</label>
+                        <input type="number" step="0.1" value={courseForm.credit} onChange={(e) => setCourseForm({ ...courseForm, credit: e.target.value })} placeholder="E.g., 1.5" className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all" />
+                    </div>
+                </div>
+                <div>
+                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 block">Assigned Instructor</label>
+                    <div className="relative">
+                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none">person</span>
+                        <select
+                            value={courseForm.instructorId}
+                            onChange={(e) => setCourseForm({ ...courseForm, instructorId: e.target.value })}
+                            className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 pl-10 pr-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none"
+                        >
+                            <option value="">Unassigned (All Admins)</option>
+                            {users.filter((u: any) => u.role === 'ADMIN').map((admin: any) => (
+                                <option key={admin.id} value={admin.id}>{admin.name || admin.email}</option>
+                            ))}
+                        </select>
+                        <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">expand_more</span>
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-1.5">Certificates and notifications will be routed to the assigned instructor. Leave unassigned for all admins.</p>
+                </div>
+                <div>
+                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Tags (select multiple)</label>
+                    <div className="flex flex-wrap gap-2">
+                        {['Nursing', 'CNAprep', 'Clinical', 'other', 'etc'].map((t) => (
+                            <button
+                                key={t}
+                                type="button"
+                                onClick={() => {
+                                    setCourseForm(prev => ({
+                                        ...prev,
+                                        tags: prev.tags.includes(t)
+                                            ? prev.tags.filter(tag => tag !== t)
+                                            : [...prev.tags, t]
+                                    }));
+                                }}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition border ${courseForm.tags.includes(t)
+                                    ? 'bg-primary text-white border-primary shadow-md shadow-primary/20'
+                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-transparent hover:border-primary/50'
+                                    }`}
+                            >
+                                {t}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+                <div>
+                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 block">Description</label>
+                    <textarea value={courseForm.description} onChange={(e) => setCourseForm({ ...courseForm, description: e.target.value })} placeholder="Course description and learning objectives..." className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all" rows={3} />
+                </div>
+
+                <div>
+                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 block">Course Thumbnail</label>
+                    <div className="flex border border-slate-300 dark:border-slate-700 rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-950">
+                        {courseForm.thumbnail ? (
+                            <div className="h-24 w-36 shrink-0 bg-slate-200 dark:bg-slate-800 flex items-center justify-center border-r border-slate-300 dark:border-slate-700 relative group overflow-hidden">
+                                <img src={getFileUrl(courseForm.thumbnail)} alt="Preview" className="h-full w-full object-cover group-hover:scale-110 transition-transform" />
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <span className="material-symbols-outlined text-white">image</span>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="h-24 w-36 shrink-0 bg-slate-100 dark:bg-slate-800 flex flex-col items-center justify-center text-xs text-slate-400 border-r border-slate-300 dark:border-slate-700 border-dashed">
+                                <span className="material-symbols-outlined text-2xl mb-1 opacity-50">add_photo_alternate</span>
+                                No Image
+                            </div>
+                        )}
+                        <div className="flex-1 flex flex-col sm:flex-row items-start sm:items-center p-4 justify-between gap-3">
+                            <div className="text-sm text-slate-500 mr-4 leading-snug">
+                                {courseForm.thumbnail ? 'Thumbnail uploaded successfully. You can replace it if needed.' : 'Upload a high-quality thumbnail (16:9 recommended) to make your course stand out.'}
+                            </div>
+                            <button
+                                onClick={() => {
+                                    const input = document.createElement('input');
+                                    input.type = 'file';
+                                    input.accept = '.jpg,.jpeg,.png,.webp,.gif';
+                                    input.onchange = async (e: any) => {
+                                        const file = e.target.files[0];
+                                        if (!file) return;
+                                        setSaving(true);
+                                        const formData = new FormData();
+                                        formData.append('thumbnail', file);
+                                        try {
+                                            const res = await api.post('/upload/thumbnail', formData, {
+                                                headers: { 'Content-Type': 'multipart/form-data' },
+                                            });
+                                            setCourseForm(prev => ({ ...prev, thumbnail: res.data.url }));
+                                        } catch {
+                                            alert('Thumbnail upload failed.');
+                                        } finally {
+                                            setSaving(false);
+                                        }
+                                    };
+                                    input.click();
+                                }}
+                                className="shrink-0 flex items-center justify-center gap-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 w-full sm:w-auto px-4 py-2 text-sm font-bold text-slate-700 dark:text-slate-300 hover:border-primary hover:text-primary transition-all shadow-sm"
+                                disabled={saving}
+                            >
+                                <span className="material-symbols-outlined text-lg">upload</span>
+                                {courseForm.thumbnail ? 'Replace' : 'Upload'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div className={`flex justify-end gap-3 p-5 sm:p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 shrink-0 ${isInline ? 'rounded-b-[2rem]' : ''}`}>
+                <button onClick={() => { setShowCourseForm(false); setEditingCourse(null); }} className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-6 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">Cancel</button>
+                <button onClick={handleCreateCourse} disabled={saving} className="rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-white hover:bg-sky-500 transition-colors disabled:opacity-50 shadow-lg shadow-primary/20 flex items-center gap-2">
+                    {saving ? <span className="material-symbols-outlined animate-spin text-lg">refresh</span> : null}
+                    {saving ? 'Saving...' : (editingCourse ? 'Save Changes' : 'Create Course')}
+                </button>
+            </div>
+        </div>
+    );
+
     if (loading) return (
         <div className="flex items-center justify-center py-20 min-h-screen bg-background-light dark:bg-background-dark">
             <motion.div
@@ -1166,7 +1316,7 @@ export default function AdminDashboard() {
                                                 <button
                                                     onClick={() => {
                                                         setEditingCourse(null);
-                                                        setCourseForm({ title: '', description: '', price: '0', category: '', thumbnail: '', tags: [], instructorId: '' });
+                                                        setCourseForm({ title: '', description: '', price: '0', category: '', thumbnail: '', tags: [], instructorId: '', credit: '0' });
                                                         setShowCourseForm(!showCourseForm);
                                                     }}
                                                     className="flex items-center justify-center gap-2 px-6 py-2.5 bg-gradient-to-r from-primary to-cyan-500 hover:from-sky-400 hover:to-cyan-400 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-primary/30 hover:shadow-primary/40 hover:-translate-y-0.5 w-full sm:w-auto overflow-hidden relative group"
@@ -1178,155 +1328,33 @@ export default function AdminDashboard() {
                                             </div>
 
                                             <AnimatePresence>
-                                            {showCourseForm && (
+                                            {showCourseForm && !editingCourse && (
+                                                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
                                                 <motion.div
-                                                    initial={{ opacity: 0, height: 0, marginBottom: 0 }}
-                                                    animate={{ opacity: 1, height: 'auto', marginBottom: 32 }}
-                                                    exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-                                                    transition={{ duration: 0.35, ease: [0.25, 0.8, 0.25, 1] }}
-                                                    className="rounded-2xl border border-primary/20 bg-primary/5 dark:bg-slate-800/50 p-6 shadow-sm overflow-hidden"
+                                                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                    exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                                                    transition={{ duration: 0.2 }}
+                                                    className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-full"
                                                 >
-                                                    <div className="flex justify-between items-center mb-4 border-b border-primary/10 pb-2">
-                                                        <h3 className="font-bold text-lg text-primary flex items-center gap-2">
-                                                            <span className="material-symbols-outlined">{editingCourse ? 'edit' : 'add_circle'}</span>
-                                                            {editingCourse ? 'Edit Course Details' : 'Create New Course'}
-                                                        </h3>
-                                                    </div>
-                                                    <div className="space-y-4">
-                                                        <div>
-                                                            <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 block">Course Title</label>
-                                                            <input value={courseForm.title} onChange={(e) => setCourseForm({ ...courseForm, title: e.target.value })} placeholder="E.g., CNA Basics 101" className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all" />
-                                                        </div>
-                                                        <div className="grid grid-cols-2 gap-4">
-                                                            <div>
-                                                                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 block">Category</label>
-                                                                <select value={courseForm.category || ''} onChange={(e) => setCourseForm({ ...courseForm, category: e.target.value })} className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all">
-                                                                    <option value="">No Category</option>
-                                                                    <option value="Nursing">Nursing</option>
-                                                                    <option value="CNA Prep">CNA Prep</option>
-                                                                    <option value="Clinical Skills">Clinical Skills</option>
-                                                                    <option value="Certification">Certification</option>
-                                                                    <option value="Other">Other</option>
-                                                                </select>
-                                                            </div>
-                                                            <div>
-                                                                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 block">Price ($)</label>
-                                                                <input type="number" value={courseForm.price} onChange={(e) => setCourseForm({ ...courseForm, price: e.target.value })} placeholder="E.g., 49.99" className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all" />
-                                                            </div>
-                                                        </div>
-                                                        <div>
-                                                            <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 block">Assigned Instructor</label>
-                                                            <div className="relative">
-                                                                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none">person</span>
-                                                                <select
-                                                                    value={courseForm.instructorId}
-                                                                    onChange={(e) => setCourseForm({ ...courseForm, instructorId: e.target.value })}
-                                                                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 pl-10 pr-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none"
-                                                                >
-                                                                    <option value="">Unassigned (All Admins)</option>
-                                                                    {users.filter((u: any) => u.role === 'ADMIN').map((admin: any) => (
-                                                                        <option key={admin.id} value={admin.id}>{admin.name || admin.email}</option>
-                                                                    ))}
-                                                                </select>
-                                                                <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">expand_more</span>
-                                                            </div>
-                                                            <p className="text-[10px] text-slate-400 mt-1">Certificates and notifications will be routed to the assigned instructor. Leave unassigned for all admins.</p>
-                                                        </div>
-                                                        <div>
-                                                            <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Tags (select multiple)</label>
-                                                            <div className="flex flex-wrap gap-2">
-                                                                {['Nursing', 'CNAprep', 'Clinical', 'other', 'etc'].map((t) => (
-                                                                    <button
-                                                                        key={t}
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            setCourseForm(prev => ({
-                                                                                ...prev,
-                                                                                tags: prev.tags.includes(t)
-                                                                                    ? prev.tags.filter(tag => tag !== t)
-                                                                                    : [...prev.tags, t]
-                                                                            }));
-                                                                        }}
-                                                                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition border ${courseForm.tags.includes(t)
-                                                                            ? 'bg-primary text-white border-primary shadow-md shadow-primary/20'
-                                                                            : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700 hover:border-primary hover:text-primary dark:hover:text-primary'
-                                                                            }`}
-                                                                    >
-                                                                        {t}
-                                                                    </button>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                        <div>
-                                                            <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 block">Description</label>
-                                                            <textarea value={courseForm.description} onChange={(e) => setCourseForm({ ...courseForm, description: e.target.value })} placeholder="Course description and learning objectives..." className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all" rows={3} />
-                                                        </div>
-
-                                                        <div>
-                                                            <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 block">Course Thumbnail</label>
-                                                            <div className="flex border border-slate-300 dark:border-slate-700 rounded-xl overflow-hidden bg-white dark:bg-slate-900">
-                                                                {courseForm.thumbnail ? (
-                                                                    <div className="h-20 w-32 shrink-0 bg-slate-100 dark:bg-slate-800 flex items-center justify-center border-r border-slate-300 dark:border-slate-700">
-                                                                        <img src={getFileUrl(courseForm.thumbnail)} alt="Preview" className="h-full w-full object-cover" />
-                                                                    </div>
-                                                                ) : (
-                                                                    <div className="h-20 w-32 shrink-0 bg-slate-50 dark:bg-slate-800/50 flex flex-col items-center justify-center text-xs text-slate-400 border-r border-slate-300 dark:border-slate-700 border-dashed">
-                                                                        <span className="material-symbols-outlined text-xl mb-1 opacity-50">image</span>
-                                                                        No Image
-                                                                    </div>
-                                                                )}
-                                                                <div className="flex-1 flex items-center p-4 justify-between">
-                                                                    <div className="text-sm text-slate-500 truncate mr-4">
-                                                                        {courseForm.thumbnail ? 'Thumbnail uploaded successfully.' : 'Upload a high-quality thumbnail (16:9 recommended).'}
-                                                                    </div>
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            const input = document.createElement('input');
-                                                                            input.type = 'file';
-                                                                            input.accept = '.jpg,.jpeg,.png,.webp,.gif';
-                                                                            input.onchange = async (e: any) => {
-                                                                                const file = e.target.files[0];
-                                                                                if (!file) return;
-                                                                                setSaving(true);
-                                                                                const formData = new FormData();
-                                                                                formData.append('thumbnail', file);
-                                                                                try {
-                                                                                    const res = await api.post('/upload/thumbnail', formData, {
-                                                                                        headers: { 'Content-Type': 'multipart/form-data' },
-                                                                                    });
-                                                                                    setCourseForm(prev => ({ ...prev, thumbnail: res.data.url }));
-                                                                                } catch {
-                                                                                    alert('Thumbnail upload failed.');
-                                                                                } finally {
-                                                                                    setSaving(false);
-                                                                                }
-                                                                            };
-                                                                            input.click();
-                                                                        }}
-                                                                        className="shrink-0 flex items-center gap-2 rounded-lg bg-secondary/10 px-4 py-2 text-sm font-semibold text-secondary hover:bg-secondary/20 transition-colors"
-                                                                        disabled={saving}
-                                                                    >
-                                                                        <span className="material-symbols-outlined text-lg">upload</span>
-                                                                        {courseForm.thumbnail ? 'Replace' : 'Browse...'}
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700/50 mt-4">
-                                                            <button onClick={() => { setShowCourseForm(false); setEditingCourse(null); }} className="rounded-xl border border-slate-300 dark:border-slate-600 px-5 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Cancel</button>
-                                                            <button onClick={handleCreateCourse} disabled={saving} className="rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white hover:bg-sky-500 transition-colors disabled:opacity-50 shadow-lg shadow-primary/20 flex items-center gap-2">
-                                                                {saving ? <span className="material-symbols-outlined animate-spin">refresh</span> : null}
-                                                                {saving ? 'Saving...' : (editingCourse ? 'Save Changes' : 'Create Course')}
-                                                            </button>
-                                                        </div>
-                                                    </div>
+                                                    {renderCourseFormUI(false)}
                                                 </motion.div>
+                                                </div>
                                             )}
                                             </AnimatePresence>
 
                                             <div className="mt-8 grid grid-cols-1 gap-6">
-                                                {filteredCourses.map((course) => (
+                                                {filteredCourses.map((course) => editingCourse === course.id ? (
+                                                    <motion.div
+                                                        key={`edit-${course.id}`}
+                                                        layout
+                                                        initial={{ opacity: 0, y: 20 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        className="bg-white dark:bg-slate-900 rounded-[2rem] border-2 border-primary/40 shadow-2xl transition-all duration-500 overflow-hidden"
+                                                    >
+                                                        {renderCourseFormUI(true)}
+                                                    </motion.div>
+                                                ) : (
                                                     <motion.div
                                                         key={course.id}
                                                         layout
@@ -1405,6 +1433,20 @@ export default function AdminDashboard() {
                                                                                     <p className="text-sm font-black text-slate-700 dark:text-slate-200">${Number(course.price).toFixed(2)}</p>
                                                                                 </div>
                                                                             </div>
+                                                                            {(course.credit ?? 0) > 0 && (
+                                                                                <>
+                                                                                    <div className="w-px h-8 bg-slate-200 dark:bg-slate-800 hidden sm:block"></div>
+                                                                                    <div className="hidden sm:flex items-center gap-3">
+                                                                                        <div className="w-10 h-10 rounded-full bg-amber-50 dark:bg-amber-900/20 text-amber-500 flex items-center justify-center border border-amber-100 dark:border-amber-800/30">
+                                                                                            <span className="material-symbols-outlined text-lg">stars</span>
+                                                                                        </div>
+                                                                                        <div>
+                                                                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Credit</p>
+                                                                                            <p className="text-sm font-black text-slate-700 dark:text-slate-200">{course.credit ?? 0}hr</p>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </>
+                                                                            )}
                                                                         </div>
 
                                                                         {/* Premium Responsive Action Bar */}
