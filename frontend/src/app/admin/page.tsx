@@ -1442,7 +1442,7 @@ export default function AdminDashboard() {
                                                                                         </div>
                                                                                         <div>
                                                                                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Credit</p>
-                                                                                            <p className="text-sm font-black text-slate-700 dark:text-slate-200">{course.credit ?? 0}hr</p>
+                                                                                            <p className="text-sm font-black text-slate-700 dark:text-slate-200">{course.credit ?? 0}</p>
                                                                                         </div>
                                                                                     </div>
                                                                                 </>
@@ -2315,12 +2315,15 @@ export default function AdminDashboard() {
                                                                                                 Re-Approve
                                                                                             </button>
                                                                                         )}
-                                                                                        <button className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md text-slate-400 hover:text-primary transition-colors" title="View Details">
+                                                                                        <button 
+                                                                                            onClick={() => window.open(`/certificate/verify/${c.uniqueId}`, '_blank')}
+                                                                                            className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md text-slate-400 hover:text-primary transition-colors" title="View Details"
+                                                                                        >
                                                                                             <span className="material-symbols-outlined text-lg">visibility</span>
                                                                                         </button>
                                                                                         <button 
                                                                                             onClick={() => {
-                                                                                                window.open(`${getFileUrl(`/api/public/certificates/${c.uniqueId}/download`)}`, '_blank');
+                                                                                                window.open(`${getFileUrl(`/api/certificates/download/${c.id}`)}`, '_blank');
                                                                                             }}
                                                                                             className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md text-slate-400 hover:text-primary transition-colors" title="Download PDF"
                                                                                         >

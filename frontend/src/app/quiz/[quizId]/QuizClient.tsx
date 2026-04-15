@@ -588,7 +588,7 @@ function QuizResultScreen({ result, user, quiz, onRetry, courseCompleted, nextEx
                                     <div className="mt-auto pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                                         <div className="flex flex-col">
                                             <span className="text-xs font-bold text-primary">${course.price}</span>
-                                            {course.credit ? <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider flex items-center gap-1 mt-0.5"><span className="material-symbols-outlined text-[10px]">star</span> Credit: {course.credit}hr</span> : null}
+                                            {course.credit ? <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider flex items-center gap-1 mt-0.5"><span className="material-symbols-outlined text-[10px]">star</span> Credit: {course.credit}</span> : null}
                                         </div>
                                         <span className="text-[10px] text-slate-400 font-medium">Enrol Now →</span>
                                     </div>

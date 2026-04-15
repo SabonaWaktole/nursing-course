@@ -101,7 +101,7 @@ export default function CourseCard({
               </span>
               {credit ? (
                 <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider flex items-center gap-1">
-                  <Star className="w-3 h-3 fill-current" /> Credit: {credit}hr
+                  <Star className="w-3 h-3 fill-current" /> Credits: {credit}
                 </span>
               ) : null}
             </div>
