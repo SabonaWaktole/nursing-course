@@ -12,6 +12,7 @@ import RoleGuard from '@/components/RoleGuard';
 import AdminSidebar from '@/components/AdminSidebar';
 import AdminSettingsTab from '@/components/AdminSettingsTab';
 import { getFileUrl } from '@/lib/url-utils';
+import { formatPrice } from '@/lib/utils';
 
 export default function AdminDashboard() {
     const { user } = useAuth();
@@ -1430,7 +1431,7 @@ export default function AdminDashboard() {
                                                                                 </div>
                                                                                 <div>
                                                                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Price</p>
-                                                                                    <p className="text-sm font-black text-slate-700 dark:text-slate-200">${Number(course.price).toFixed(2)}</p>
+                                                                                    <p className="text-sm font-black text-slate-700 dark:text-slate-200">${formatPrice(Number(course.price))}</p>
                                                                                 </div>
                                                                             </div>
                                                                             {(course.credit ?? 0) > 0 && (
