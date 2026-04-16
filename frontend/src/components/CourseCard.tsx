@@ -3,6 +3,7 @@ import { motion, type HTMLMotionProps } from 'framer-motion';
 import { ArrowRight, Star, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { useCardHoverMotion } from '@/lib/motion';
+import { formatPrice } from '@/lib/utils';
 
 interface CourseCardProps extends Omit<HTMLMotionProps<"div">, "children"> {
   courseId: string | number;
@@ -97,11 +98,11 @@ export default function CourseCard({
           {price !== undefined && (
             <div className="flex flex-col gap-0.5">
               <span className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
-                {price && price > 0 ? `$${price}` : <span className="text-emerald-500">Free</span>}
+                {price && price > 0 ? `$${formatPrice(price)}` : <span className="text-emerald-500">Free</span>}
               </span>
               {credit ? (
-                <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider flex items-center gap-1">
-                  <Star className="w-3 h-3 fill-current" /> Credits: {credit}
+                <span className="text-[10px] font-bold text-amber-500  tracking-wider flex items-center gap-1">
+                  <Star className="w-3 h-3 fill-current" /> Credits: {credit} Units
                 </span>
               ) : null}
             </div>

@@ -354,8 +354,8 @@ export const verifyCertificate = async (req: Request, res: Response) => {
         });
         const certificate = cert as any;
 
-        if (!certificate) {
-            return res.status(404).json({ valid: false, message: 'Certificate not found' });
+        if (!certificate || certificate.status !== 'APPROVED') {
+            return res.status(404).json({ valid: false, message: 'Certificate not found or invalid' });
         }
 
         let orgName = certificate.organizationName;
