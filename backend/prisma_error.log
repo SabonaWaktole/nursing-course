@@ -1,4 +1,0 @@
-[1m[31mError: [39m[22m
-EPERM: operation not permitted, unlink 'C:\Users\sebon\OneDrive\Desktop\UW\backend\node_modules\.prisma\client\query_engine-windows.dll.node'
-
-

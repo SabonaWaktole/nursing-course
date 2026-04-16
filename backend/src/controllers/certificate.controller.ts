@@ -225,6 +225,10 @@ export const downloadCertificate = async (req: Request, res: Response) => {
             doc.font('Helvetica').fontSize(9).fillColor(slate400)
                 .text(orgAddress, leftX, topY + 18);
         }
+        if (provId) {
+            doc.font('Helvetica').fontSize(9).fillColor(slate400)
+                .text(`Provider ID: ${provId}`, leftX, topY + 30);
+        }
 
         // ============ CERTIFICATE TITLE ============
         const titleY = 105;

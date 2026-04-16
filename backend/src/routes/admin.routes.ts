@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import { getDashboardStats, getAllUsers, getAllCertificates, deleteUser, createUser, approveCertificate, revokeCertificate, updateCertificate, getNotifications, markNotificationRead, markAllNotificationsRead, clearAllNotifications } from '../controllers/admin.controller';
 import { authenticate, requireAdmin } from '../middleware/auth.middleware';
+import { withConcurrencyLimit } from '../utils/concurrency';
 
 const router = Router();
 
-router.get('/dashboard', authenticate, requireAdmin, getDashboardStats);
+router.get('/dashboard', authenticate, requireAdmin, withConcurrencyLimit(3), getDashboardStats);
 router.get('/users', authenticate, requireAdmin, getAllUsers);
 router.post('/users', authenticate, requireAdmin, createUser);
 router.delete('/users/:id', authenticate, requireAdmin, deleteUser);

@@ -5,40 +5,35 @@ export const getDashboardStats = async (req: Request, res: Response) => {
     try {
         const now = new Date();
         const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
 
-        const [
-            totalUsers, prevUsers,
-            totalCourses, prevCourses,
-            totalEnrollments, prevEnrollments,
-            totalCertificates, prevCertificates,
-            recentEnrollments,
-            allResults
-        ] = await Promise.all([
-            prisma.user.count(),
-            prisma.user.count({ where: { createdAt: { lt: thirtyDaysAgo } } }),
+        // Batch 1: Core counts (lightweight, safe to parallelize within a small batch)
+        const [totalUsers, totalCourses, totalEnrollments, totalCertificates] =
+            await Promise.all([
+                prisma.user.count(),
+                prisma.course.count(),
+                prisma.enrollment.count(),
+                prisma.certificate.count(),
+            ]);
 
-            prisma.course.count(),
-            prisma.course.count({ where: { createdAt: { lt: thirtyDaysAgo } } }),
-
-            prisma.enrollment.count(),
-            prisma.enrollment.count({ where: { createdAt: { lt: thirtyDaysAgo } } }),
-
-            prisma.certificate.count(),
-            prisma.certificate.count({ where: { issuedAt: { lt: thirtyDaysAgo } } }),
-
-            prisma.enrollment.findMany({
-                take: 10,
-                orderBy: { createdAt: 'desc' },
-                include: {
-                    user: { select: { name: true, email: true } },
-                    course: { select: { title: true } },
-                },
-            }),
-            prisma.result.findMany({
-                select: { score: true, passed: true }
-            })
-        ]);
+        // Batch 2: Trend counts + heavier data (separate batch to limit peak connections)
+        const [prevUsers, prevCourses, prevEnrollments, prevCertificates, recentEnrollments, allResults] =
+            await Promise.all([
+                prisma.user.count({ where: { createdAt: { lt: thirtyDaysAgo } } }),
+                prisma.course.count({ where: { createdAt: { lt: thirtyDaysAgo } } }),
+                prisma.enrollment.count({ where: { createdAt: { lt: thirtyDaysAgo } } }),
+                prisma.certificate.count({ where: { issuedAt: { lt: thirtyDaysAgo } } }),
+                prisma.enrollment.findMany({
+                    take: 10,
+                    orderBy: { createdAt: 'desc' },
+                    include: {
+                        user: { select: { name: true, email: true } },
+                        course: { select: { title: true } },
+                    },
+                }),
+                prisma.result.findMany({
+                    select: { score: true, passed: true }
+                }),
+            ]);
 
         const calculateTrend = (total: number, prev: number) => {
             if (prev === 0) return total > 0 ? 100 : 0;

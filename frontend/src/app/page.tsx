@@ -710,6 +710,8 @@ function CoursesSection() {
                   link={link}
                   delay={i * 0.15}
                   category={isDynamic ? ((course as Course).tags?.[0] || (course as Course).category || undefined) : undefined}
+                  price={isDynamic ? ((course as Course).price ?? undefined) : undefined}
+                  credit={isDynamic ? ((course as Course).credit ?? null) : null}
                 />
               );
             })

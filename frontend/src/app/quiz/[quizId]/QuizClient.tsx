@@ -586,7 +586,10 @@ function QuizResultScreen({ result, user, quiz, onRetry, courseCompleted, nextEx
                                 <div className="p-4 flex flex-col flex-grow">
                                     <h3 className="text-base font-bold text-slate-900 mb-2 leading-tight group-hover:text-blue-900 transition-colors line-clamp-2">{course.title}</h3>
                                     <div className="mt-auto pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                                        <span className="text-xs font-bold text-primary">${course.price}</span>
+                                        <div className="flex flex-col">
+                                            <span className="text-xs font-bold text-primary">${course.price}</span>
+                                            {course.credit ? <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider flex items-center gap-1 mt-0.5"><span className="material-symbols-outlined text-[10px]">star</span> Credit: {course.credit}</span> : null}
+                                        </div>
                                         <span className="text-[10px] text-slate-400 font-medium">Enrol Now →</span>
                                     </div>
                                 </div>

@@ -160,6 +160,11 @@ export default function VerifyClient({ uniqueId }: { uniqueId: string }) {
                                         {cert.organizationAddress}
                                     </p>
                                 )}
+                                {cert.providerId && (
+                                    <p className="text-[clamp(8px,1vw,11px)] text-slate-400 mt-0.5 leading-snug">
+                                        Provider ID: {cert.providerId}
+                                    </p>
+                                )}
                             </div>
 
                             {/* Title */}
