@@ -342,22 +342,24 @@ export const updateProgress = async (req: Request, res: Response) => {
         const courseId = req.params.courseId as string;
         const { progress } = req.body;
 
-        const enrollment = await prisma.enrollment.update({
-            where: { userId_courseId: { userId, courseId } },
+        const updateCount = await prisma.enrollment.updateMany({
+            where: { userId, courseId },
             data: {
                 progress: Math.min(100, Math.max(0, parseInt(progress))),
                 completed: parseInt(progress) >= 100,
             },
         });
 
-        // Log activity
-        try {
-            await (prisma as any).activityLog.create({
-                data: { userId, type: 'PROGRESS_UPDATE', courseId },
-            });
-        } catch {}
+        if (updateCount.count > 0) {
+            // Log activity
+            try {
+                await (prisma as any).activityLog.create({
+                    data: { userId, type: 'PROGRESS_UPDATE', courseId },
+                });
+            } catch {}
+        }
 
-        res.json(enrollment);
+        res.json({ message: 'Progress processed', progress });
     } catch (error: any) {
         res.status(500).json({ message: 'Error updating progress' });
     }

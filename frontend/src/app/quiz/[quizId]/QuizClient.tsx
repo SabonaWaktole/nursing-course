@@ -88,8 +88,8 @@ export default function QuizPage() {
     // Result screen (Matches assesment_and_reward.html)
     if (result) {
         return (
-            <RoleGuard allowedRoles={['STUDENT']}>
-                <QuizResultScreen
+        <RoleGuard allowedRoles={['STUDENT', 'ADMIN']}>
+            <QuizResultScreen
                     result={result}
                     user={user}
                     quiz={quiz}
@@ -108,7 +108,7 @@ export default function QuizPage() {
     const answeredCount = Object.keys(answers).length;
 
     return (
-        <RoleGuard allowedRoles={['STUDENT']}>
+        <RoleGuard allowedRoles={['STUDENT', 'ADMIN']}>
             <motion.div
                 initial={{ opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}

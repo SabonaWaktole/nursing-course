@@ -73,21 +73,29 @@ export default function CourseDetailPage() {
         if (user && course) {
             api.get('/courses/my/enrollments').then((r) => {
                 const found = r.data.find((e: any) => e.courseId === course.id);
-                if (found) {
+                const isInstructor = course.instructor && course.instructor.id === user.id;
+                const isAdmin = user.role === 'ADMIN';
+                
+                // Instructors get access if it's their course.
+                // Admins get access ONLY if the course has no instructor assigned.
+                const hasOverrideAccess = isInstructor || (isAdmin && !course.instructor);
+
+                if (found || hasOverrideAccess) {
                     setEnrolled(true);
-                    setProgress(found.progress || 0);
+                    const currentProgress = found ? (found.progress || 0) : 0;
+                    setProgress(currentProgress);
 
                     // If enrolled, calculate which lesson should be active based on progress
                     const allLessons: Lesson[] = course.modules?.flatMap(m => m.lessons) || [];
                     const totalLessons = allLessons.length;
                     if (totalLessons > 0) {
-                        if (found.progress === 0) {
+                        if (currentProgress === 0) {
                             // Reset to first
                             setActiveLesson(allLessons[0].id);
                             if (course.modules?.[0]) {
                                 setExpandedModules(new Set([course.modules[0].id]));
                             }
-                        } else if (found.progress >= 100) {
+                        } else if (currentProgress >= 100) {
                             // Fully completed, stay on the last lesson or whatever they clicked
                             if (!activeLesson) {
                                 setActiveLesson(allLessons[totalLessons - 1].id);
@@ -96,7 +104,7 @@ export default function CourseDetailPage() {
                             }
                         } else {
                             // Calculate current lesson index based on progress percentage
-                            const currentIndex = Math.max(0, Math.floor((found.progress / 100) * totalLessons));
+                            const currentIndex = Math.max(0, Math.floor((currentProgress / 100) * totalLessons));
                             const safeIndex = Math.min(currentIndex, totalLessons - 1);
 
                             if (!activeLesson) {
