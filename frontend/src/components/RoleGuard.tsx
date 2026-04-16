@@ -10,7 +10,7 @@ interface RoleGuardProps {
 }
 
 export default function RoleGuard({ children, allowedRoles }: RoleGuardProps) {
-    const { user, loading } = useAuth();
+    const { user, loading, activeRole } = useAuth();
     const router = useRouter();
 
     useEffect(() => {
@@ -18,16 +18,16 @@ export default function RoleGuard({ children, allowedRoles }: RoleGuardProps) {
             if (!user) {
                 // Not logged in
                 router.push('/login');
-            } else if (allowedRoles && !allowedRoles.includes(user.role as any)) {
-                // Unauthorized role
-                if (user.role === 'ADMIN') {
+            } else if (allowedRoles && !allowedRoles.includes(activeRole)) {
+                // Unauthorized based on activeRole
+                if (activeRole === 'ADMIN') {
                     router.push('/admin');
                 } else {
                     router.push('/courses');
                 }
             }
         }
-    }, [user, loading, router, allowedRoles]);
+    }, [user, loading, router, allowedRoles, activeRole]);
 
     if (loading) {
         return (
@@ -37,7 +37,7 @@ export default function RoleGuard({ children, allowedRoles }: RoleGuardProps) {
         );
     }
 
-    if (!user || (allowedRoles && !allowedRoles.includes(user.role as any))) {
+    if (!user || (allowedRoles && !allowedRoles.includes(activeRole))) {
         return null; // Will redirect in useEffect
     }
 

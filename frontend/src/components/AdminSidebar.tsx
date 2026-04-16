@@ -28,7 +28,7 @@ export default function AdminSidebar({
     loadResults,
     loadCertificates
 }: AdminSidebarProps) {
-    const { user } = useAuth();
+    const { user, activeRole, setActiveRole } = useAuth();
 
     const navItems = [
         { id: 'overview', icon: 'grid_view', label: 'Overview', onClick: () => setTab?.('overview'), href: '/admin' },
@@ -140,7 +140,18 @@ export default function AdminSidebar({
                     })}
                 </nav>
 
-                <div className="p-4 border-t border-slate-200 dark:border-slate-800 shrink-0">
+                <div className="p-4 border-t border-slate-200 dark:border-slate-800 shrink-0 space-y-2">
+                    {/* Switch to Student button */}
+                    <button
+                        onClick={() => setActiveRole('STUDENT')}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 text-primary bg-primary/5 hover:bg-primary/10 border border-primary/20 ${isSidebarCollapsed ? 'justify-center' : ''}`}
+                        title="Switch to Student view"
+                    >
+                        <span className="material-symbols-outlined text-xl">school</span>
+                        {!isSidebarCollapsed && (
+                            <span className="animate-in fade-in slide-in-from-left-2 duration-300">Switch to Student</span>
+                        )}
+                    </button>
                     <Link
                         href="/settings"
                         onClick={() => {

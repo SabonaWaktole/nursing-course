@@ -15,7 +15,7 @@ const PdfViewer = dynamic(() => import('@/components/PdfViewer'), { ssr: false }
 
 export default function CourseDetailPage() {
     const { id } = useParams();
-    const { user } = useAuth();
+    const { user, activeRole } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
     const fromQuiz = searchParams.get('fromQuiz');
@@ -74,7 +74,7 @@ export default function CourseDetailPage() {
             api.get('/courses/my/enrollments').then((r) => {
                 const found = r.data.find((e: any) => e.courseId === course.id);
                 const isInstructor = course.instructor && course.instructor.id === user.id;
-                const isAdmin = user.role === 'ADMIN';
+                const isAdmin = activeRole === 'ADMIN';
                 
                 // Instructors get access if it's their course.
                 // Admins get access ONLY if the course has no instructor assigned.
