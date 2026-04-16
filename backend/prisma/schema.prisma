@@ -23,6 +23,7 @@ model User {
   results     Result[]
   certificates Certificate[]
   activityLogs ActivityLog[]
+  payments    Payment[]
   teachingCourses Course[] // Relation for instructors/admin
 }
 
@@ -51,6 +52,7 @@ model Course {
   quizzes     Quiz[]
   enrollments Enrollment[]
   certificates Certificate[]
+  payments    Payment[]
 }
 
 model Module {
@@ -187,4 +189,27 @@ model AdminSettings {
   providerId          String   @default("")
   
   updatedAt           DateTime @updatedAt
+}
+
+model Payment {
+  id                String        @id @default(uuid())
+  userId            String
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId           String
+  course            Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  stripeSessionId   String        @unique
+  stripePaymentId   String?       @unique
+  amount            Float
+  currency          String        @default("usd")
+  status            PaymentStatus @default(PENDING)
+
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
 }

@@ -248,6 +248,21 @@ export const enrollInCourse = async (req: Request, res: Response) => {
         const userId = (req as any).user.userId;
         const courseId = req.params.courseId as string;
 
+        // Check if the course requires payment
+        const course = await prisma.course.findUnique({
+            where: { id: courseId },
+            select: { id: true, title: true, price: true },
+        });
+        if (!course) return res.status(404).json({ message: 'Course not found' });
+
+        if (course.price && course.price > 0) {
+            return res.status(402).json({
+                message: 'Payment required',
+                requiresPayment: true,
+                price: course.price,
+            });
+        }
+
         const existing = await prisma.enrollment.findUnique({
             where: { userId_courseId: { userId, courseId } },
         });
@@ -327,22 +342,24 @@ export const updateProgress = async (req: Request, res: Response) => {
         const courseId = req.params.courseId as string;
         const { progress } = req.body;
 
-        const enrollment = await prisma.enrollment.update({
-            where: { userId_courseId: { userId, courseId } },
+        const updateCount = await prisma.enrollment.updateMany({
+            where: { userId, courseId },
             data: {
                 progress: Math.min(100, Math.max(0, parseInt(progress))),
                 completed: parseInt(progress) >= 100,
             },
         });
 
-        // Log activity
-        try {
-            await (prisma as any).activityLog.create({
-                data: { userId, type: 'PROGRESS_UPDATE', courseId },
-            });
-        } catch {}
+        if (updateCount.count > 0) {
+            // Log activity
+            try {
+                await (prisma as any).activityLog.create({
+                    data: { userId, type: 'PROGRESS_UPDATE', courseId },
+                });
+            } catch {}
+        }
 
-        res.json(enrollment);
+        res.json({ message: 'Progress processed', progress });
     } catch (error: any) {
         res.status(500).json({ message: 'Error updating progress' });
     }
