@@ -248,6 +248,21 @@ export const enrollInCourse = async (req: Request, res: Response) => {
         const userId = (req as any).user.userId;
         const courseId = req.params.courseId as string;
 
+        // Check if the course requires payment
+        const course = await prisma.course.findUnique({
+            where: { id: courseId },
+            select: { id: true, title: true, price: true },
+        });
+        if (!course) return res.status(404).json({ message: 'Course not found' });
+
+        if (course.price && course.price > 0) {
+            return res.status(402).json({
+                message: 'Payment required',
+                requiresPayment: true,
+                price: course.price,
+            });
+        }
+
         const existing = await prisma.enrollment.findUnique({
             where: { userId_courseId: { userId, courseId } },
         });

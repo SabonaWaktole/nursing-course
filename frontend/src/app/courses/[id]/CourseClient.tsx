@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { formatPrice } from '@/lib/utils';
 import { CourseDetail, Module, Lesson } from '@/lib/types';
 import Link from 'next/link';
 import { getFileUrl } from '@/lib/url-utils';
@@ -18,6 +19,8 @@ export default function CourseDetailPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const fromQuiz = searchParams.get('fromQuiz');
+    const paymentStatus = searchParams.get('payment');
+    const sessionId = searchParams.get('session_id');
 
     const [course, setCourse] = useState<CourseDetail | null>(null);
     const [enrolling, setEnrolling] = useState(false);
@@ -28,6 +31,8 @@ export default function CourseDetailPage() {
     const [progress, setProgress] = useState(0);
     const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
     const [materialIndex, setMaterialIndex] = useState(0);
+    const [paymentBanner, setPaymentBanner] = useState<'success' | 'cancelled' | null>(null);
+    const [verifyingPayment, setVerifyingPayment] = useState(false);
 
     useEffect(() => {
         api.get(`/courses/${id}`).then((r) => {
@@ -124,13 +129,73 @@ export default function CourseDetailPage() {
         }
     }, [user, course, fromQuiz]);
 
+    // Handle Stripe payment redirect
+    useEffect(() => {
+        if (paymentStatus === 'cancelled') {
+            setPaymentBanner('cancelled');
+        }
+        if (paymentStatus === 'success' && sessionId && user && !enrolled) {
+            setVerifyingPayment(true);
+            setPaymentBanner('success');
+            const verify = async () => {
+                try {
+                    const res = await api.get(`/payments/verify?session_id=${sessionId}`);
+                    if (res.data.enrolled) {
+                        setEnrolled(true);
+                        setVerifyingPayment(false);
+                    } else {
+                        // Payment might still be processing, retry after a short delay
+                        setTimeout(async () => {
+                            try {
+                                const retry = await api.get(`/payments/verify?session_id=${sessionId}`);
+                                if (retry.data.enrolled) setEnrolled(true);
+                            } catch { }
+                            setVerifyingPayment(false);
+                        }, 3000);
+                    }
+                } catch {
+                    setVerifyingPayment(false);
+                }
+            };
+            verify();
+        }
+    }, [paymentStatus, sessionId, user]);
+
     const handleEnroll = async () => {
         if (!user) return router.push('/login');
         setEnrolling(true);
         try {
-            await api.post(`/courses/${id}/enroll`);
-            setEnrolled(true);
-        } catch { }
+            // Check if course is paid
+            if (course?.price && course.price > 0) {
+                // Redirect to Stripe Checkout
+                const res = await api.post('/payments/create-checkout-session', { courseId: id });
+                if (res.data.enrolled) {
+                    // Already paid — enrollment was created on the spot
+                    setEnrolled(true);
+                    setEnrolling(false);
+                    return;
+                }
+                if (res.data.sessionUrl) {
+                    window.location.href = res.data.sessionUrl;
+                    return; // Don't setEnrolling(false) — page is navigating away
+                }
+            } else {
+                // Free course — instant enrollment
+                await api.post(`/courses/${id}/enroll`);
+                setEnrolled(true);
+            }
+        } catch (err: any) {
+            // If backend returns 402, redirect to payment
+            if (err?.response?.status === 402 && err?.response?.data?.requiresPayment) {
+                try {
+                    const res = await api.post('/payments/create-checkout-session', { courseId: id });
+                    if (res.data.sessionUrl) {
+                        window.location.href = res.data.sessionUrl;
+                        return;
+                    }
+                } catch { }
+            }
+        }
         setEnrolling(false);
     };
 
@@ -380,16 +445,41 @@ export default function CourseDetailPage() {
                         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                         className="h-full flex flex-col"
                     >
-                        {!enrolled && user ? (
+                        {verifyingPayment ? (
                             <div className="flex-1 flex flex-col items-center justify-center">
                                 <div className="max-w-xl text-center bg-white/50 dark:bg-slate-900/50 backdrop-blur-2xl p-12 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-2xl">
+                                    <div className="mx-auto mb-6 h-12 w-12 animate-spin rounded-full border-4 border-primary border-r-transparent"></div>
+                                    <h2 className="text-2xl font-bold tracking-tight mb-2">Confirming your payment...</h2>
+                                    <p className="text-slate-500 dark:text-slate-400">Please wait while we verify your payment and activate your enrollment.</p>
+                                </div>
+                            </div>
+                        ) : !enrolled && user ? (
+                            <div className="flex-1 flex flex-col items-center justify-center">
+                                <div className="max-w-xl text-center bg-white/50 dark:bg-slate-900/50 backdrop-blur-2xl p-12 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-2xl">
+                                    {paymentBanner === 'cancelled' && (
+                                        <div className="mb-6 p-4 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-700 dark:text-amber-400 text-sm font-medium flex items-center justify-between">
+                                            <span className="flex items-center gap-2">
+                                                <span className="material-symbols-outlined text-lg">info</span>
+                                                Payment was cancelled. You can try again.
+                                            </span>
+                                            <button onClick={() => setPaymentBanner(null)} className="text-amber-500 hover:text-amber-700 transition-colors">
+                                                <span className="material-symbols-outlined text-lg">close</span>
+                                            </button>
+                                        </div>
+                                    )}
                                     <div className="mx-auto mb-8 flex h-24 w-24 items-center justify-center rounded-3xl bg-primary/10 rotate-3">
                                         <span className="material-symbols-outlined text-primary text-5xl -rotate-3">play_arrow</span>
                                     </div>
                                     <h2 className="text-3xl font-bold tracking-tight mb-4">{course.title}</h2>
-                                    <p className="text-slate-500 dark:text-slate-400 mb-8 leading-relaxed max-w-md mx-auto">{course.description}</p>
+                                    <p className="text-slate-500 dark:text-slate-400 mb-4 leading-relaxed max-w-md mx-auto">{course.description}</p>
+                                    {course.price && course.price > 0 && (
+                                        <p className="text-2xl font-black text-slate-900 dark:text-white mb-6">${formatPrice(course.price)}</p>
+                                    )}
                                     <button onClick={handleEnroll} disabled={enrolling} className="inline-flex h-14 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-primary to-sky-500 px-8 text-lg font-bold text-white transition-all hover:scale-[1.02] hover:shadow-[0_20px_40px_rgba(14,165,233,0.3)] disabled:opacity-50 disabled:hover:scale-100">
-                                        {enrolling ? 'Enrolling...' : 'Start Learning Now'}
+                                        {enrolling
+                                            ? (course.price && course.price > 0 ? 'Redirecting to payment...' : 'Enrolling...')
+                                            : (course.price && course.price > 0 ? `Pay $${formatPrice(course.price)} & Enroll` : 'Start Learning Now')
+                                        }
                                     </button>
                                 </div>
                             </div>
