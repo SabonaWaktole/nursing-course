@@ -15,7 +15,7 @@ interface StudentHeaderProps {
 }
 
 export default function StudentHeader({ title, subtitle, icon, onMobileMenuOpen }: StudentHeaderProps) {
-    const { user, logout } = useAuth();
+    const { user, logout, activeRole, setActiveRole } = useAuth();
     const pathname = usePathname();
     const [notifications, setNotifications] = useState<any[]>([]);
     const [showNotifications, setShowNotifications] = useState(false);

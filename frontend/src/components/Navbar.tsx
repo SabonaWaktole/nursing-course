@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 export default function Navbar() {
-    const { user, logout } = useAuth();
+    const { user, logout, activeRole } = useAuth();
     const [mobileOpen, setMobileOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
 
@@ -26,11 +26,11 @@ export default function Navbar() {
         { label: 'Certifications', href: '/certifications', icon: 'workspace_premium' },
     ];
 
-    const studentLinks = user && user.role !== 'ADMIN'
+    const studentLinks = user && activeRole !== 'ADMIN'
         ? [{ label: 'My Learning', href: '/my-courses', icon: 'school' }]
         : [];
 
-    const adminLinks = user && user.role === 'ADMIN'
+    const adminLinks = user && activeRole === 'ADMIN'
         ? [{ label: 'Admin Dashboard', href: '/admin', icon: 'dashboard' }]
         : [];
 

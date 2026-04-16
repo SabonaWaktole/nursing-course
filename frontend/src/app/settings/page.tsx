@@ -10,7 +10,7 @@ import AdminSidebar from '@/components/AdminSidebar';
 import StudentHeader from '@/components/StudentHeader';
 
 export default function SettingsPage() {
-    const { user, updateUser, logout } = useAuth();
+    const { user, updateUser, logout, activeRole } = useAuth();
 
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
@@ -210,7 +210,7 @@ export default function SettingsPage() {
     return (
         <RoleGuard allowedRoles={['STUDENT', 'ADMIN']}>
             <div className={`flex h-screen overflow-hidden bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-sans antialiased transition-colors duration-200 relative`}>
-                {user?.role === 'ADMIN' ? (
+                {activeRole === 'ADMIN' ? (
                     <AdminSidebar
                         tab="settings"
                         isSidebarCollapsed={isSidebarCollapsed}
@@ -228,9 +228,6 @@ export default function SettingsPage() {
                 )}
 
                 <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-                    {user?.role !== 'ADMIN' && (
-                        <StudentHeader title="Account Settings" subtitle="Manage your profile and preferences." icon="settings" onMobileMenuOpen={() => setIsMobileMenuOpen(true)} />
-                    )}
                     <main className="flex-1 p-6 lg:p-10 overflow-y-auto custom-scrollbar">
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}

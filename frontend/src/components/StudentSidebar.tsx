@@ -25,7 +25,7 @@ export default function StudentSidebar({
     setIsMobileMenuOpen
 }: StudentSidebarProps) {
     const pathname = usePathname();
-    const { user } = useAuth();
+    const { user, activeRole, setActiveRole } = useAuth();
 
     return (
         <>
@@ -106,37 +106,36 @@ export default function StudentSidebar({
                     })}
                 </nav>
 
-                {/* User info card at bottom */}
-                {!isSidebarCollapsed && (
-                    <div className="px-4 pb-6">
-                        <div className="bg-gradient-to-br from-primary/10 to-cyan-500/5 rounded-2xl p-4 flex flex-col gap-3 border border-primary/15 animate-in fade-in slide-in-from-bottom-2">
-                            <Link href="/settings" className="flex items-center gap-3 p-2 -mx-2 rounded-xl hover:bg-white/50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer">
-                                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-cyan-400 text-white text-sm font-bold flex items-center justify-center shadow-[0_0_12px_rgba(13,185,242,0.25)]">
-                                    {user?.name?.charAt(0)?.toUpperCase() || 'S'}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{user?.name || 'Student'}</p>
-                                    <p className="text-[10px] text-slate-500 truncate">{user?.email}</p>
-                                </div>
-                            </Link>
-                            <motion.button
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                className="bg-primary/15 text-primary text-xs font-bold py-2 rounded-xl hover:bg-primary/25 transition-colors flex items-center justify-center gap-1.5"
-                            >
-                                <span className="material-symbols-outlined text-sm">bolt</span>
-                                Upgrade to Premium
-                            </motion.button>
-                        </div>
-                    </div>
-                )}
-                {isSidebarCollapsed && (
-                    <div className="pb-6 flex justify-center">
-                        <Link href="/settings" className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-cyan-400 text-white text-xs font-bold flex items-center justify-center shadow-[0_0_12px_rgba(13,185,242,0.25)] hover:scale-105 transition-transform" title={user?.name || "Settings"}>
+                <div className="p-4 border-t border-slate-200 dark:border-slate-800 shrink-0 space-y-2">
+                    {/* Return to Admin — visible only to true Admins in Student mode */}
+                    {user?.role === 'ADMIN' && (
+                        <button
+                            onClick={() => setActiveRole('ADMIN')}
+                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 text-primary bg-primary/5 hover:bg-primary/10 border border-primary/20 ${isSidebarCollapsed ? 'justify-center' : ''}`}
+                            title="Return to Admin view"
+                        >
+                            <span className="material-symbols-outlined text-xl">admin_panel_settings</span>
+                            {!isSidebarCollapsed && (
+                                <span className="animate-in fade-in slide-in-from-left-2 duration-300">Return to Admin</span>
+                            )}
+                        </button>
+                    )}
+                    <Link
+                        href="/settings"
+                        onClick={() => setIsMobileMenuOpen?.(false)}
+                        className={`w-full flex items-center gap-3 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors ${isSidebarCollapsed ? 'justify-center' : ''}`}
+                    >
+                        <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm shrink-0">
                             {user?.name?.charAt(0)?.toUpperCase() || 'S'}
-                        </Link>
-                    </div>
-                )}
+                        </div>
+                        {!isSidebarCollapsed && (
+                            <div className="flex-1 min-w-0 animate-in fade-in slide-in-from-left-2 duration-300 text-left">
+                                <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{user?.name || 'Student'}</p>
+                                <p className="text-xs text-slate-500 truncate">{user?.email}</p>
+                            </div>
+                        )}
+                    </Link>
+                </div>
             </aside>
         </>
     );
