@@ -342,11 +342,12 @@ export default function CourseDetailPage() {
             </div>
 
             {/* Left Sidebar (Navigation Rail) */}
-            <motion.aside
-                initial={false}
-                animate={{ width: isSidebarExpanded ? 320 : 80 }}
-                onMouseEnter={() => setIsSidebarExpanded(true)}
-                onMouseLeave={() => setIsSidebarExpanded(false)}
+            {enrolled && user && (
+                <motion.aside
+                    initial={false}
+                    animate={{ width: isSidebarExpanded ? 320 : 80 }}
+                    onMouseEnter={() => setIsSidebarExpanded(true)}
+                    onMouseLeave={() => setIsSidebarExpanded(false)}
                 className="z-40 h-screen shrink-0 bg-white/70 dark:bg-slate-900/40 backdrop-blur-xl border-r border-slate-200/50 dark:border-slate-800/50 flex flex-col transition-all overflow-hidden shadow-2xl shadow-slate-200/20 dark:shadow-black/40"
             >
                 {/* Progress Mini/Expanded */}
@@ -440,7 +441,8 @@ export default function CourseDetailPage() {
                         </div>
                     )}
                 </div>
-            </motion.aside>
+                </motion.aside>
+            )}
 
             {/* Main Content Area */}
             <main className="flex-1 relative z-10 h-screen overflow-hidden">

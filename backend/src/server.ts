@@ -52,6 +52,11 @@ app.use(cors({
   credentials: true
 }));
 
+import { handleWebhook } from './controllers/payment.controller';
+
+// ⚠️ Stripe webhook MUST be registered BEFORE express.json() — it needs the raw body
+app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), handleWebhook);
+
 app.use(express.json({ limit: '50mb' }));
 
 // Serve uploaded files from persistent upload directory
