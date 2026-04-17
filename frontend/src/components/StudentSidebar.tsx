@@ -1,14 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
 
 const NAV_ITEMS = [
-    { href: '/my-courses', icon: 'book', label: 'My Courses' },
-    { href: '/certificates', icon: 'workspace_premium', label: 'Certificates' },
-    { href: '/settings', icon: 'settings', label: 'Settings' },
+    { href: '/my-learning?tab=courses', id: 'courses', icon: 'school', label: 'My Courses' },
+    { href: '/my-learning?tab=certificates', id: 'certificates', icon: 'workspace_premium', label: 'Certificates' },
+    { href: '/settings', id: 'settings', icon: 'settings', label: 'Settings' },
 ];
 
 interface StudentSidebarProps {
@@ -25,6 +25,8 @@ export default function StudentSidebar({
     setIsMobileMenuOpen
 }: StudentSidebarProps) {
     const pathname = usePathname();
+    const searchParams = useSearchParams();
+    const currentTab = searchParams.get('tab') || 'courses';
     const { user, activeRole, setActiveRole } = useAuth();
 
     return (
@@ -80,7 +82,9 @@ export default function StudentSidebar({
                 {/* Navigation */}
                 <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto custom-scrollbar">
                     {NAV_ITEMS.map((item) => {
-                        const isActive = pathname === item.href;
+                        const isActive = pathname === '/my-learning' && (item.id === 'courses' || item.id === 'certificates')
+                            ? currentTab === item.id
+                            : pathname === item.href || (item.id === 'settings' && pathname === '/settings');
                         return (
                             <Link
                                 key={item.label}
