@@ -11,6 +11,8 @@ import Link from 'next/link';
 import RoleGuard from '@/components/RoleGuard';
 import AdminSidebar from '@/components/AdminSidebar';
 import AdminSettingsTab from '@/components/AdminSettingsTab';
+import UserDropdown from '@/components/UserDropdown';
+import NotificationBell from '@/components/NotificationBell';
 import { getFileUrl } from '@/lib/url-utils';
 import { formatPrice } from '@/lib/utils';
 
@@ -54,21 +56,12 @@ export default function AdminDashboard() {
 
     const [users, setUsers] = useState<any[]>([]);
     const [results, setResults] = useState<any[]>([]);
-    const [notifications, setNotifications] = useState<any[]>([]);
-    const [showNotifications, setShowNotifications] = useState(false);
-    const notifRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
-                setShowNotifications(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
 
-    const unreadCount = notifications.filter(n => !n.read).length;
+    const notifications: any[] = [];
+    const setNotifications = (n: any) => {};
+    const setShowNotifications = (s: boolean) => {};
+    const unreadCount = 0;
 
     // User management
     const [showUserForm, setShowUserForm] = useState(false);
@@ -269,33 +262,6 @@ export default function AdminDashboard() {
         }
     };
 
-    const markRead = async (id: string) => {
-        try {
-            await api.patch(`/admin/notifications/${id}/read`);
-            setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-        } catch (err) {
-            console.error('Failed to mark notification rad', err);
-        }
-    };
-
-    const markAllRead = async () => {
-        try {
-            await api.patch('/admin/notifications/read-all');
-            setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-        } catch (err) {
-            console.error('Failed to mark all notifications read', err);
-        }
-    };
-
-    const clearAll = async () => {
-        try {
-            await api.delete('/admin/notifications');
-            setNotifications([]);
-            setShowNotifications(false);
-        } catch (err) {
-            console.error('Failed to clear notifications', err);
-        }
-    };
 
     const handleEditCourseInfo = (course: any) => {
         setCourseForm({
@@ -994,155 +960,65 @@ export default function AdminDashboard() {
                 {/* Main Content Area */}
                 <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-background-light dark:bg-background-dark">
 
-                    {/* Header — Premium glassmorphic design matching global Navbar */}
-                    <header className="h-[72px] flex items-center justify-between px-4 sm:px-6 lg:px-8 border-b border-slate-200/50 dark:border-white/[0.06] bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.05)] dark:shadow-[0_4px_30px_rgba(0,0,0,0.4)] z-50 relative shrink-0 transition-all duration-500">
-                        <div className="flex-1 flex items-center">
-                            {/* Mobile Toggle */}
-                            <motion.button
-                                whileTap={{ scale: 0.9 }}
-                                onClick={() => setIsMobileMenuOpen(true)}
-                                className="lg:hidden p-2.5 -ml-2 text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-slate-100 dark:hover:bg-white/[0.06] rounded-full transition-all"
-                            >
-                                <span className="material-symbols-outlined text-2xl">menu</span>
-                            </motion.button>
+                    {/* Header — Horizontal Tab Navigation */}
+                    <header className="h-[76px] flex items-center justify-between px-6 lg:px-10 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 z-50 relative shrink-0 transition-all duration-300">
+                        {/* Mobile Toggle */}
+                        <motion.button
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => setIsMobileMenuOpen(true)}
+                            className="lg:hidden p-2.5 mr-4 text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all"
+                        >
+                            <span className="material-symbols-outlined text-2xl">menu</span>
+                        </motion.button>
 
-                            {/* Logo glow icon + page title */}
-                            <div className="hidden sm:flex items-center gap-3">
-                                <motion.div
-                                    whileHover={{ rotate: 8, scale: 1.05 }}
-                                    transition={{ duration: 0.35, ease: 'easeInOut' }}
-                                    className="w-9 h-9 rounded-full bg-slate-100 dark:bg-[#1e293b] border border-primary/30 flex items-center justify-center shadow-[0_0_12px_rgba(13,185,242,0.1)] dark:shadow-[0_0_12px_rgba(13,185,242,0.2)]"
-                                >
-                                    <span className="material-symbols-outlined text-primary text-xl">
-                                        {tab === 'overview' ? 'grid_view' : tab === 'courses' ? 'menu_book' : tab === 'users' ? 'people_alt' : tab === 'results' ? 'analytics' : tab === 'certificates' ? 'card_membership' : 'settings'}
-                                    </span>
-                                </motion.div>
-                                <div className="hidden lg:block">
-                                    <h2 className="text-[15px] font-bold tracking-tight text-slate-900 dark:text-white capitalize leading-tight">
-                                        {tab === 'overview' ? 'Dashboard' : `${tab}`}
-                                    </h2>
-                                </div>
+                        <div className="flex flex-1 items-center gap-12 h-full">
+                            {/* Page Title (Large) - Fixed width to prevent nav shifting */}
+                            <div className="hidden lg:flex items-center w-[220px] shrink-0">
+                                <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white capitalize truncate">
+                                    {tab === 'overview' ? 'Dashboard' : `${tab}`}
+                                </h1>
                             </div>
 
-                            {/* Navigation Links — Spaced edge-to-edge to fill all gaps as requested */}
-                            <nav className="hidden xl:flex flex-1 items-center justify-between ml-8 mr-10">
+                            {/* Horizontal Tabs Navigation */}
+                            <nav className="hidden md:flex items-end h-full pt-4">
                                 {[
                                     { id: 'overview', icon: 'grid_view', label: 'Overview' },
                                     { id: 'courses', icon: 'menu_book', label: 'Courses' },
-                                    { id: 'users', icon: 'people_alt', label: 'Users' },
-                                    { id: 'results', icon: 'analytics', label: 'Results' },
-                                    { id: 'certificates', icon: 'card_membership', label: 'Certs' },
-                                ].map((item) => (
-                                    <motion.button
-                                        key={item.id}
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
-                                        onClick={() => {
-                                            setTab(item.id as any);
-                                            if (item.id === 'users') loadUsers();
-                                            if (item.id === 'results') loadResults();
-                                            if (item.id === 'certificates') loadCertificates();
-                                        }}
-                                        className={`group flex items-center gap-1.5 px-3 lg:px-5 py-2 text-[14px] font-bold tracking-tight transition-colors duration-300 relative ${
-                                            tab === item.id ? 'text-primary bg-primary/5 rounded-xl border border-primary/20' : 'text-slate-600 dark:text-slate-300 hover:text-primary'
-                                        }`}
-                                    >
-                                        <span className={`material-symbols-outlined text-[20px] transition-all duration-300 ${
-                                            tab === item.id ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'
-                                        }`}>
-                                            {item.icon}
-                                        </span>
-                                        {item.label}
-                                    </motion.button>
-                                ))}
+                                    { id: 'users', icon: 'person_outline', label: 'Users' },
+                                    { id: 'results', icon: 'bar_chart', label: 'Results' },
+                                    { id: 'certificates', icon: 'workspace_premium', label: 'Certs' },
+                                ].map((item) => {
+                                    const isActive = tab === item.id;
+                                    return (
+                                        <button
+                                            key={item.id}
+                                            onClick={() => {
+                                                setTab(item.id as any);
+                                                if (item.id === 'users') loadUsers();
+                                                if (item.id === 'results') loadResults();
+                                                if (item.id === 'certificates') loadCertificates();
+                                            }}
+                                            className={`group flex items-center gap-2 px-5 pb-5 pt-2 text-[15px] font-semibold transition-all duration-200 border-b-2 ${
+                                                isActive 
+                                                    ? 'text-blue-700 dark:text-blue-500 border-blue-700 dark:border-blue-500' 
+                                                    : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-900 dark:hover:text-white'
+                                            }`}
+                                        >
+                                            <span className="material-symbols-outlined text-[20px] mb-[1px]">
+                                                {item.icon}
+                                            </span>
+                                            {item.label}
+                                        </button>
+                                    );
+                                })}
                             </nav>
                         </div>
 
-                            <div className="flex items-center gap-1 sm:gap-2 relative">
-                                {/* Notifications Link/Dropdown */}
-                                <div className="relative" ref={notifRef}>
-                                    <motion.button
-                                        whileHover={{ scale: 1.05 }}
-                                        whileTap={{ scale: 0.95 }}
-                                        onClick={() => setShowNotifications(!showNotifications)}
-                                        className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border transition-all duration-300 ${
-                                            showNotifications ? 'bg-primary/20 border-primary text-primary' : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:text-primary hover:border-primary/50'
-                                        }`}
-                                        title="Notifications"
-                                    >
-                                        <span className="material-symbols-outlined text-xl">notifications</span>
-                                        {unreadCount > 0 && (
-                                            <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-rose-500 border-2 border-white dark:border-slate-900 rounded-full flex items-center justify-center animate-pulse">
-                                                <span className="text-[7px] font-bold text-white">{unreadCount}</span>
-                                            </span>
-                                        )}
-                                    </motion.button>
-
-                                    <AnimatePresence>
-                                        {showNotifications && (
-                                            <motion.div
-                                                initial={{ opacity: 0, y: 15, scale: 0.95 }}
-                                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                                exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                                className="absolute right-0 mt-3 w-80 sm:w-96 bg-white/90 dark:bg-slate-900/95 backdrop-blur-2xl rounded-2xl border border-slate-200 dark:border-slate-800 shadow-[0_10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] z-50 overflow-hidden"
-                                            >
-                                                <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
-                                                    <h4 className="font-bold text-slate-900 dark:text-white text-sm">Notifications</h4>
-                                                    {unreadCount > 0 && (
-                                                        <button onClick={markAllRead} className="text-xs font-bold text-primary hover:underline">Mark all read</button>
-                                                    )}
-                                                </div>
-                                                <div className="max-h-[400px] overflow-y-auto custom-scrollbar p-2">
-                                                    {notifications.length > 0 ? (
-                                                        <div className="space-y-1 text-left">
-                                                            {notifications.map((n) => (
-                                                                <div 
-                                                                    key={n.id} 
-                                                                    className={`p-4 rounded-xl transition-all border ${n.read ? 'bg-transparent border-transparent opacity-60' : 'bg-slate-50 dark:bg-slate-800/40 border-slate-100 dark:border-slate-800/60'}`}
-                                                                >
-                                                                    <div className="flex gap-3">
-                                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${n.read ? 'bg-slate-200 dark:bg-slate-700' : 'bg-primary/20 text-primary'}`}>
-                                                                            <span className="material-symbols-outlined text-sm">{n.type === 'enrollment' ? 'person_add' : 'info'}</span>
-                                                                        </div>
-                                                                        <div className="flex-1 min-w-0">
-                                                                            <p className="text-xs text-slate-900 dark:text-slate-100 font-medium leading-tight">{n.message}</p>
-                                                                            <p className="text-[10px] text-slate-500 mt-1">{new Date(n.createdAt).toLocaleString()}</p>
-                                                                        </div>
-                                                                        {!n.read && (
-                                                                            <button onClick={() => markRead(n.id)} className="text-slate-400 hover:text-primary transition-colors">
-                                                                                <span className="material-symbols-outlined text-base">check_circle</span>
-                                                                            </button>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    ) : (
-                                                        <div className="py-12 text-center">
-                                                            <span className="material-symbols-outlined text-4xl text-slate-300 dark:text-slate-700 mb-2">notifications_off</span>
-                                                            <p className="text-sm text-slate-500">No notifications yet</p>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <div className="p-4 bg-slate-50 dark:bg-slate-800/30 border-t border-slate-200 dark:border-slate-800 flex justify-center">
-                                                    <button onClick={clearAll} className="text-xs font-bold text-slate-500 hover:text-rose-500 transition-colors">Clear All</button>
-                                                </div>
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-                                </div>
-
-                                {/* Admin avatar */}
-                                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="hidden sm:flex">
-                                    <Link
-                                        href="/settings"
-                                        className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-primary to-cyan-500 text-white font-bold flex items-center justify-center shadow-[0_0_12px_rgba(13,185,242,0.3)] border border-primary/20 shrink-0 transition-shadow hover:shadow-[0_0_20px_rgba(13,185,242,0.5)]"
-                                        title="Account Settings"
-                                    >
-                                        {user?.name?.charAt(0)?.toUpperCase() || 'A'}
-                                    </Link>
-                                </motion.div>
-                            </div>
+                        {/* Right Section: Notification & User Dropdown */}
+                        <div className="flex items-center gap-6 relative ml-6">
+                            <NotificationBell />
+                            <UserDropdown />
+                        </div>
                     </header>
 
                     {/* Scrollable Content */}

@@ -18,12 +18,6 @@ function LearningDashboard() {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    // Dynamic Header Props
-    const headerTitle = activeTab === 'courses' ? 'My Courses' : 'My Certifications';
-    const headerSubtitle = activeTab === 'courses' ? 'Track progress and continue learning' : 'Official training records and credentials.';
-    const headerIcon = activeTab === 'courses' ? 'school' : 'workspace_premium';
-
-
     return (
         <RoleGuard allowedRoles={['STUDENT']}>
             <motion.div
@@ -40,9 +34,6 @@ function LearningDashboard() {
 
                 <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-background-light dark:bg-background-dark">
                     <StudentHeader
-                        title={headerTitle}
-                        subtitle={headerSubtitle}
-                        icon={headerIcon}
                         onMobileMenuOpen={() => setIsMobileMenuOpen(true)}
                     />
 
