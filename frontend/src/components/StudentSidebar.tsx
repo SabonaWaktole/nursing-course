@@ -111,7 +111,7 @@ export default function StudentSidebar({
                         })}
                     </nav>
 
-                    <div className="mx-6 my-6 border-b border-[#E2E8F0] dark:border-slate-800/80"></div>
+                    <div className="mt-auto mx-6 my-6 border-b border-[#E2E8F0] dark:border-slate-800/80"></div>
 
                     {/* Switch Section — visible only to true Admins in Student mode */}
                     {user?.role === 'ADMIN' && (
@@ -137,7 +137,7 @@ export default function StudentSidebar({
                     )}
 
                     {/* User Area */}
-                    <div className="mt-auto flex flex-col space-y-2 pb-4">
+                    <div className="flex flex-col space-y-2 pb-4">
                         <Link
                             href="/settings"
                             onClick={() => setIsMobileMenuOpen?.(false)}

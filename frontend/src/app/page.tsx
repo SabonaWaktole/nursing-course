@@ -778,9 +778,6 @@ function CTASection() {
               Explore Course Catalog
             </a>
           </div>
-          <p className="mt-6 text-sm text-slate-500 dark:text-slate-500">
-            No credit card required. Start learning in under 2 minutes.
-          </p>
         </motion.div>
       </div>
     </section>
