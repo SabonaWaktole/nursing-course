@@ -11,7 +11,7 @@ import { usePageVariants } from '@/lib/motion';
 export default function ClientProviders({ children }: { children: ReactNode }) {
     const pathname = usePathname();
     // Routes that have their own sidebar + header layout — hide global Navbar & Footer
-    const hasDashboardLayout = pathname?.startsWith('/admin') || pathname?.startsWith('/my-courses') || pathname?.startsWith('/certificates') || pathname?.startsWith('/settings');
+    const hasDashboardLayout = pathname?.startsWith('/admin') || pathname?.startsWith('/my-learning') || pathname?.startsWith('/settings');
     // Routes that have their own header but still need normal scrolling (not fixed height)
     const isCourseDetails = pathname?.startsWith('/courses/') && pathname !== '/courses';
     const hasOwnNav = pathname?.startsWith('/quiz') || isCourseDetails;

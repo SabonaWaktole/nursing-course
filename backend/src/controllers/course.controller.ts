@@ -255,13 +255,7 @@ export const enrollInCourse = async (req: Request, res: Response) => {
         });
         if (!course) return res.status(404).json({ message: 'Course not found' });
 
-        if (course.price && course.price > 0) {
-            return res.status(402).json({
-                message: 'Payment required',
-                requiresPayment: true,
-                price: course.price,
-            });
-        }
+        // 402 Check removed to allow auditing (free enrollment)
 
         const existing = await prisma.enrollment.findUnique({
             where: { userId_courseId: { userId, courseId } },
@@ -315,11 +309,20 @@ export const getMyEnrollments = async (req: Request, res: Response) => {
             orderBy: { createdAt: 'desc' },
         });
 
+        // Fetch completed payments for this user to determine paid access
+        const payments = await (prisma as any).payment.findMany({
+            where: { userId, status: 'COMPLETED' },
+            select: { courseId: true }
+        });
+        const paidCourseIds = new Set(payments.map((p: any) => p.courseId));
+
         // Calculate total lessons from modules
         const results = enrollments.map(en => {
             const totalLessons = en.course.modules.reduce((acc, mod) => acc + mod._count.lessons, 0);
+            const hasPaidAccess = !en.course.price || en.course.price === 0 || paidCourseIds.has(en.courseId);
             return {
                 ...en,
+                hasPaidAccess,
                 course: {
                     ...en.course,
                     _count: {

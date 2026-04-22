@@ -42,3 +42,6 @@ next-env.d.ts
 old_db_backup/*
 *.log
 *.zip
+resource/*
+*.png
+*.jpg

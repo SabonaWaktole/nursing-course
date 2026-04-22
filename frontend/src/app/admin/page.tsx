@@ -11,6 +11,8 @@ import Link from 'next/link';
 import RoleGuard from '@/components/RoleGuard';
 import AdminSidebar from '@/components/AdminSidebar';
 import AdminSettingsTab from '@/components/AdminSettingsTab';
+import UserDropdown from '@/components/UserDropdown';
+import NotificationBell from '@/components/NotificationBell';
 import { getFileUrl } from '@/lib/url-utils';
 import { formatPrice } from '@/lib/utils';
 
@@ -20,7 +22,7 @@ export default function AdminDashboard() {
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [courses, setCourses] = useState<Course[]>([]);
     const [loading, setLoading] = useState(true);
-    const [tab, setTab] = useState<'overview' | 'courses' | 'users' | 'results' | 'certificates' | 'settings'>('overview');
+    const [tab, setTab] = useState<'overview' | 'courses' | 'users' | 'results' | 'certificates' | 'settings' | 'guide'>('overview');
     const [certificates, setCertificates] = useState<any[]>([]);
     const [editingCertId, setEditingCertId] = useState<string | null>(null);
     const [certNumInput, setCertNumInput] = useState('');
@@ -54,21 +56,12 @@ export default function AdminDashboard() {
 
     const [users, setUsers] = useState<any[]>([]);
     const [results, setResults] = useState<any[]>([]);
-    const [notifications, setNotifications] = useState<any[]>([]);
-    const [showNotifications, setShowNotifications] = useState(false);
-    const notifRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
-                setShowNotifications(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
 
-    const unreadCount = notifications.filter(n => !n.read).length;
+    const notifications: any[] = [];
+    const setNotifications = (n: any) => {};
+    const setShowNotifications = (s: boolean) => {};
+    const unreadCount = 0;
 
     // User management
     const [showUserForm, setShowUserForm] = useState(false);
@@ -269,33 +262,6 @@ export default function AdminDashboard() {
         }
     };
 
-    const markRead = async (id: string) => {
-        try {
-            await api.patch(`/admin/notifications/${id}/read`);
-            setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-        } catch (err) {
-            console.error('Failed to mark notification rad', err);
-        }
-    };
-
-    const markAllRead = async () => {
-        try {
-            await api.patch('/admin/notifications/read-all');
-            setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-        } catch (err) {
-            console.error('Failed to mark all notifications read', err);
-        }
-    };
-
-    const clearAll = async () => {
-        try {
-            await api.delete('/admin/notifications');
-            setNotifications([]);
-            setShowNotifications(false);
-        } catch (err) {
-            console.error('Failed to clear notifications', err);
-        }
-    };
 
     const handleEditCourseInfo = (course: any) => {
         setCourseForm({
@@ -994,155 +960,65 @@ export default function AdminDashboard() {
                 {/* Main Content Area */}
                 <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-background-light dark:bg-background-dark">
 
-                    {/* Header — Premium glassmorphic design matching global Navbar */}
-                    <header className="h-[72px] flex items-center justify-between px-4 sm:px-6 lg:px-8 border-b border-slate-200/50 dark:border-white/[0.06] bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.05)] dark:shadow-[0_4px_30px_rgba(0,0,0,0.4)] z-50 relative shrink-0 transition-all duration-500">
-                        <div className="flex-1 flex items-center">
-                            {/* Mobile Toggle */}
-                            <motion.button
-                                whileTap={{ scale: 0.9 }}
-                                onClick={() => setIsMobileMenuOpen(true)}
-                                className="lg:hidden p-2.5 -ml-2 text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-slate-100 dark:hover:bg-white/[0.06] rounded-full transition-all"
-                            >
-                                <span className="material-symbols-outlined text-2xl">menu</span>
-                            </motion.button>
+                    {/* Header — Horizontal Tab Navigation */}
+                    <header className="h-[76px] flex items-center justify-between px-6 lg:px-10 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 z-50 relative shrink-0 transition-all duration-300">
+                        {/* Mobile Toggle */}
+                        <motion.button
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => setIsMobileMenuOpen(true)}
+                            className="lg:hidden p-2.5 mr-4 text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all"
+                        >
+                            <span className="material-symbols-outlined text-2xl">menu</span>
+                        </motion.button>
 
-                            {/* Logo glow icon + page title */}
-                            <div className="hidden sm:flex items-center gap-3">
-                                <motion.div
-                                    whileHover={{ rotate: 8, scale: 1.05 }}
-                                    transition={{ duration: 0.35, ease: 'easeInOut' }}
-                                    className="w-9 h-9 rounded-full bg-slate-100 dark:bg-[#1e293b] border border-primary/30 flex items-center justify-center shadow-[0_0_12px_rgba(13,185,242,0.1)] dark:shadow-[0_0_12px_rgba(13,185,242,0.2)]"
-                                >
-                                    <span className="material-symbols-outlined text-primary text-xl">
-                                        {tab === 'overview' ? 'grid_view' : tab === 'courses' ? 'menu_book' : tab === 'users' ? 'people_alt' : tab === 'results' ? 'analytics' : tab === 'certificates' ? 'card_membership' : 'settings'}
-                                    </span>
-                                </motion.div>
-                                <div className="hidden lg:block">
-                                    <h2 className="text-[15px] font-bold tracking-tight text-slate-900 dark:text-white capitalize leading-tight">
-                                        {tab === 'overview' ? 'Dashboard' : `${tab}`}
-                                    </h2>
-                                </div>
+                        <div className="flex flex-1 items-center gap-12 h-full">
+                            {/* Page Title (Large) - Fixed width to prevent nav shifting */}
+                            <div className="hidden lg:flex items-center w-[220px] shrink-0">
+                                <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white capitalize truncate">
+                                    {tab === 'overview' ? 'Dashboard' : `${tab}`}
+                                </h1>
                             </div>
 
-                            {/* Navigation Links — Spaced edge-to-edge to fill all gaps as requested */}
-                            <nav className="hidden xl:flex flex-1 items-center justify-between ml-8 mr-10">
+                            {/* Horizontal Tabs Navigation */}
+                            <nav className="hidden md:flex items-end h-full pt-4">
                                 {[
                                     { id: 'overview', icon: 'grid_view', label: 'Overview' },
                                     { id: 'courses', icon: 'menu_book', label: 'Courses' },
-                                    { id: 'users', icon: 'people_alt', label: 'Users' },
-                                    { id: 'results', icon: 'analytics', label: 'Results' },
-                                    { id: 'certificates', icon: 'card_membership', label: 'Certs' },
-                                ].map((item) => (
-                                    <motion.button
-                                        key={item.id}
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
-                                        onClick={() => {
-                                            setTab(item.id as any);
-                                            if (item.id === 'users') loadUsers();
-                                            if (item.id === 'results') loadResults();
-                                            if (item.id === 'certificates') loadCertificates();
-                                        }}
-                                        className={`group flex items-center gap-1.5 px-3 lg:px-5 py-2 text-[14px] font-bold tracking-tight transition-colors duration-300 relative ${
-                                            tab === item.id ? 'text-primary bg-primary/5 rounded-xl border border-primary/20' : 'text-slate-600 dark:text-slate-300 hover:text-primary'
-                                        }`}
-                                    >
-                                        <span className={`material-symbols-outlined text-[20px] transition-all duration-300 ${
-                                            tab === item.id ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'
-                                        }`}>
-                                            {item.icon}
-                                        </span>
-                                        {item.label}
-                                    </motion.button>
-                                ))}
+                                    { id: 'users', icon: 'person_outline', label: 'Users' },
+                                    { id: 'results', icon: 'bar_chart', label: 'Results' },
+                                    { id: 'certificates', icon: 'workspace_premium', label: 'Certs' },
+                                ].map((item) => {
+                                    const isActive = tab === item.id;
+                                    return (
+                                        <button
+                                            key={item.id}
+                                            onClick={() => {
+                                                setTab(item.id as any);
+                                                if (item.id === 'users') loadUsers();
+                                                if (item.id === 'results') loadResults();
+                                                if (item.id === 'certificates') loadCertificates();
+                                            }}
+                                            className={`group flex items-center gap-2 px-5 pb-5 pt-2 text-[15px] font-semibold transition-all duration-200 border-b-2 ${
+                                                isActive 
+                                                    ? 'text-blue-700 dark:text-blue-500 border-blue-700 dark:border-blue-500' 
+                                                    : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-900 dark:hover:text-white'
+                                            }`}
+                                        >
+                                            <span className="material-symbols-outlined text-[20px] mb-[1px]">
+                                                {item.icon}
+                                            </span>
+                                            {item.label}
+                                        </button>
+                                    );
+                                })}
                             </nav>
                         </div>
 
-                            <div className="flex items-center gap-1 sm:gap-2 relative">
-                                {/* Notifications Link/Dropdown */}
-                                <div className="relative" ref={notifRef}>
-                                    <motion.button
-                                        whileHover={{ scale: 1.05 }}
-                                        whileTap={{ scale: 0.95 }}
-                                        onClick={() => setShowNotifications(!showNotifications)}
-                                        className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border transition-all duration-300 ${
-                                            showNotifications ? 'bg-primary/20 border-primary text-primary' : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:text-primary hover:border-primary/50'
-                                        }`}
-                                        title="Notifications"
-                                    >
-                                        <span className="material-symbols-outlined text-xl">notifications</span>
-                                        {unreadCount > 0 && (
-                                            <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-rose-500 border-2 border-white dark:border-slate-900 rounded-full flex items-center justify-center animate-pulse">
-                                                <span className="text-[7px] font-bold text-white">{unreadCount}</span>
-                                            </span>
-                                        )}
-                                    </motion.button>
-
-                                    <AnimatePresence>
-                                        {showNotifications && (
-                                            <motion.div
-                                                initial={{ opacity: 0, y: 15, scale: 0.95 }}
-                                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                                exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                                className="absolute right-0 mt-3 w-80 sm:w-96 bg-white/90 dark:bg-slate-900/95 backdrop-blur-2xl rounded-2xl border border-slate-200 dark:border-slate-800 shadow-[0_10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] z-50 overflow-hidden"
-                                            >
-                                                <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
-                                                    <h4 className="font-bold text-slate-900 dark:text-white text-sm">Notifications</h4>
-                                                    {unreadCount > 0 && (
-                                                        <button onClick={markAllRead} className="text-xs font-bold text-primary hover:underline">Mark all read</button>
-                                                    )}
-                                                </div>
-                                                <div className="max-h-[400px] overflow-y-auto custom-scrollbar p-2">
-                                                    {notifications.length > 0 ? (
-                                                        <div className="space-y-1 text-left">
-                                                            {notifications.map((n) => (
-                                                                <div 
-                                                                    key={n.id} 
-                                                                    className={`p-4 rounded-xl transition-all border ${n.read ? 'bg-transparent border-transparent opacity-60' : 'bg-slate-50 dark:bg-slate-800/40 border-slate-100 dark:border-slate-800/60'}`}
-                                                                >
-                                                                    <div className="flex gap-3">
-                                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${n.read ? 'bg-slate-200 dark:bg-slate-700' : 'bg-primary/20 text-primary'}`}>
-                                                                            <span className="material-symbols-outlined text-sm">{n.type === 'enrollment' ? 'person_add' : 'info'}</span>
-                                                                        </div>
-                                                                        <div className="flex-1 min-w-0">
-                                                                            <p className="text-xs text-slate-900 dark:text-slate-100 font-medium leading-tight">{n.message}</p>
-                                                                            <p className="text-[10px] text-slate-500 mt-1">{new Date(n.createdAt).toLocaleString()}</p>
-                                                                        </div>
-                                                                        {!n.read && (
-                                                                            <button onClick={() => markRead(n.id)} className="text-slate-400 hover:text-primary transition-colors">
-                                                                                <span className="material-symbols-outlined text-base">check_circle</span>
-                                                                            </button>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    ) : (
-                                                        <div className="py-12 text-center">
-                                                            <span className="material-symbols-outlined text-4xl text-slate-300 dark:text-slate-700 mb-2">notifications_off</span>
-                                                            <p className="text-sm text-slate-500">No notifications yet</p>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <div className="p-4 bg-slate-50 dark:bg-slate-800/30 border-t border-slate-200 dark:border-slate-800 flex justify-center">
-                                                    <button onClick={clearAll} className="text-xs font-bold text-slate-500 hover:text-rose-500 transition-colors">Clear All</button>
-                                                </div>
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-                                </div>
-
-                                {/* Admin avatar */}
-                                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="hidden sm:flex">
-                                    <Link
-                                        href="/settings"
-                                        className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-primary to-cyan-500 text-white font-bold flex items-center justify-center shadow-[0_0_12px_rgba(13,185,242,0.3)] border border-primary/20 shrink-0 transition-shadow hover:shadow-[0_0_20px_rgba(13,185,242,0.5)]"
-                                        title="Account Settings"
-                                    >
-                                        {user?.name?.charAt(0)?.toUpperCase() || 'A'}
-                                    </Link>
-                                </motion.div>
-                            </div>
+                        {/* Right Section: Notification & User Dropdown */}
+                        <div className="flex items-center gap-6 relative ml-6">
+                            <NotificationBell />
+                            <UserDropdown />
+                        </div>
                     </header>
 
                     {/* Scrollable Content */}
@@ -2365,6 +2241,15 @@ export default function AdminDashboard() {
                                         </div>
                                     )
                                 }
+
+                                {/* Guide Tab */}
+                                {
+                                    tab === 'guide' && (
+                                        <div className="flex-1 overflow-y-auto p-4 sm:p-8 scroll-smooth max-w-5xl mx-auto">
+                                            <GuideTab />
+                                        </div>
+                                    )
+                                }
                             </motion.div>
                         </AnimatePresence>
                     </div>
@@ -2387,5 +2272,315 @@ export default function AdminDashboard() {
                     )}
                 </AnimatePresence>
         </RoleGuard>
+    );
+}
+
+/* ═══════════════════════════════════════════
+   GUIDE TAB COMPONENT
+   ═══════════════════════════════════════════ */
+
+function GuideTab() {
+    const [images, setImages] = React.useState<any[]>([]);
+    const [loading, setLoading] = React.useState(true);
+    const [uploading, setUploading] = React.useState(false);
+    const [uploadProgress, setUploadProgress] = React.useState(0);
+    const [editingId, setEditingId] = React.useState<string | null>(null);
+    const [editForm, setEditForm] = React.useState({ title: '', description: '' });
+    const [dragIdx, setDragIdx] = React.useState<number | null>(null);
+    const [dragOverIdx, setDragOverIdx] = React.useState<number | null>(null);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    const loadImages = async () => {
+        try {
+            const res = await api.get('/guide');
+            setImages(res.data);
+        } catch (err) {
+            console.error('Failed to load guide images:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    React.useEffect(() => { loadImages(); }, []);
+
+    const handleUpload = async (files: FileList | null) => {
+        if (!files || files.length === 0) return;
+        setUploading(true);
+        setUploadProgress(0);
+        try {
+            for (let i = 0; i < files.length; i++) {
+                const formData = new FormData();
+                formData.append('image', files[i]);
+                formData.append('title', `Step ${images.length + i + 1}`);
+                formData.append('description', '');
+                await api.post('/guide', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                    onUploadProgress: (progressEvent) => {
+                        const total = progressEvent.total || 1;
+                        const currentFileProgress = progressEvent.loaded / total;
+                        const overallProgress = Math.round(((i + currentFileProgress) / files.length) * 100);
+                        setUploadProgress(overallProgress);
+                    }
+                });
+            }
+            await loadImages();
+        } catch (err: any) {
+            alert(err.response?.data?.message || 'Error uploading image');
+        } finally {
+            setUploading(false);
+            setUploadProgress(0);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!confirm('Delete this guide image?')) return;
+        try {
+            await api.delete(`/guide/${id}`);
+            await loadImages();
+        } catch (err: any) {
+            alert(err.response?.data?.message || 'Error deleting image');
+        }
+    };
+
+    const handleUpdate = async (id: string) => {
+        try {
+            await api.put(`/guide/${id}`, editForm);
+            setEditingId(null);
+            await loadImages();
+        } catch (err: any) {
+            alert(err.response?.data?.message || 'Error updating image');
+        }
+    };
+
+    const startEdit = (img: any) => {
+        setEditingId(img.id);
+        setEditForm({ title: img.title || '', description: img.description || '' });
+    };
+
+    // Drag-to-reorder
+    const handleDragStart = (index: number) => setDragIdx(index);
+    const handleDragOver = (e: React.DragEvent, index: number) => {
+        e.preventDefault();
+        setDragOverIdx(index);
+    };
+    const handleDrop = async (e: React.DragEvent, dropIndex: number) => {
+        e.preventDefault();
+        if (dragIdx === null || dragIdx === dropIndex) {
+            setDragIdx(null);
+            setDragOverIdx(null);
+            return;
+        }
+        const reordered = [...images];
+        const [moved] = reordered.splice(dragIdx, 1);
+        reordered.splice(dropIndex, 0, moved);
+        setImages(reordered);
+        setDragIdx(null);
+        setDragOverIdx(null);
+        try {
+            await api.put('/guide/reorder', { orderedIds: reordered.map((img: any) => img.id) });
+        } catch (err: any) {
+            alert(err.response?.data?.message || 'Error reordering');
+            await loadImages();
+        }
+    };
+    const handleDragEnd = () => { setDragIdx(null); setDragOverIdx(null); };
+
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+
+    const resolveUrl = (url: string) => {
+        if (!url) return '';
+        if (url.startsWith('http')) return url;
+        return `${API_URL}${url.startsWith('/') ? url : '/' + url}`;
+    };
+
+    if (loading) {
+        return (
+            <div className="space-y-6">
+                <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded-lg w-48 animate-pulse" />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+                            <div className="h-48 bg-slate-200 dark:bg-slate-800 animate-pulse" />
+                            <div className="p-4 space-y-2">
+                                <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-2/3 animate-pulse" />
+                                <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-full animate-pulse" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-8">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <span className="material-symbols-outlined text-primary">slideshow</span>
+                        Guide Slideshow
+                    </h2>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                        Upload and arrange images to create a step-by-step onboarding guide shown on the courses page.
+                    </p>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-slate-500">
+                    <span className="material-symbols-outlined text-base">photo_library</span>
+                    {images.length} image{images.length !== 1 ? 's' : ''}
+                </div>
+            </div>
+
+            {/* Upload Area */}
+            <div
+                className="relative group border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-8 text-center hover:border-primary/50 dark:hover:border-primary/50 transition-colors cursor-pointer bg-slate-50/50 dark:bg-slate-900/30"
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleUpload(e.dataTransfer.files); }}
+            >
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.webp,.gif"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => handleUpload(e.target.files)}
+                />
+                {uploading ? (
+                    <div className="flex flex-col items-center gap-3">
+                        <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+                        <div className="flex flex-col items-center">
+                            <span className="text-sm font-medium text-slate-500">Uploading...</span>
+                            <span className="text-xs text-slate-400 mt-0.5">{uploadProgress}%</span>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center gap-3">
+                        <span className="material-symbols-outlined text-4xl text-slate-400 group-hover:text-primary transition-colors">cloud_upload</span>
+                        <div>
+                            <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Click to upload or drag and drop</p>
+                            <p className="text-xs text-slate-400 mt-1">JPG, PNG, WebP, or GIF · Multiple files supported</p>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Image Grid */}
+            {images.length === 0 ? (
+                <div className="text-center py-16 text-slate-400">
+                    <span className="material-symbols-outlined text-5xl mb-4 block">image</span>
+                    <p className="font-medium">No guide images yet</p>
+                    <p className="text-sm mt-1">Upload images above to create your onboarding slideshow.</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {images.map((img: any, idx: number) => (
+                        <div
+                            key={img.id}
+                            draggable
+                            onDragStart={() => handleDragStart(idx)}
+                            onDragOver={(e) => handleDragOver(e, idx)}
+                            onDrop={(e) => handleDrop(e, idx)}
+                            onDragEnd={handleDragEnd}
+                            className={`group relative bg-white dark:bg-slate-900 rounded-2xl border overflow-hidden transition-all duration-200 ${
+                                dragOverIdx === idx
+                                    ? 'border-primary shadow-lg shadow-primary/20 scale-[1.02]'
+                                    : 'border-slate-200 dark:border-slate-800 hover:border-primary/30'
+                            } ${dragIdx === idx ? 'opacity-50' : ''}`}
+                        >
+                            {/* Order badge */}
+                            <div className="absolute top-3 left-3 z-10 w-7 h-7 rounded-full bg-primary text-white text-xs font-black flex items-center justify-center shadow-lg">
+                                {idx + 1}
+                            </div>
+
+                            {/* Drag handle */}
+                            <div className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing">
+                                <span className="material-symbols-outlined text-white bg-black/50 backdrop-blur-sm rounded-lg p-1 text-sm">drag_indicator</span>
+                            </div>
+
+                            {/* Image */}
+                            <div className="relative h-48 bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                                <img
+                                    src={resolveUrl(img.imageUrl)}
+                                    alt={img.title || `Step ${idx + 1}`}
+                                    className="w-full h-full object-contain"
+                                />
+                            </div>
+
+                            {/* Content */}
+                            <div className="p-4">
+                                {editingId === img.id ? (
+                                    <div className="space-y-3">
+                                        <input
+                                            value={editForm.title}
+                                            onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                                            placeholder="Step title"
+                                            className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary"
+                                        />
+                                        <textarea
+                                            value={editForm.description}
+                                            onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                                            placeholder="Step description"
+                                            rows={2}
+                                            className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary resize-none"
+                                        />
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => handleUpdate(img.id)}
+                                                className="flex-1 py-1.5 bg-primary text-white text-xs font-bold rounded-lg hover:bg-primary/90 transition-colors"
+                                            >
+                                                Save
+                                            </button>
+                                            <button
+                                                onClick={() => setEditingId(null)}
+                                                className="flex-1 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-bold rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <h4 className="font-bold text-slate-900 dark:text-white text-sm truncate">
+                                            {img.title || `Step ${idx + 1}`}
+                                        </h4>
+                                        {img.description && (
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">{img.description}</p>
+                                        )}
+                                        <div className="flex gap-2 mt-3">
+                                            <button
+                                                onClick={() => startEdit(img)}
+                                                className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+                                            >
+                                                <span className="material-symbols-outlined text-sm">edit</span>
+                                                Edit
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(img.id)}
+                                                className="flex items-center gap-1 text-xs font-semibold text-red-500 hover:text-red-600 transition-colors"
+                                            >
+                                                <span className="material-symbols-outlined text-sm">delete</span>
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Tip */}
+            {images.length > 0 && (
+                <div className="flex items-start gap-3 p-4 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20">
+                    <span className="material-symbols-outlined text-blue-500 text-lg mt-0.5">info</span>
+                    <div className="text-sm text-blue-700 dark:text-blue-400">
+                        <strong>Tip:</strong> Drag and drop cards to reorder. The slideshow on the courses page will auto-rotate through these images every 3 seconds.
+                    </div>
+                </div>
+            )}
+        </div>
     );
 }

@@ -60,7 +60,7 @@ export default function Footer() {
                         <h6 className="text-white font-bold mb-6">Learning</h6>
                         <ul className="space-y-4 text-sm">
                             <li><Link href="/courses" className="link-animated hover:text-white transition-colors">Course Library</Link></li>
-                            <li><Link href="/certificates" className="link-animated hover:text-white transition-colors">Certifications</Link></li>
+                            <li><Link href="/my-learning?tab=certificates" className="link-animated hover:text-white transition-colors">Certifications</Link></li>
                             <li><Link href="/courses" className="link-animated hover:text-white transition-colors">Study Guides</Link></li>
                             <li><Link href="/courses" className="link-animated hover:text-white transition-colors">CE Requirements</Link></li>
                         </ul>
@@ -81,10 +81,9 @@ export default function Footer() {
                     <motion.div variants={footerItemVariants}>
                         <h6 className="text-white font-bold mb-6">Legal</h6>
                         <ul className="space-y-4 text-sm">
-                            <li><Link href="/" className="link-animated hover:text-white transition-colors">Privacy Policy</Link></li>
-                            <li><Link href="/" className="link-animated hover:text-white transition-colors">Terms of Service</Link></li>
-                            <li><Link href="/" className="link-animated hover:text-white transition-colors">Cookie Policy</Link></li>
-                            <li><Link href="/" className="link-animated hover:text-white transition-colors">Security</Link></li>
+                            <li><Link href="/privacy" className="link-animated hover:text-white transition-colors">Privacy Policy</Link></li>
+                            <li><Link href="/terms" className="link-animated hover:text-white transition-colors">Terms of Service</Link></li>
+                            <li><Link href="/refund" className="link-animated hover:text-white transition-colors">Refund Policy</Link></li>
                         </ul>
                     </motion.div>
 

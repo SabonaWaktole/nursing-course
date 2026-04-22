@@ -37,31 +37,34 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
             return res.status(400).json({ message: 'This course is free. Use the enroll endpoint instead.' });
         }
 
-        // 2. Check if already enrolled
-        const existingEnrollment = await prisma.enrollment.findUnique({
-            where: { userId_courseId: { userId, courseId } },
-        });
-
-        if (existingEnrollment) {
-            return res.status(400).json({ message: 'Already enrolled in this course' });
-        }
-
-        // 3. Check if there's already a completed payment (e.g., user paid but enrollment failed)
+        // 2. Check if there's already a completed payment
         const existingPayment = await (prisma as any).payment.findFirst({
             where: { userId, courseId, status: 'COMPLETED' },
         });
 
         if (existingPayment) {
-            // Payment exists but enrollment doesn't — create enrollment now
-            const enrollment = await prisma.enrollment.create({
-                data: { userId, courseId },
+            // Check if enrollment exists
+            const existingEnrollment = await prisma.enrollment.findUnique({
+                where: { userId_courseId: { userId, courseId } },
             });
 
-            return res.json({
-                enrolled: true,
-                message: 'You already paid for this course. Enrollment created.',
-                enrollment,
-            });
+            if (!existingEnrollment) {
+                // Payment exists but enrollment doesn't — create enrollment now
+                const enrollment = await prisma.enrollment.create({
+                    data: { userId, courseId },
+                });
+
+                return res.json({
+                    enrolled: true,
+                    message: 'You already paid for this course. Enrollment created.',
+                    enrollment,
+                });
+            } else {
+                return res.json({
+                    enrolled: true,
+                    message: 'You already paid and are enrolled.',
+                });
+            }
         }
 
         // 4. Check ALL existing PENDING payments — verify with Stripe if any were actually paid
@@ -274,4 +277,121 @@ export const verifyPayment = async (req: Request, res: Response) => {
         console.error('verifyPayment error:', error);
         res.status(500).json({ message: 'Error verifying payment', details: error?.message });
     }
+};
+
+/**
+ * POST /api/payments/webhook
+ * Called by Stripe to notify us of payment events.
+ * The request body must be the raw Buffer (not parsed JSON) for signature verification.
+ */
+export const handleWebhook = async (req: Request, res: Response) => {
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    if (!webhookSecret) {
+        console.error('❌ STRIPE_WEBHOOK_SECRET is not set');
+        return res.status(500).json({ message: 'Webhook secret not configured' });
+    }
+
+    const sig = req.headers['stripe-signature'] as string;
+
+    let event: any;
+
+    try {
+        event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+    } catch (err: any) {
+        console.error('❌ Webhook signature verification failed:', err.message);
+        return res.status(400).json({ message: `Webhook Error: ${err.message}` });
+    }
+
+    // Handle the event
+    if (event.type === 'checkout.session.completed') {
+        const session = event.data.object as any;
+
+        console.log(`✅ Webhook received: checkout.session.completed for session ${session.id}`);
+
+        const userId = session.metadata?.userId;
+        const courseId = session.metadata?.courseId;
+
+        if (!userId || !courseId) {
+            console.warn('⚠️ Webhook session missing metadata (userId or courseId)');
+            return res.json({ received: true });
+        }
+
+        try {
+            // 1. Find the payment record by stripeSessionId
+            const payment = await (prisma as any).payment.findUnique({
+                where: { stripeSessionId: session.id },
+            });
+
+            if (!payment) {
+                console.warn(`⚠️ No payment record found for session ${session.id}`);
+                return res.json({ received: true });
+            }
+
+            // 2. Skip if already completed (idempotent)
+            if (payment.status === 'COMPLETED') {
+                console.log(`ℹ️ Payment already completed for session ${session.id}`);
+                return res.json({ received: true });
+            }
+
+            // 3. Update payment status to COMPLETED
+            await (prisma as any).payment.update({
+                where: { id: payment.id },
+                data: {
+                    status: 'COMPLETED',
+                    stripePaymentId: session.payment_intent as string || null,
+                },
+            });
+
+            // 4. Create enrollment if it doesn't already exist
+            const existingEnrollment = await prisma.enrollment.findUnique({
+                where: { userId_courseId: { userId, courseId } },
+            });
+
+            if (!existingEnrollment) {
+                await prisma.enrollment.create({
+                    data: { userId, courseId },
+                });
+
+                console.log(`✅ Enrollment created via webhook for user ${userId} in course ${courseId}`);
+
+                // 5. Send instructor notification
+                try {
+                    const course = await prisma.course.findUnique({
+                        where: { id: courseId },
+                        select: { title: true },
+                    });
+                    const student = await prisma.user.findUnique({
+                        where: { id: userId },
+                        select: { name: true },
+                    });
+                    if (course) {
+                        await createInstructorNotification(courseId, {
+                            title: 'New Enrollment (Paid)',
+                            message: `${student?.name || 'A student'} has enrolled in "${course.title}" via Stripe payment.`,
+                            type: 'ENROLLMENT',
+                        });
+                    }
+                } catch (notifErr) {
+                    console.warn('Failed to create enrollment notification:', notifErr);
+                }
+            } else {
+                console.log(`ℹ️ Enrollment already exists for user ${userId} in course ${courseId}`);
+            }
+
+            // 6. Mark any other pending payments for this user/course as FAILED
+            await (prisma as any).payment.updateMany({
+                where: { userId, courseId, status: 'PENDING', id: { not: payment.id } },
+                data: { status: 'FAILED' },
+            });
+
+        } catch (dbError: any) {
+            console.error('❌ Webhook DB processing error:', dbError);
+            // Return 500 so Stripe retries the webhook
+            return res.status(500).json({ message: 'Error processing webhook' });
+        }
+    }
+
+    // Acknowledge receipt to Stripe
+    res.json({ received: true });
 };

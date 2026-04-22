@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
+
 import api from '@/lib/api';
 import { Course } from '@/lib/types';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -23,7 +24,7 @@ const PLACEHOLDER_IMAGES = [
     "https://lh3.googleusercontent.com/aida-public/AB6AXuAspeDG7VrUYFBVvgfo_eG5ZZrEPuF_ACLlsissW4FcNdQM8rBBfdhA536LajsiMSRcbQKELN9PRW_ojTHL5ZhYjhZTpN5GPvhjDVuMwecJyweY1wCiQUPeH3CvTwumTyQbZNOOdwzxSMg8V6RPHQcKnD-Qr5_M3q2HpWrT0sbv3N34_uXLgzRlyNwmeNih7s7JICwS7xwVbXXWpkiH-0XuUQoXvsyFeJlDd_o7YU-oRwJpiQY1SMauIkk5kZICJeg_dcQnN__C5Ug",
     "https://lh3.googleusercontent.com/aida-public/AB6AXuDMVI4QibcKTv1IHjyeeP27yhbo5EJWfCp4gz9iRSCrN0Zf1VAOM8kSdzkiQsiM23fAOe_temwpx-ybjVxCBzdJafTkdGKdSKAa8-8WXLmlVpInj39k9BqvcFz4taRZT-DKDQUDALDzsDyXH-qmUdq2R_sOFsHepXuLXoOwYb9IUgQo0Cn0jaObSfuwXt-8iVxGc8fzrlB2RvR8MS5wseYcLLR5JvOtzII_DaO_REkwxorbvvmozJ_z6DSTS57MZUbeAZNJPllI50g"
 ];
-const FEATURED_IMAGE = "https://lh3.googleusercontent.com/aida-public/AB6AXuB4Fy8LpUlN3GFqNpV9X-BjytMgNvx7RDKWOLgjXNCnpOF8Iz3zKcWN39tVeb9trEyAwAsCI2TOZ8hqohhr1hRsabdhSNGo50NFi37W1CxL6hXO5kp0hHe44lwsc4c49yct7RlqlEfw48bpJfE8ffLX4fJjhKQqjWioPjYq_6attTcPxw0miSJSzgf37fdmkYhoqhps1YONg3v3tr7iPNINr7fbU5AeB8HFxuzFEnV6VCEdLtGkF8tf05VI82SmjEsR9FhSdcXzAaI";
+
 
 export default function CoursesPage() {
     const [courses, setCourses] = useState<Course[]>([]);
@@ -31,7 +32,7 @@ export default function CoursesPage() {
     const [selectedTag, setSelectedTag] = useState('All');
     const [loading, setLoading] = useState(true);
     const [tags, setTags] = useState<string[]>(['All']);
-    const [isExpanded, setIsExpanded] = useState(false);
+
     const sectionContainer = useSectionContainerVariants();
     const sectionItem = useSectionItemVariants();
     const buttonHover = useButtonHoverMotion();
@@ -109,7 +110,7 @@ export default function CoursesPage() {
                                 transition={{ duration: 0.5, delay: 0.25 }}
                                 className="text-lg text-slate-600 dark:text-slate-400 leading-relaxed"
                             >
-                                Upgrade your nursing career with industry-recognized certifications and professional development workshops.
+                                Renew your certification with Excel Community Living any time anywhere.
                             </motion.p>
                         </div>
                         <motion.div
@@ -176,118 +177,8 @@ export default function CoursesPage() {
                     </div>
                 </motion.div>
 
-                {/* Featured Highlight */}
-                {filtered.length > 0 && (
-                    <motion.div
-                        key={`featured-${filtered[0]?.id}`}
-                        initial={{ opacity: 0, y: 30, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        transition={{ duration: 0.6, ease: [0.25, 0.8, 0.25, 1] }}
-                        className="relative group overflow-hidden rounded-2xl mb-12 transition-all duration-500 hover:-translate-y-3 bg-white dark:bg-slate-900/60 backdrop-blur-sm border border-slate-200/80 dark:border-slate-700/50 hover:border-primary/40 dark:hover:border-primary/40 hover:shadow-[0_20px_60px_-15px_rgba(13,185,242,0.15),0_8px_24px_-8px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_20px_60px_-15px_rgba(13,185,242,0.2),0_8px_24px_-8px_rgba(0,0,0,0.3)]"
-                    >
-                        {/* Animated gradient top accent */}
-                        <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent animate-gradient-shift z-30" />
-
-                        {/* Dynamic Gradient Overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-white via-white/90 dark:from-slate-900 dark:via-slate-900/80 to-transparent z-10"></div>
-                        {/* Hover shine sweep */}
-                        <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden">
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.06] to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out" />
-                        </div>
-
-                        <div className="relative z-20 p-8 md:p-12 flex flex-col justify-center max-w-xl min-h-[320px]">
-                            <motion.div
-                                initial={{ opacity: 0, x: -10 }}
-                                whileInView={{ opacity: 1, x: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: 0.2, duration: 0.4 }}
-                                className="flex items-center gap-2 text-primary font-black text-xs uppercase tracking-widest mb-4"
-                            >
-                                <span className="material-symbols-outlined text-sm animate-pulse">auto_awesome</span>
-                            </motion.div>
-                            <motion.h3
-                                initial={{ opacity: 0, y: 16 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: 0.3, duration: 0.5 }}
-                                className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-4 tracking-tight leading-tight"
-                            >
-                                {filtered[0].title}
-                            </motion.h3>
-
-                            <motion.div
-                                initial={{ opacity: 0, y: 12 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: 0.4, duration: 0.4 }}
-                                className="relative mb-8"
-                            >
-                                <p className={`text-slate-600 dark:text-slate-300 leading-relaxed font-medium transition-all duration-500 ${!isExpanded ? 'line-clamp-3' : ''}`}>
-                                    {filtered[0].description || "Master the latest clinical techniques used in high-acuity environments. This comprehensive course covers advanced nursing protocols, emergency response strategies, and evidence-based patient care."}
-                                </p>
-                                {(filtered[0].description?.length > 160 || !filtered[0].description) && (
-                                    <button
-                                        onClick={() => setIsExpanded(!isExpanded)}
-                                        className="text-primary hover:text-primary/80 font-bold text-xs uppercase tracking-widest mt-2 flex items-center gap-1 transition-colors"
-                                    >
-                                        {isExpanded ? (
-                                            <>See Less <span className="material-symbols-outlined text-sm rotate-180">expand_more</span></>
-                                        ) : (
-                                            <>See More <span className="material-symbols-outlined text-sm">expand_more</span></>
-                                        )}
-                                    </button>
-                                )}
-                            </motion.div>
-
-                            <motion.div
-                                initial={{ opacity: 0, y: 12 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: 0.5, duration: 0.4 }}
-                                className="flex flex-wrap items-center gap-6"
-                            >
-                                <motion.div {...glowHover}>
-                                    <Link href={`/courses/${filtered[0].id}`} className="shimmer-btn bg-primary hover:bg-primary/95 text-white font-black py-4 px-10 rounded-2xl shadow-xl shadow-primary/30 transition-all hover:-translate-y-1 flex items-center gap-2 text-sm tracking-tight">
-                                        ENROLL NOW <span className="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
-                                    </Link>
-                                </motion.div>
-                                <div className="flex items-center gap-3 bg-white/50 dark:bg-slate-900/50 backdrop-blur-md px-4 py-2 rounded-2xl border border-slate-200/50 dark:border-slate-700/50">
-                                    <div className="flex -space-x-2">
-                                        {[1, 2, 3].map(i => (
-                                            <motion.div
-                                                key={i}
-                                                initial={{ opacity: 0, scale: 0.5 }}
-                                                whileInView={{ opacity: 1, scale: 1 }}
-                                                viewport={{ once: true }}
-                                                transition={{ delay: 0.5 + i * 0.1, duration: 0.3 }}
-                                                className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-800 bg-slate-200 dark:bg-slate-700 flex items-center justify-center overflow-hidden z-10 transition-transform hover:scale-110 hover:z-20"
-                                            >
-                                                <span className="material-symbols-outlined text-xs text-slate-400">person</span>
-                                            </motion.div>
-                                        ))}
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-slate-900 dark:text-white font-black text-sm tracking-tight">4.9/5.0</span>
-                                        <span className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider">{courses.length * 340}+ Students</span>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        </div>
-
-                        {/* Featured background image with parallax-like hover */}
-                        <motion.div
-                            className="absolute inset-0 w-full h-full bg-center bg-cover -z-0"
-                            whileHover={{ scale: 1.05 }}
-                            transition={{ duration: 0.8, ease: 'easeOut' }}
-                            style={{
-                                backgroundImage: `url('${filtered[0].thumbnail
-                                    ? getFileUrl(filtered[0].thumbnail)
-                                    : FEATURED_IMAGE
-                                    }')`
-                            }}
-                        />
-                    </motion.div>
-                )}
+                {/* Getting Started Slideshow */}
+                <GettingStartedSlideshow />
 
                 {/* Course Grid */}
                 {loading ? (
@@ -411,5 +302,279 @@ export default function CoursesPage() {
                 </motion.div>
             </main>
         </div>
+    );
+}
+
+/* ═══════════════════════════════════════════
+   GETTING STARTED SLIDESHOW
+   ═══════════════════════════════════════════ */
+
+function GettingStartedSlideshow() {
+    const [guideSteps, setGuideSteps] = useState<{ step: number; image: string; title: string; description: string }[]>([]);
+    const [activeStep, setActiveStep] = useState(0);
+    const [isPaused, setIsPaused] = useState(false);
+    const [progress, setProgress] = useState(0);
+    const [isExpanded, setIsExpanded] = useState(true);
+    const [guideLoading, setGuideLoading] = useState(true);
+    const intervalRef = useRef<NodeJS.Timeout | null>(null);
+    const progressRef = useRef<NodeJS.Timeout | null>(null);
+    const INTERVAL_MS = 3000;
+    const PROGRESS_TICK = 30; // update progress every 30ms
+
+    // Fetch guide images from API
+    useEffect(() => {
+        api.get('/guide')
+            .then((res) => {
+                const data = res.data.map((img: any, idx: number) => ({
+                    step: idx + 1,
+                    image: getFileUrl(img.imageUrl),
+                    title: img.title || `Step ${idx + 1}`,
+                    description: img.description || '',
+                }));
+                setGuideSteps(data);
+            })
+            .catch((err) => console.error('Failed to load guide:', err))
+            .finally(() => setGuideLoading(false));
+    }, []);
+
+    const goToStep = useCallback((index: number) => {
+        setActiveStep(index);
+        setProgress(0);
+    }, []);
+
+    const nextStep = useCallback(() => {
+        setActiveStep((prev) => (prev + 1) % (guideSteps.length || 1));
+        setProgress(0);
+    }, [guideSteps.length]);
+
+    // Auto-advance timer
+    useEffect(() => {
+        if (isPaused || guideSteps.length === 0) {
+            if (intervalRef.current) clearInterval(intervalRef.current);
+            if (progressRef.current) clearInterval(progressRef.current);
+            return;
+        }
+
+        intervalRef.current = setInterval(nextStep, INTERVAL_MS);
+        progressRef.current = setInterval(() => {
+            setProgress((prev) => Math.min(prev + (PROGRESS_TICK / INTERVAL_MS) * 100, 100));
+        }, PROGRESS_TICK);
+
+        return () => {
+            if (intervalRef.current) clearInterval(intervalRef.current);
+            if (progressRef.current) clearInterval(progressRef.current);
+        };
+    }, [isPaused, nextStep, activeStep, guideSteps.length]);
+
+    // Don't render if loading or no images
+    if (guideLoading || guideSteps.length === 0) return null;
+
+    const currentStep = guideSteps[activeStep] || guideSteps[0];
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 30, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.6, ease: [0.25, 0.8, 0.25, 1] }}
+            className="relative overflow-hidden rounded-2xl mb-12 bg-white dark:bg-slate-900/60 backdrop-blur-sm border border-slate-200/80 dark:border-slate-700/50"
+        >
+            {/* Animated gradient top accent */}
+            <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent animate-gradient-shift z-30" />
+
+            {/* Header */}
+            <div className="px-6 md:px-10 pt-8 pb-4">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <div className="flex items-center gap-2 text-primary font-black text-xs uppercase tracking-widest mb-2">
+                            <span className="material-symbols-outlined text-sm animate-pulse">play_circle</span>
+                            How to Get Started
+                        </div>
+                        <h3 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                            Login & Start Learning
+                        </h3>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                            Follow these simple steps to create your account and begin your courses.
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => setIsExpanded(!isExpanded)}
+                        className="shrink-0 ml-4 w-10 h-10 rounded-xl flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-primary/10 dark:hover:bg-primary/15 border border-slate-200 dark:border-slate-700 hover:border-primary/30 text-slate-500 dark:text-slate-400 hover:text-primary transition-all duration-300"
+                        aria-label={isExpanded ? 'Collapse slideshow' : 'Expand slideshow'}
+                    >
+                        <motion.span
+                            animate={{ rotate: isExpanded ? 180 : 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="material-symbols-outlined text-lg"
+                        >
+                            expand_less
+                        </motion.span>
+                    </button>
+                </div>
+            </div>
+
+            {/* Two-column layout */}
+            <AnimatePresence initial={false}>
+            {isExpanded && (
+            <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.4, ease: [0.25, 0.8, 0.25, 1] }}
+                className="overflow-hidden"
+            >
+            <div className="flex flex-col lg:flex-row gap-0 lg:gap-6 px-6 md:px-10 pb-8">
+                {/* Left: Step list */}
+                <div className="lg:w-[280px] shrink-0 py-4 flex flex-row lg:flex-col gap-2 overflow-x-auto lg:overflow-x-visible scrollbar-hide">
+                    {guideSteps.map((step, i) => (
+                        <button
+                            key={step.step}
+                            onClick={() => goToStep(i)}
+                            className={`group flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-300 whitespace-nowrap lg:whitespace-normal min-w-[160px] lg:min-w-0 ${
+                                activeStep === i
+                                    ? 'bg-primary/10 dark:bg-primary/15 border border-primary/30'
+                                    : 'hover:bg-slate-50 dark:hover:bg-slate-800/50 border border-transparent'
+                            }`}
+                        >
+                            <div
+                                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shrink-0 transition-all duration-300 ${
+                                    activeStep === i
+                                        ? 'bg-primary text-white shadow-lg shadow-primary/30 scale-110'
+                                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-primary/20 group-hover:text-primary'
+                                }`}
+                            >
+                                {step.step}
+                            </div>
+                            <div className="flex flex-col">
+                                <span
+                                    className={`text-sm font-bold transition-colors duration-300 ${
+                                        activeStep === i
+                                            ? 'text-primary'
+                                            : 'text-slate-700 dark:text-slate-300'
+                                    }`}
+                                >
+                                    {step.title}
+                                </span>
+                                <span className="text-[11px] text-slate-400 dark:text-slate-500 hidden lg:block leading-tight mt-0.5">
+                                    {step.description}
+                                </span>
+                            </div>
+                        </button>
+                    ))}
+                </div>
+
+                {/* Right: Image slideshow */}
+                <div className="flex-1 relative">
+                    {/* Browser-like frame */}
+                    <div className="rounded-xl overflow-hidden border border-slate-200/80 dark:border-slate-700/50 bg-slate-100 dark:bg-slate-800/50 shadow-xl">
+                        {/* Fake browser bar */}
+                        <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+                            <div className="flex gap-1.5">
+                                <div className="w-3 h-3 rounded-full bg-red-400/70" />
+                                <div className="w-3 h-3 rounded-full bg-yellow-400/70" />
+                                <div className="w-3 h-3 rounded-full bg-green-400/70" />
+                            </div>
+                            <div className="flex-1 mx-4">
+                                <div className="bg-white dark:bg-slate-900 rounded-md px-3 py-1 text-xs text-slate-400 dark:text-slate-500 font-mono truncate">
+                                    excelcommunityliving.com
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Image container */}
+                        <div
+                            className="relative aspect-video bg-slate-200 dark:bg-slate-900 overflow-hidden"
+                            onMouseEnter={() => setIsPaused(true)}
+                            onMouseLeave={() => setIsPaused(false)}
+                        >
+                            <AnimatePresence mode="wait">
+                                <motion.div
+                                    key={activeStep}
+                                    initial={{ opacity: 0, scale: 1.02 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.98 }}
+                                    transition={{ duration: 0.4, ease: [0.25, 0.8, 0.25, 1] }}
+                                    className="absolute inset-0"
+                                >
+                                    <img
+                                        src={currentStep.image}
+                                        alt={`Step ${currentStep.step}: ${currentStep.title}`}
+                                        className="w-full h-full object-contain"
+                                    />
+                                </motion.div>
+                            </AnimatePresence>
+
+                            {/* Step badge overlay */}
+                            <div className="absolute top-4 left-4 z-10">
+                                <div className="bg-black/60 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5">
+                                    <span className="w-5 h-5 rounded-full bg-primary flex items-center justify-center text-[10px] font-black">
+                                        {currentStep.step}
+                                    </span>
+                                    {currentStep.title}
+                                </div>
+                            </div>
+
+                            {/* Pause indicator */}
+                            <AnimatePresence>
+                                {isPaused && (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.8 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.8 }}
+                                        className="absolute top-4 right-4 z-10 bg-black/60 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5"
+                                    >
+                                        <span className="material-symbols-outlined text-sm">pause</span>
+                                        Paused
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+
+                        {/* Progress bar */}
+                        <div className="h-1 bg-slate-200 dark:bg-slate-700 relative overflow-hidden">
+                            <motion.div
+                                className="absolute inset-y-0 left-0 bg-primary"
+                                style={{ width: `${progress}%` }}
+                                transition={{ duration: 0.03, ease: 'linear' }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Mobile step description */}
+                    <div className="lg:hidden mt-4 px-1">
+                        <AnimatePresence mode="wait">
+                            <motion.p
+                                key={activeStep}
+                                initial={{ opacity: 0, y: 8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -8 }}
+                                transition={{ duration: 0.3 }}
+                                className="text-sm text-slate-600 dark:text-slate-400"
+                            >
+                                {currentStep.description}
+                            </motion.p>
+                        </AnimatePresence>
+                    </div>
+
+                    {/* Dot indicators for quick reference */}
+                    <div className="flex justify-center gap-2 mt-4">
+                        {guideSteps.map((_, i) => (
+                            <button
+                                key={i}
+                                onClick={() => goToStep(i)}
+                                className={`rounded-full transition-all duration-300 ${
+                                    activeStep === i
+                                        ? 'w-8 h-2.5 bg-primary shadow-md shadow-primary/30'
+                                        : 'w-2.5 h-2.5 bg-slate-300 dark:bg-slate-600 hover:bg-primary/50'
+                                }`}
+                                aria-label={`Go to step ${i + 1}`}
+                            />
+                        ))}
+                    </div>
+                </div>
+            </div>
+            </motion.div>
+            )}
+            </AnimatePresence>
+        </motion.div>
     );
 }

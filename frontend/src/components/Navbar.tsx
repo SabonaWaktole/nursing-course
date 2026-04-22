@@ -4,11 +4,14 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { useState, useEffect } from 'react';
 import ThemeToggle from './ThemeToggle';
+import UserDropdown from './UserDropdown';
+import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 export default function Navbar() {
     const { user, logout, activeRole } = useAuth();
+    const pathname = usePathname();
     const [mobileOpen, setMobileOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
 
@@ -27,7 +30,7 @@ export default function Navbar() {
     ];
 
     const studentLinks = user && activeRole !== 'ADMIN'
-        ? [{ label: 'My Learning', href: '/my-courses', icon: 'school' }]
+        ? [{ label: 'My Learning', href: '/my-learning', icon: 'school' }]
         : [];
 
     const adminLinks = user && activeRole === 'ADMIN'
@@ -48,7 +51,7 @@ export default function Navbar() {
                     : "bg-transparent"
             )}
         >
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="w-full pl-4 sm:pl-6 lg:pl-10 xl:pl-12 pr-3 sm:pr-4 lg:pr-6 py-4">
                 <div className="flex justify-between items-center">
                     {/* ── Logo ── */}
                     <Link href="/" className="flex items-center gap-3 group shrink-0">
@@ -72,32 +75,42 @@ export default function Navbar() {
 
                     {/* ── Desktop Nav Links (icon + label, Nordic-ICT style) ── */}
                     <nav className="hidden md:flex items-center gap-1 lg:gap-2">
-                        {allLinks.map((link) => (
-                            <Link
-                                key={link.href}
-                                href={link.href}
-                                className="group flex items-center gap-1.5 px-3 lg:px-4 py-2 text-sm font-medium text-slate-300 hover:text-primary transition-colors duration-300 relative"
-                            >
-                                <span className="material-symbols-outlined text-[18px] opacity-70 group-hover:opacity-100 group-hover:text-primary transition-all duration-300">
-                                    {link.icon}
-                                </span>
-                                {link.label}
-                            </Link>
-                        ))}
+                        {allLinks.map((link) => {
+                            const isActive = pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href));
+                            return (
+                                <Link
+                                    key={link.href}
+                                    href={link.href}
+                                    className={cn(
+                                        "group flex items-center gap-1.5 px-3 lg:px-4 py-2 text-sm font-medium transition-colors duration-300 relative",
+                                        isActive ? "text-primary" : "text-slate-300 hover:text-primary"
+                                    )}
+                                >
+                                    <span className={cn(
+                                        "material-symbols-outlined text-[18px] transition-all duration-300",
+                                        isActive ? "opacity-100" : "opacity-70 group-hover:opacity-100 group-hover:text-primary"
+                                    )}>
+                                        {link.icon}
+                                    </span>
+                                    {link.label}
+                                    {isActive && (
+                                        <motion.div
+                                            layoutId="navbar-pill"
+                                            className="absolute inset-0 bg-primary/10 rounded-full -z-10"
+                                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                        />
+                                    )}
+                                </Link>
+                            );
+                        })}
                     </nav>
 
                     {/* ── Right side: search, theme, auth ── */}
                     <div className="hidden md:flex items-center gap-3">
                         {user ? (
-                            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="ml-1">
-                                <Link
-                                    href="/settings"
-                                    className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-cyan-500 text-white font-bold flex items-center justify-center shadow-[0_0_12px_rgba(13,185,242,0.3)] border border-primary/20 shrink-0 transition-shadow hover:shadow-[0_0_20px_rgba(13,185,242,0.5)]"
-                                    title="Account Settings"
-                                >
-                                    {user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                                </Link>
-                            </motion.div>
+                            <div className="ml-1">
+                                <UserDropdown />
+                            </div>
                         ) : (
                             <div className="flex items-center gap-4 ml-1">
                                 <ThemeToggle />
@@ -115,15 +128,7 @@ export default function Navbar() {
 
                     {/* ── Mobile toggle ── */}
                     <div className="flex items-center gap-2 md:hidden">
-                        {!user && <ThemeToggle />}
-                        {user && (
-                            <Link 
-                                href="/settings" 
-                                className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-cyan-500 text-[12px] text-white font-bold flex items-center justify-center shadow-[0_0_10px_rgba(13,185,242,0.3)] shrink-0 mr-1"
-                            >
-                                {user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                            </Link>
-                        )}
+                        {!user ? <ThemeToggle /> : <div className="mr-1 mt-0.5"><UserDropdown /></div>}
                         <motion.button
                             whileTap={{ scale: 0.9 }}
                             className="flex items-center justify-center h-10 w-10 rounded-full text-slate-300 hover:text-primary hover:bg-white/[0.06] transition-all duration-300"
@@ -141,43 +146,54 @@ export default function Navbar() {
             <AnimatePresence>
                 {mobileOpen && (
                     <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.35, ease: [0.25, 0.8, 0.25, 1] }}
-                        className="md:hidden overflow-hidden bg-slate-950/95 backdrop-blur-2xl border-t border-white/[0.06]"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="md:hidden fixed inset-0 top-[72px] bg-slate-950/98 backdrop-blur-3xl z-40 flex flex-col"
                     >
-                        <div className="px-5 py-6 space-y-2">
+                        <div className="flex-1 px-6 py-10 space-y-4 overflow-y-auto">
                             {/* Links */}
-                            {allLinks.map((link, i) => (
-                                <motion.div
-                                    key={link.href}
-                                    initial={{ opacity: 0, x: -16 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: 0.05 + i * 0.06, duration: 0.3 }}
-                                >
-                                    <Link
-                                        href={link.href}
-                                        className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-300 hover:text-primary hover:bg-white/[0.04] transition-all duration-300"
-                                        onClick={() => setMobileOpen(false)}
+                            {allLinks.map((link, i) => {
+                                const isActive = pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href));
+                                return (
+                                    <motion.div
+                                        key={link.href}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: 0.05 + i * 0.06, duration: 0.4, type: "spring", stiffness: 300, damping: 24 }}
                                     >
-                                        <span className="material-symbols-outlined text-[20px] opacity-70">{link.icon}</span>
-                                        {link.label}
-                                    </Link>
-                                </motion.div>
-                            ))}
+                                        <Link
+                                            href={link.href}
+                                            className={cn(
+                                                "flex items-center gap-4 px-5 py-4 rounded-2xl text-lg font-bold transition-all duration-300 border",
+                                                isActive ? "bg-primary/10 text-primary border-primary/20" : "border-transparent text-slate-300 hover:text-primary hover:bg-white/[0.04]"
+                                            )}
+                                            onClick={() => setMobileOpen(false)}
+                                        >
+                                            <span className="material-symbols-outlined text-[24px] opacity-80">{link.icon}</span>
+                                            {link.label}
+                                        </Link>
+                                    </motion.div>
+                                );
+                            })}
 
                             {/* Auth buttons for logged-out users */}
                             {!user && (
-                                <div className="mt-4 pt-4 border-t border-white/[0.06]">
+                                <motion.div 
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.05 + allLinks.length * 0.06, duration: 0.4 }}
+                                    className="mt-8 pt-8 border-t border-white/[0.06]"
+                                >
                                     <Link
                                         href="/login"
-                                        className="flex items-center justify-center rounded-xl bg-primary px-4 py-3.5 text-sm font-bold text-white hover:bg-primary/90 shadow-lg shadow-primary/25 transition-all duration-300"
+                                        className="flex items-center justify-center rounded-2xl bg-primary px-4 py-4 text-base font-bold text-white hover:bg-primary/90 shadow-[0_0_30px_rgba(13,185,242,0.3)] transition-all duration-300"
                                         onClick={() => setMobileOpen(false)}
                                     >
-                                        Log in
+                                        Log in to Portal
                                     </Link>
-                                </div>
+                                </motion.div>
                             )}
                         </div>
                     </motion.div>

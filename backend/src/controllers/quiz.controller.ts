@@ -40,15 +40,26 @@ export const getQuiz = async (req: Request, res: Response) => {
     try {
         const quizId = req.params.quizId as string;
         const userRole = (req as any).user?.role;
+        const userId = (req as any).user?.userId;
 
         const quiz = await prisma.quiz.findUnique({
             where: { id: quizId },
             include: {
                 questions: true,
-                course: { select: { title: true } },
+                course: { select: { title: true, price: true } },
             },
         });
         if (!quiz) return res.status(404).json({ message: 'Quiz not found' });
+
+        // Check paid access for students
+        if (userRole === 'STUDENT' && (quiz as any).course.price && (quiz as any).course.price > 0) {
+            const payment = await (prisma as any).payment.findFirst({
+                where: { userId, courseId: quiz.courseId, status: 'COMPLETED' }
+            });
+            if (!payment) {
+                return res.status(403).json({ message: 'Paid access required to view this assessment.' });
+            }
+        }
 
         // Hide correct answers for students
         if (userRole !== 'ADMIN') {

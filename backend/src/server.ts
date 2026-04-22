@@ -14,6 +14,7 @@ import uploadRoutes from './routes/upload.routes';
 import publicRoutes from './routes/public.routes';
 import settingRoutes from './routes/setting.routes';
 import paymentRoutes from './routes/payment.routes';
+import guideRoutes from './routes/guide.routes';
 import prisma from './utils/prisma';
 
 const app = express();
@@ -52,6 +53,11 @@ app.use(cors({
   credentials: true
 }));
 
+import { handleWebhook } from './controllers/payment.controller';
+
+// ⚠️ Stripe webhook MUST be registered BEFORE express.json() — it needs the raw body
+app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), handleWebhook);
+
 app.use(express.json({ limit: '50mb' }));
 
 // Serve uploaded files from persistent upload directory
@@ -73,6 +79,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api/settings', settingRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/guide', guideRoutes);
 
 // Error handling
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

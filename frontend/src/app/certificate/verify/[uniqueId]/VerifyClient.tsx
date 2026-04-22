@@ -84,7 +84,7 @@ export default function VerifyClient({ uniqueId }: { uniqueId: string }) {
                 </div>
                 <nav className="hidden md:flex items-center gap-9">
                     <Link href="/courses" className="text-slate-600 dark:text-slate-400 hover:text-primary transition-colors text-sm font-medium">Courses</Link>
-                    <Link href="/my-courses" className="text-slate-600 dark:text-slate-400 hover:text-primary transition-colors text-sm font-medium">Dashboard</Link>
+                    <Link href="/my-learning?tab=courses" className="text-slate-600 dark:text-slate-400 hover:text-primary transition-colors text-sm font-medium">Dashboard</Link>
                 </nav>
             </header>
 

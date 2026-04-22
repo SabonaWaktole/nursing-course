@@ -27,12 +27,14 @@ export default function CourseDetailPage() {
     const [enrolled, setEnrolled] = useState(false);
     const [activeLesson, setActiveLesson] = useState<string | null>(null);
     const [completing, setCompleting] = useState(false);
+    const [hasPaidAccess, setHasPaidAccess] = useState(false);
     const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
     const [progress, setProgress] = useState(0);
     const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
     const [materialIndex, setMaterialIndex] = useState(0);
     const [paymentBanner, setPaymentBanner] = useState<'success' | 'cancelled' | null>(null);
     const [verifyingPayment, setVerifyingPayment] = useState(false);
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
     useEffect(() => {
         api.get(`/courses/${id}`).then((r) => {
@@ -82,6 +84,7 @@ export default function CourseDetailPage() {
 
                 if (found || hasOverrideAccess) {
                     setEnrolled(true);
+                    setHasPaidAccess(hasOverrideAccess || found?.hasPaidAccess);
                     const currentProgress = found ? (found.progress || 0) : 0;
                     setProgress(currentProgress);
 
@@ -150,13 +153,17 @@ export default function CourseDetailPage() {
                     const res = await api.get(`/payments/verify?session_id=${sessionId}`);
                     if (res.data.enrolled) {
                         setEnrolled(true);
+                        setHasPaidAccess(true);
                         setVerifyingPayment(false);
                     } else {
                         // Payment might still be processing, retry after a short delay
                         setTimeout(async () => {
                             try {
                                 const retry = await api.get(`/payments/verify?session_id=${sessionId}`);
-                                if (retry.data.enrolled) setEnrolled(true);
+                                if (retry.data.enrolled) {
+                                    setEnrolled(true);
+                                    setHasPaidAccess(true);
+                                }
                             } catch { }
                             setVerifyingPayment(false);
                         }, 3000);
@@ -169,17 +176,18 @@ export default function CourseDetailPage() {
         }
     }, [paymentStatus, sessionId, user]);
 
-    const handleEnroll = async () => {
+    const handleEnroll = async (isAudit = false) => {
         if (!user) return router.push('/login');
         setEnrolling(true);
         try {
             // Check if course is paid
-            if (course?.price && course.price > 0) {
+            if (course?.price && course.price > 0 && !isAudit) {
                 // Redirect to Stripe Checkout
                 const res = await api.post('/payments/create-checkout-session', { courseId: id });
                 if (res.data.enrolled) {
                     // Already paid — enrollment was created on the spot
                     setEnrolled(true);
+                    setHasPaidAccess(true);
                     setEnrolling(false);
                     return;
                 }
@@ -188,9 +196,10 @@ export default function CourseDetailPage() {
                     return; // Don't setEnrolling(false) — page is navigating away
                 }
             } else {
-                // Free course — instant enrollment
+                // Free course or Auditing — instant enrollment
                 await api.post(`/courses/${id}/enroll`);
                 setEnrolled(true);
+                setHasPaidAccess(!course?.price || course.price === 0);
             }
         } catch (err: any) {
             // If backend returns 402, redirect to payment
@@ -273,14 +282,14 @@ export default function CourseDetailPage() {
         const moduleLessons = currentMod?.lessons || [];
         const isLastInModule = currentLessonIndex >= 0 && allLessons[currentLessonIndex].id === moduleLessons[moduleLessons.length - 1]?.id;
 
-        if (isLastInModule && currentMod && currentMod.quizzes && currentMod.quizzes.length > 0) {
+        if (isLastInModule && currentMod && currentMod.quizzes && currentMod.quizzes.length > 0 && hasPaidAccess) {
             router.push(`/quiz/${currentMod.quizzes[0].id}`);
         } else if (currentLessonIndex < allLessons.length - 1) {
             const nextLesson = allLessons[currentLessonIndex + 1];
             setActiveLesson(nextLesson.id);
             const mod = findModuleForLesson(nextLesson.id);
             if (mod) setExpandedModules(prev => new Set([...prev, mod.id]));
-        } else if (course.quizzes?.length > 0) {
+        } else if (course.quizzes?.length > 0 && hasPaidAccess) {
             router.push(`/quiz/${course.quizzes[0].id}`);
         } else {
             setCompleting(true);
@@ -317,7 +326,7 @@ export default function CourseDetailPage() {
     const getNextLabel = () => {
         if (!isLastMaterialInLesson) return 'Next Material »';
         if (!isLastLessonOverall) return 'Next Lesson »';
-        if (course?.quizzes?.length && course.quizzes.length > 0) return 'Take Meta Quiz »';
+        if (course?.quizzes?.length && course.quizzes.length > 0 && hasPaidAccess) return 'Take Meta Quiz »';
         return 'Finish Course »';
     };
 
@@ -342,11 +351,12 @@ export default function CourseDetailPage() {
             </div>
 
             {/* Left Sidebar (Navigation Rail) */}
-            <motion.aside
-                initial={false}
-                animate={{ width: isSidebarExpanded ? 320 : 80 }}
-                onMouseEnter={() => setIsSidebarExpanded(true)}
-                onMouseLeave={() => setIsSidebarExpanded(false)}
+            {enrolled && user && (
+                <motion.aside
+                    initial={false}
+                    animate={{ width: isSidebarExpanded ? 320 : 80 }}
+                    onMouseEnter={() => setIsSidebarExpanded(true)}
+                    onMouseLeave={() => setIsSidebarExpanded(false)}
                 className="z-40 h-screen shrink-0 bg-white/70 dark:bg-slate-900/40 backdrop-blur-xl border-r border-slate-200/50 dark:border-slate-800/50 flex flex-col transition-all overflow-hidden shadow-2xl shadow-slate-200/20 dark:shadow-black/40"
             >
                 {/* Progress Mini/Expanded */}
@@ -419,10 +429,17 @@ export default function CourseDetailPage() {
                                             );
                                     })}
                                     {mod.quizzes?.map((quiz) => (
-                                        <Link key={quiz.id} href={`/quiz/${quiz.id}`} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-500 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 hover:text-slate-800 dark:hover:text-slate-200 transition-all">
-                                            <span className="material-symbols-outlined text-lg text-emerald-500">quiz</span>
-                                            <span className="truncate whitespace-nowrap text-left">{quiz.title}</span>
-                                        </Link>
+                                        hasPaidAccess ? (
+                                            <Link key={quiz.id} href={`/quiz/${quiz.id}`} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-500 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 hover:text-slate-800 dark:hover:text-slate-200 transition-all">
+                                                <span className="material-symbols-outlined text-lg text-emerald-500">quiz</span>
+                                                <span className="truncate whitespace-nowrap text-left">{quiz.title}</span>
+                                            </Link>
+                                        ) : (
+                                            <button key={quiz.id} onClick={() => setShowUpgradeModal(true)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all cursor-pointer">
+                                                <span className="material-symbols-outlined text-lg text-amber-500">lock</span>
+                                                <span className="truncate whitespace-nowrap text-left flex-1">{quiz.title}</span>
+                                            </button>
+                                        )
                                     ))}
                                 </div>
                             )}
@@ -432,15 +449,23 @@ export default function CourseDetailPage() {
                         <div className="mt-6 pt-4 border-t border-slate-200/50 dark:border-slate-800/50 px-3">
                             <p className="px-3 py-2 text-[11px] font-bold text-primary uppercase tracking-widest opacity-80">Final Exam</p>
                             {course.quizzes.map((quiz) => (
-                                <Link key={quiz.id} href={`/quiz/${quiz.id}`} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-500 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-all">
-                                    <span className="material-symbols-outlined text-lg text-primary">workspace_premium</span>
-                                    <span className="truncate font-medium">{quiz.title}</span>
-                                </Link>
+                                        hasPaidAccess ? (
+                                            <Link key={quiz.id} href={`/quiz/${quiz.id}`} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-500 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-all">
+                                                <span className="material-symbols-outlined text-lg text-primary">workspace_premium</span>
+                                                <span className="truncate font-medium">{quiz.title}</span>
+                                            </Link>
+                                        ) : (
+                                            <button key={quiz.id} onClick={() => setShowUpgradeModal(true)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all cursor-pointer">
+                                                <span className="material-symbols-outlined text-lg text-amber-500">lock</span>
+                                                <span className="truncate font-medium flex-1 text-left">{quiz.title}</span>
+                                            </button>
+                                        )
                             ))}
                         </div>
                     )}
                 </div>
-            </motion.aside>
+                </motion.aside>
+            )}
 
             {/* Main Content Area */}
             <main className="flex-1 relative z-10 h-screen overflow-hidden">
@@ -483,12 +508,20 @@ export default function CourseDetailPage() {
                                     {course.price && course.price > 0 && (
                                         <p className="text-2xl font-black text-slate-900 dark:text-white mb-6">${formatPrice(course.price)}</p>
                                     )}
-                                    <button onClick={handleEnroll} disabled={enrolling} className="inline-flex h-14 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-primary to-sky-500 px-8 text-lg font-bold text-white transition-all hover:scale-[1.02] hover:shadow-[0_20px_40px_rgba(14,165,233,0.3)] disabled:opacity-50 disabled:hover:scale-100">
-                                        {enrolling
-                                            ? (course.price && course.price > 0 ? 'Redirecting to payment...' : 'Enrolling...')
-                                            : (course.price && course.price > 0 ? `Pay $${formatPrice(course.price)} & Enroll` : 'Start Learning Now')
-                                        }
-                                    </button>
+                                    {course.price && course.price > 0 ? (
+                                        <div className="flex flex-col gap-3 w-full">
+                                            <button onClick={() => handleEnroll(false)} disabled={enrolling} className="inline-flex h-14 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-primary to-sky-500 px-8 text-lg font-bold text-white transition-all hover:scale-[1.02] hover:shadow-[0_20px_40px_rgba(14,165,233,0.3)] disabled:opacity-50 disabled:hover:scale-100">
+                                                {enrolling ? 'Redirecting to payment...' : `Pay $${formatPrice(course.price)} & Enroll (Full Access)`}
+                                            </button>
+                                            <button onClick={() => handleEnroll(true)} disabled={enrolling} className="inline-flex h-14 w-full items-center justify-center rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 px-8 text-lg font-bold text-slate-700 dark:text-slate-300 transition-all hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50">
+                                                {enrolling ? 'Enrolling...' : 'Audit Course (Free, No Certificates)'}
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <button onClick={() => handleEnroll(false)} disabled={enrolling} className="inline-flex h-14 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-primary to-sky-500 px-8 text-lg font-bold text-white transition-all hover:scale-[1.02] hover:shadow-[0_20px_40px_rgba(14,165,233,0.3)] disabled:opacity-50 disabled:hover:scale-100">
+                                            {enrolling ? 'Enrolling...' : 'Start Learning Now'}
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         ) : !user ? (
@@ -521,7 +554,7 @@ export default function CourseDetailPage() {
                                                     </div>
                                                     <div className="flex items-center gap-1">
                                                         <button
-                                                            onClick={() => router.push('/my-courses')}
+                                                            onClick={() => router.push('/my-learning?tab=courses')}
                                                             className="px-3 h-7 rounded hover:bg-white/10 transition-colors text-[13px] text-gray-200 font-medium"
                                                         >
                                                             Close
@@ -565,7 +598,7 @@ export default function CourseDetailPage() {
                                             key={`${currentLesson.id}-${materialIndex}`}
                                             url={getFileUrl(mat.url)}
                                             filename={mat.url.split('/').pop() || `${currentLesson.title} - PDF`}
-                                            onClose={() => router.push('/my-courses')}
+                                            onClose={() => router.push('/my-learning?tab=courses')}
                                             onBack={!isFirstMaterialOverall ? handleBack : undefined}
                                             onNext={handleNext}
                                             backLabel="« Back"
@@ -582,6 +615,48 @@ export default function CourseDetailPage() {
                     </motion.div>
                 </AnimatePresence>
             </main>
+
+            {/* Upgrade Modal */}
+            <AnimatePresence>
+                {showUpgradeModal && course && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.95, y: 20 }}
+                            className="w-full max-w-md bg-white dark:bg-slate-900 rounded-[2rem] p-8 shadow-2xl border border-slate-200 dark:border-slate-800 text-center flex flex-col items-center"
+                        >
+                            <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mb-6">
+                                <span className="material-symbols-outlined text-3xl text-amber-500">lock</span>
+                            </div>
+                            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">Upgrade to Unlock</h2>
+                            <p className="text-slate-500 dark:text-slate-400 mb-8 leading-relaxed text-sm">
+                                You are currently auditing this course for free. To take tests, access assessments, and earn your certificate, please upgrade your access. Your progress will be saved.
+                            </p>
+                            <div className="flex flex-col gap-3 w-full">
+                                <button
+                                    onClick={() => { setShowUpgradeModal(false); handleEnroll(false); }}
+                                    disabled={enrolling}
+                                    className="w-full h-12 flex items-center justify-center bg-gradient-to-r from-primary to-sky-500 hover:from-primary/90 hover:to-sky-500/90 text-white rounded-xl font-bold transition-all shadow-lg"
+                                >
+                                    {enrolling ? 'Redirecting...' : `Pay $${formatPrice(course.price || 0)} to Upgrade`}
+                                </button>
+                                <button
+                                    onClick={() => setShowUpgradeModal(false)}
+                                    className="w-full h-12 flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl font-bold transition-all"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 }
