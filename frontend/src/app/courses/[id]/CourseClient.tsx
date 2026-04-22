@@ -554,7 +554,7 @@ export default function CourseDetailPage() {
                                                     </div>
                                                     <div className="flex items-center gap-1">
                                                         <button
-                                                            onClick={() => router.push('/my-courses')}
+                                                            onClick={() => router.push('/my-learning?tab=courses')}
                                                             className="px-3 h-7 rounded hover:bg-white/10 transition-colors text-[13px] text-gray-200 font-medium"
                                                         >
                                                             Close
@@ -598,7 +598,7 @@ export default function CourseDetailPage() {
                                             key={`${currentLesson.id}-${materialIndex}`}
                                             url={getFileUrl(mat.url)}
                                             filename={mat.url.split('/').pop() || `${currentLesson.title} - PDF`}
-                                            onClose={() => router.push('/my-courses')}
+                                            onClose={() => router.push('/my-learning?tab=courses')}
                                             onBack={!isFirstMaterialOverall ? handleBack : undefined}
                                             onNext={handleNext}
                                             backLabel="« Back"

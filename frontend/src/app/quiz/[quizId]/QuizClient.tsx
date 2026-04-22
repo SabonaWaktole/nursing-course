@@ -490,7 +490,7 @@ function QuizResultScreen({ result, user, quiz, onRetry, courseCompleted, nextEx
                                                 </div>
                                             )}
                                             <motion.span {...buttonHover}>
-                                                <Link href="/certificates" className="flex items-center justify-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-6 py-3.5 rounded-lg font-medium transition-colors duration-200">
+                                                <Link href="/my-learning?tab=certificates" className="flex items-center justify-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-6 py-3.5 rounded-lg font-medium transition-colors duration-200">
                                                     <span className="material-symbols-outlined">folder</span>
                                                     All Certificates
                                                 </Link>

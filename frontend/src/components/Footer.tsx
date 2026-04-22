@@ -60,7 +60,7 @@ export default function Footer() {
                         <h6 className="text-white font-bold mb-6">Learning</h6>
                         <ul className="space-y-4 text-sm">
                             <li><Link href="/courses" className="link-animated hover:text-white transition-colors">Course Library</Link></li>
-                            <li><Link href="/certificates" className="link-animated hover:text-white transition-colors">Certifications</Link></li>
+                            <li><Link href="/my-learning?tab=certificates" className="link-animated hover:text-white transition-colors">Certifications</Link></li>
                             <li><Link href="/courses" className="link-animated hover:text-white transition-colors">Study Guides</Link></li>
                             <li><Link href="/courses" className="link-animated hover:text-white transition-colors">CE Requirements</Link></li>
                         </ul>
