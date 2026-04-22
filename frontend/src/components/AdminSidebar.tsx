@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/auth-context';
 import { motion } from 'framer-motion';
 
 interface AdminSidebarProps {
-    tab: 'overview' | 'courses' | 'users' | 'results' | 'certificates' | 'settings';
+    tab: 'overview' | 'courses' | 'users' | 'results' | 'certificates' | 'settings' | 'guide';
     setTab?: (tab: any) => void;
     isSidebarCollapsed: boolean;
     setIsSidebarCollapsed: (collapsed: boolean) => void;
@@ -36,6 +36,7 @@ export default function AdminSidebar({
         { id: 'users', icon: 'people_alt', label: 'Users', onClick: () => { setTab?.('users'); loadUsers?.(); }, href: '/admin' },
         { id: 'results', icon: 'analytics', label: 'Results', onClick: () => { setTab?.('results'); loadResults?.(); }, href: '/admin' },
         { id: 'certificates', icon: 'card_membership', label: 'Certificates', onClick: () => { setTab?.('certificates'); loadCertificates?.(); }, href: '/admin' },
+        { id: 'guide', icon: 'slideshow', label: 'Guide', onClick: () => setTab?.('guide'), href: '/admin' },
     ];
 
     return (

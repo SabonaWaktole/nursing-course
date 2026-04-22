@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+
 import api from '@/lib/api';
 import { Course } from '@/lib/types';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -24,14 +24,7 @@ const PLACEHOLDER_IMAGES = [
     "https://lh3.googleusercontent.com/aida-public/AB6AXuAspeDG7VrUYFBVvgfo_eG5ZZrEPuF_ACLlsissW4FcNdQM8rBBfdhA536LajsiMSRcbQKELN9PRW_ojTHL5ZhYjhZTpN5GPvhjDVuMwecJyweY1wCiQUPeH3CvTwumTyQbZNOOdwzxSMg8V6RPHQcKnD-Qr5_M3q2HpWrT0sbv3N34_uXLgzRlyNwmeNih7s7JICwS7xwVbXXWpkiH-0XuUQoXvsyFeJlDd_o7YU-oRwJpiQY1SMauIkk5kZICJeg_dcQnN__C5Ug",
     "https://lh3.googleusercontent.com/aida-public/AB6AXuDMVI4QibcKTv1IHjyeeP27yhbo5EJWfCp4gz9iRSCrN0Zf1VAOM8kSdzkiQsiM23fAOe_temwpx-ybjVxCBzdJafTkdGKdSKAa8-8WXLmlVpInj39k9BqvcFz4taRZT-DKDQUDALDzsDyXH-qmUdq2R_sOFsHepXuLXoOwYb9IUgQo0Cn0jaObSfuwXt-8iVxGc8fzrlB2RvR8MS5wseYcLLR5JvOtzII_DaO_REkwxorbvvmozJ_z6DSTS57MZUbeAZNJPllI50g"
 ];
-const GUIDE_STEPS = [
-    { step: 1, image: '/guide/step-1.png', title: 'Click Login', description: 'Go to the homepage and click the "Log In" button in the top-right corner.' },
-    { step: 2, image: '/guide/step-2.png', title: 'Create Account', description: 'If you don\'t have an account yet, click "Create Account" on the login page.' },
-    { step: 3, image: '/guide/step-3.png', title: 'Enter Your Info', description: 'Fill in your name, email, and password, then click "Create Account".' },
-    { step: 4, image: '/guide/step-4.png', title: 'Browse Courses', description: 'Once logged in, click "Courses" in the navigation bar to view available courses.' },
-    { step: 5, image: '/guide/step-5.png', title: 'Enroll in a Course', description: 'Scroll through the catalog, find the course you want, and click "Enroll Now".' },
-    { step: 6, image: '/guide/step-6.png', title: 'Pay & Start Learning', description: 'Complete your payment to enroll and start learning immediately.' },
-];
+
 
 export default function CoursesPage() {
     const [courses, setCourses] = useState<Course[]>([]);
@@ -117,7 +110,7 @@ export default function CoursesPage() {
                                 transition={{ duration: 0.5, delay: 0.25 }}
                                 className="text-lg text-slate-600 dark:text-slate-400 leading-relaxed"
                             >
-                                Upgrade your nursing career with industry-recognized certifications and professional development workshops.
+                                Renew your certification with Excel Community Living any time anywhere.
                             </motion.p>
                         </div>
                         <motion.div
@@ -317,14 +310,32 @@ export default function CoursesPage() {
    ═══════════════════════════════════════════ */
 
 function GettingStartedSlideshow() {
+    const [guideSteps, setGuideSteps] = useState<{ step: number; image: string; title: string; description: string }[]>([]);
     const [activeStep, setActiveStep] = useState(0);
     const [isPaused, setIsPaused] = useState(false);
     const [progress, setProgress] = useState(0);
     const [isExpanded, setIsExpanded] = useState(true);
+    const [guideLoading, setGuideLoading] = useState(true);
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
     const progressRef = useRef<NodeJS.Timeout | null>(null);
     const INTERVAL_MS = 3000;
     const PROGRESS_TICK = 30; // update progress every 30ms
+
+    // Fetch guide images from API
+    useEffect(() => {
+        api.get('/guide')
+            .then((res) => {
+                const data = res.data.map((img: any, idx: number) => ({
+                    step: idx + 1,
+                    image: getFileUrl(img.imageUrl),
+                    title: img.title || `Step ${idx + 1}`,
+                    description: img.description || '',
+                }));
+                setGuideSteps(data);
+            })
+            .catch((err) => console.error('Failed to load guide:', err))
+            .finally(() => setGuideLoading(false));
+    }, []);
 
     const goToStep = useCallback((index: number) => {
         setActiveStep(index);
@@ -332,13 +343,13 @@ function GettingStartedSlideshow() {
     }, []);
 
     const nextStep = useCallback(() => {
-        setActiveStep((prev) => (prev + 1) % GUIDE_STEPS.length);
+        setActiveStep((prev) => (prev + 1) % (guideSteps.length || 1));
         setProgress(0);
-    }, []);
+    }, [guideSteps.length]);
 
     // Auto-advance timer
     useEffect(() => {
-        if (isPaused) {
+        if (isPaused || guideSteps.length === 0) {
             if (intervalRef.current) clearInterval(intervalRef.current);
             if (progressRef.current) clearInterval(progressRef.current);
             return;
@@ -353,9 +364,12 @@ function GettingStartedSlideshow() {
             if (intervalRef.current) clearInterval(intervalRef.current);
             if (progressRef.current) clearInterval(progressRef.current);
         };
-    }, [isPaused, nextStep, activeStep]);
+    }, [isPaused, nextStep, activeStep, guideSteps.length]);
 
-    const currentStep = GUIDE_STEPS[activeStep];
+    // Don't render if loading or no images
+    if (guideLoading || guideSteps.length === 0) return null;
+
+    const currentStep = guideSteps[activeStep] || guideSteps[0];
 
     return (
         <motion.div
@@ -411,7 +425,7 @@ function GettingStartedSlideshow() {
             <div className="flex flex-col lg:flex-row gap-0 lg:gap-6 px-6 md:px-10 pb-8">
                 {/* Left: Step list */}
                 <div className="lg:w-[280px] shrink-0 py-4 flex flex-row lg:flex-col gap-2 overflow-x-auto lg:overflow-x-visible scrollbar-hide">
-                    {GUIDE_STEPS.map((step, i) => (
+                    {guideSteps.map((step, i) => (
                         <button
                             key={step.step}
                             onClick={() => goToStep(i)}
@@ -481,12 +495,10 @@ function GettingStartedSlideshow() {
                                     transition={{ duration: 0.4, ease: [0.25, 0.8, 0.25, 1] }}
                                     className="absolute inset-0"
                                 >
-                                    <Image
+                                    <img
                                         src={currentStep.image}
                                         alt={`Step ${currentStep.step}: ${currentStep.title}`}
-                                        fill
-                                        className="object-contain"
-                                        priority={activeStep === 0}
+                                        className="w-full h-full object-contain"
                                     />
                                 </motion.div>
                             </AnimatePresence>
@@ -545,7 +557,7 @@ function GettingStartedSlideshow() {
 
                     {/* Dot indicators for quick reference */}
                     <div className="flex justify-center gap-2 mt-4">
-                        {GUIDE_STEPS.map((_, i) => (
+                        {guideSteps.map((_, i) => (
                             <button
                                 key={i}
                                 onClick={() => goToStep(i)}

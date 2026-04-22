@@ -9,7 +9,7 @@ import fs from 'fs';
 export const uploadDir = process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads');
 
 // Ensure upload directories exist
-const folders = ['videos', 'materials', 'thumbnails'];
+const folders = ['videos', 'materials', 'thumbnails', 'guides'];
 folders.forEach(folder => {
     const dir = path.join(uploadDir, folder);
     try {

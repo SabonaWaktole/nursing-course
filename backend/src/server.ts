@@ -14,6 +14,7 @@ import uploadRoutes from './routes/upload.routes';
 import publicRoutes from './routes/public.routes';
 import settingRoutes from './routes/setting.routes';
 import paymentRoutes from './routes/payment.routes';
+import guideRoutes from './routes/guide.routes';
 import prisma from './utils/prisma';
 
 const app = express();
@@ -78,6 +79,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api/settings', settingRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/guide', guideRoutes);
 
 // Error handling
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

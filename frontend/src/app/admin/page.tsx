@@ -22,7 +22,7 @@ export default function AdminDashboard() {
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [courses, setCourses] = useState<Course[]>([]);
     const [loading, setLoading] = useState(true);
-    const [tab, setTab] = useState<'overview' | 'courses' | 'users' | 'results' | 'certificates' | 'settings'>('overview');
+    const [tab, setTab] = useState<'overview' | 'courses' | 'users' | 'results' | 'certificates' | 'settings' | 'guide'>('overview');
     const [certificates, setCertificates] = useState<any[]>([]);
     const [editingCertId, setEditingCertId] = useState<string | null>(null);
     const [certNumInput, setCertNumInput] = useState('');
@@ -2241,6 +2241,15 @@ export default function AdminDashboard() {
                                         </div>
                                     )
                                 }
+
+                                {/* Guide Tab */}
+                                {
+                                    tab === 'guide' && (
+                                        <div className="flex-1 overflow-y-auto p-4 sm:p-8 scroll-smooth max-w-5xl mx-auto">
+                                            <GuideTab />
+                                        </div>
+                                    )
+                                }
                             </motion.div>
                         </AnimatePresence>
                     </div>
@@ -2263,5 +2272,315 @@ export default function AdminDashboard() {
                     )}
                 </AnimatePresence>
         </RoleGuard>
+    );
+}
+
+/* ═══════════════════════════════════════════
+   GUIDE TAB COMPONENT
+   ═══════════════════════════════════════════ */
+
+function GuideTab() {
+    const [images, setImages] = React.useState<any[]>([]);
+    const [loading, setLoading] = React.useState(true);
+    const [uploading, setUploading] = React.useState(false);
+    const [uploadProgress, setUploadProgress] = React.useState(0);
+    const [editingId, setEditingId] = React.useState<string | null>(null);
+    const [editForm, setEditForm] = React.useState({ title: '', description: '' });
+    const [dragIdx, setDragIdx] = React.useState<number | null>(null);
+    const [dragOverIdx, setDragOverIdx] = React.useState<number | null>(null);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    const loadImages = async () => {
+        try {
+            const res = await api.get('/guide');
+            setImages(res.data);
+        } catch (err) {
+            console.error('Failed to load guide images:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    React.useEffect(() => { loadImages(); }, []);
+
+    const handleUpload = async (files: FileList | null) => {
+        if (!files || files.length === 0) return;
+        setUploading(true);
+        setUploadProgress(0);
+        try {
+            for (let i = 0; i < files.length; i++) {
+                const formData = new FormData();
+                formData.append('image', files[i]);
+                formData.append('title', `Step ${images.length + i + 1}`);
+                formData.append('description', '');
+                await api.post('/guide', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                    onUploadProgress: (progressEvent) => {
+                        const total = progressEvent.total || 1;
+                        const currentFileProgress = progressEvent.loaded / total;
+                        const overallProgress = Math.round(((i + currentFileProgress) / files.length) * 100);
+                        setUploadProgress(overallProgress);
+                    }
+                });
+            }
+            await loadImages();
+        } catch (err: any) {
+            alert(err.response?.data?.message || 'Error uploading image');
+        } finally {
+            setUploading(false);
+            setUploadProgress(0);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!confirm('Delete this guide image?')) return;
+        try {
+            await api.delete(`/guide/${id}`);
+            await loadImages();
+        } catch (err: any) {
+            alert(err.response?.data?.message || 'Error deleting image');
+        }
+    };
+
+    const handleUpdate = async (id: string) => {
+        try {
+            await api.put(`/guide/${id}`, editForm);
+            setEditingId(null);
+            await loadImages();
+        } catch (err: any) {
+            alert(err.response?.data?.message || 'Error updating image');
+        }
+    };
+
+    const startEdit = (img: any) => {
+        setEditingId(img.id);
+        setEditForm({ title: img.title || '', description: img.description || '' });
+    };
+
+    // Drag-to-reorder
+    const handleDragStart = (index: number) => setDragIdx(index);
+    const handleDragOver = (e: React.DragEvent, index: number) => {
+        e.preventDefault();
+        setDragOverIdx(index);
+    };
+    const handleDrop = async (e: React.DragEvent, dropIndex: number) => {
+        e.preventDefault();
+        if (dragIdx === null || dragIdx === dropIndex) {
+            setDragIdx(null);
+            setDragOverIdx(null);
+            return;
+        }
+        const reordered = [...images];
+        const [moved] = reordered.splice(dragIdx, 1);
+        reordered.splice(dropIndex, 0, moved);
+        setImages(reordered);
+        setDragIdx(null);
+        setDragOverIdx(null);
+        try {
+            await api.put('/guide/reorder', { orderedIds: reordered.map((img: any) => img.id) });
+        } catch (err: any) {
+            alert(err.response?.data?.message || 'Error reordering');
+            await loadImages();
+        }
+    };
+    const handleDragEnd = () => { setDragIdx(null); setDragOverIdx(null); };
+
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+
+    const resolveUrl = (url: string) => {
+        if (!url) return '';
+        if (url.startsWith('http')) return url;
+        return `${API_URL}${url.startsWith('/') ? url : '/' + url}`;
+    };
+
+    if (loading) {
+        return (
+            <div className="space-y-6">
+                <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded-lg w-48 animate-pulse" />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+                            <div className="h-48 bg-slate-200 dark:bg-slate-800 animate-pulse" />
+                            <div className="p-4 space-y-2">
+                                <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-2/3 animate-pulse" />
+                                <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-full animate-pulse" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-8">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <span className="material-symbols-outlined text-primary">slideshow</span>
+                        Guide Slideshow
+                    </h2>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                        Upload and arrange images to create a step-by-step onboarding guide shown on the courses page.
+                    </p>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-slate-500">
+                    <span className="material-symbols-outlined text-base">photo_library</span>
+                    {images.length} image{images.length !== 1 ? 's' : ''}
+                </div>
+            </div>
+
+            {/* Upload Area */}
+            <div
+                className="relative group border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-8 text-center hover:border-primary/50 dark:hover:border-primary/50 transition-colors cursor-pointer bg-slate-50/50 dark:bg-slate-900/30"
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleUpload(e.dataTransfer.files); }}
+            >
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.webp,.gif"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => handleUpload(e.target.files)}
+                />
+                {uploading ? (
+                    <div className="flex flex-col items-center gap-3">
+                        <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+                        <div className="flex flex-col items-center">
+                            <span className="text-sm font-medium text-slate-500">Uploading...</span>
+                            <span className="text-xs text-slate-400 mt-0.5">{uploadProgress}%</span>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center gap-3">
+                        <span className="material-symbols-outlined text-4xl text-slate-400 group-hover:text-primary transition-colors">cloud_upload</span>
+                        <div>
+                            <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Click to upload or drag and drop</p>
+                            <p className="text-xs text-slate-400 mt-1">JPG, PNG, WebP, or GIF · Multiple files supported</p>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Image Grid */}
+            {images.length === 0 ? (
+                <div className="text-center py-16 text-slate-400">
+                    <span className="material-symbols-outlined text-5xl mb-4 block">image</span>
+                    <p className="font-medium">No guide images yet</p>
+                    <p className="text-sm mt-1">Upload images above to create your onboarding slideshow.</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {images.map((img: any, idx: number) => (
+                        <div
+                            key={img.id}
+                            draggable
+                            onDragStart={() => handleDragStart(idx)}
+                            onDragOver={(e) => handleDragOver(e, idx)}
+                            onDrop={(e) => handleDrop(e, idx)}
+                            onDragEnd={handleDragEnd}
+                            className={`group relative bg-white dark:bg-slate-900 rounded-2xl border overflow-hidden transition-all duration-200 ${
+                                dragOverIdx === idx
+                                    ? 'border-primary shadow-lg shadow-primary/20 scale-[1.02]'
+                                    : 'border-slate-200 dark:border-slate-800 hover:border-primary/30'
+                            } ${dragIdx === idx ? 'opacity-50' : ''}`}
+                        >
+                            {/* Order badge */}
+                            <div className="absolute top-3 left-3 z-10 w-7 h-7 rounded-full bg-primary text-white text-xs font-black flex items-center justify-center shadow-lg">
+                                {idx + 1}
+                            </div>
+
+                            {/* Drag handle */}
+                            <div className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing">
+                                <span className="material-symbols-outlined text-white bg-black/50 backdrop-blur-sm rounded-lg p-1 text-sm">drag_indicator</span>
+                            </div>
+
+                            {/* Image */}
+                            <div className="relative h-48 bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                                <img
+                                    src={resolveUrl(img.imageUrl)}
+                                    alt={img.title || `Step ${idx + 1}`}
+                                    className="w-full h-full object-contain"
+                                />
+                            </div>
+
+                            {/* Content */}
+                            <div className="p-4">
+                                {editingId === img.id ? (
+                                    <div className="space-y-3">
+                                        <input
+                                            value={editForm.title}
+                                            onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                                            placeholder="Step title"
+                                            className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary"
+                                        />
+                                        <textarea
+                                            value={editForm.description}
+                                            onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                                            placeholder="Step description"
+                                            rows={2}
+                                            className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary resize-none"
+                                        />
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => handleUpdate(img.id)}
+                                                className="flex-1 py-1.5 bg-primary text-white text-xs font-bold rounded-lg hover:bg-primary/90 transition-colors"
+                                            >
+                                                Save
+                                            </button>
+                                            <button
+                                                onClick={() => setEditingId(null)}
+                                                className="flex-1 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-bold rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <h4 className="font-bold text-slate-900 dark:text-white text-sm truncate">
+                                            {img.title || `Step ${idx + 1}`}
+                                        </h4>
+                                        {img.description && (
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">{img.description}</p>
+                                        )}
+                                        <div className="flex gap-2 mt-3">
+                                            <button
+                                                onClick={() => startEdit(img)}
+                                                className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+                                            >
+                                                <span className="material-symbols-outlined text-sm">edit</span>
+                                                Edit
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(img.id)}
+                                                className="flex items-center gap-1 text-xs font-semibold text-red-500 hover:text-red-600 transition-colors"
+                                            >
+                                                <span className="material-symbols-outlined text-sm">delete</span>
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Tip */}
+            {images.length > 0 && (
+                <div className="flex items-start gap-3 p-4 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20">
+                    <span className="material-symbols-outlined text-blue-500 text-lg mt-0.5">info</span>
+                    <div className="text-sm text-blue-700 dark:text-blue-400">
+                        <strong>Tip:</strong> Drag and drop cards to reorder. The slideshow on the courses page will auto-rotate through these images every 3 seconds.
+                    </div>
+                </div>
+            )}
+        </div>
     );
 }

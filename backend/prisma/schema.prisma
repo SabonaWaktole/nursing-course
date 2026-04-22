@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql  "
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 model User {
@@ -212,4 +212,13 @@ enum PaymentStatus {
   COMPLETED
   FAILED
   REFUNDED
+}
+
+model GuideImage {
+  id          String   @id @default(uuid())
+  imageUrl    String   @db.Text
+  title       String   @default("")
+  description String   @default("") @db.Text
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
 }
