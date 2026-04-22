@@ -37,31 +37,34 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
             return res.status(400).json({ message: 'This course is free. Use the enroll endpoint instead.' });
         }
 
-        // 2. Check if already enrolled
-        const existingEnrollment = await prisma.enrollment.findUnique({
-            where: { userId_courseId: { userId, courseId } },
-        });
-
-        if (existingEnrollment) {
-            return res.status(400).json({ message: 'Already enrolled in this course' });
-        }
-
-        // 3. Check if there's already a completed payment (e.g., user paid but enrollment failed)
+        // 2. Check if there's already a completed payment
         const existingPayment = await (prisma as any).payment.findFirst({
             where: { userId, courseId, status: 'COMPLETED' },
         });
 
         if (existingPayment) {
-            // Payment exists but enrollment doesn't — create enrollment now
-            const enrollment = await prisma.enrollment.create({
-                data: { userId, courseId },
+            // Check if enrollment exists
+            const existingEnrollment = await prisma.enrollment.findUnique({
+                where: { userId_courseId: { userId, courseId } },
             });
 
-            return res.json({
-                enrolled: true,
-                message: 'You already paid for this course. Enrollment created.',
-                enrollment,
-            });
+            if (!existingEnrollment) {
+                // Payment exists but enrollment doesn't — create enrollment now
+                const enrollment = await prisma.enrollment.create({
+                    data: { userId, courseId },
+                });
+
+                return res.json({
+                    enrolled: true,
+                    message: 'You already paid for this course. Enrollment created.',
+                    enrollment,
+                });
+            } else {
+                return res.json({
+                    enrolled: true,
+                    message: 'You already paid and are enrolled.',
+                });
+            }
         }
 
         // 4. Check ALL existing PENDING payments — verify with Stripe if any were actually paid

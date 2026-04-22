@@ -26,6 +26,7 @@ export default function QuizPage() {
     const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
     const [timeLeft, setTimeLeft] = useState(2700); // 45:00 in seconds
     const [showMap, setShowMap] = useState(false);
+    const [accessDenied, setAccessDenied] = useState<string | null>(null);
 
     const handleRetry = () => {
         setResult(null);
@@ -40,7 +41,12 @@ export default function QuizPage() {
         api.get(`/quizzes/${quizId}`).then((res) => {
             setQuiz(res.data);
             setLoading(false);
-        }).catch(() => setLoading(false));
+        }).catch((err) => {
+            if (err.response?.status === 403) {
+                setAccessDenied(err.response.data.message || 'Paid access required');
+            }
+            setLoading(false);
+        });
     }, [quizId, user, router]);
 
     useEffect(() => {
@@ -83,6 +89,30 @@ export default function QuizPage() {
             <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-900 border-r-transparent"></div>
         </div>
     );
+
+    if (accessDenied) {
+        return (
+            <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
+                <div className="max-w-md w-full bg-white dark:bg-slate-900 rounded-[2rem] p-8 md:p-12 shadow-2xl border border-slate-200 dark:border-slate-800 text-center flex flex-col items-center">
+                    <div className="w-20 h-20 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mb-6">
+                        <span className="material-symbols-outlined text-4xl text-amber-500">lock</span>
+                    </div>
+                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Access Restricted</h2>
+                    <p className="text-slate-500 dark:text-slate-400 mb-8 leading-relaxed">
+                        {accessDenied} You are currently auditing this course. To access assessments and earn a certificate, you need to upgrade to full access.
+                    </p>
+                    <button
+                        onClick={() => router.back()}
+                        className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold transition-all shadow-lg shadow-primary/20"
+                    >
+                        <span className="material-symbols-outlined">arrow_back</span>
+                        Go Back
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     if (!quiz) return <div className="text-center py-20 text-slate-500">Quiz not found</div>;
 
     // Result screen (Matches assesment_and_reward.html)
