@@ -29,7 +29,7 @@ export default function AdminDashboard() {
 
     // Course form
     const [showCourseForm, setShowCourseForm] = useState(false);
-    const [courseForm, setCourseForm] = useState({ title: '', description: '', price: '0', credit: '0', category: '', thumbnail: '', tags: [] as string[], instructorId: '' });
+    const [courseForm, setCourseForm] = useState({ title: '', description: '', price: '0', credit: '0', category: '', thumbnail: '', tags: [] as string[], instructorId: '', siteNumber: 1 });
     const [editingCourse, setEditingCourse] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
 
@@ -203,7 +203,7 @@ export default function AdminDashboard() {
             } else {
                 await api.post('/courses', courseForm);
             }
-            setCourseForm({ title: '', description: '', price: '0', credit: '0', category: '', thumbnail: '', tags: [], instructorId: '' });
+            setCourseForm({ title: '', description: '', price: '0', credit: '0', category: '', thumbnail: '', tags: [], instructorId: '', siteNumber: 1 });
             setShowCourseForm(false);
             loadData();
         } catch (err: any) {
@@ -272,7 +272,8 @@ export default function AdminDashboard() {
             category: course.category || '',
             thumbnail: course.thumbnail || '',
             tags: course.tags || [],
-            instructorId: course.instructor?.id || course.instructorId || ''
+            instructorId: course.instructor?.id || course.instructorId || '',
+            siteNumber: course.siteNumber || 1
         });
         setEditingCourse(course.id);
         setShowCourseForm(true);
@@ -808,23 +809,37 @@ export default function AdminDashboard() {
                         <input type="number" step="0.1" value={courseForm.credit} onChange={(e) => setCourseForm({ ...courseForm, credit: e.target.value })} placeholder="E.g., 1.5" className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all" />
                     </div>
                 </div>
-                <div>
-                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 block">Assigned Instructor</label>
-                    <div className="relative">
-                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none">person</span>
-                        <select
-                            value={courseForm.instructorId}
-                            onChange={(e) => setCourseForm({ ...courseForm, instructorId: e.target.value })}
-                            className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 pl-10 pr-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none"
-                        >
-                            <option value="">Unassigned (All Admins)</option>
-                            {users.filter((u: any) => u.role === 'ADMIN').map((admin: any) => (
-                                <option key={admin.id} value={admin.id}>{admin.name || admin.email}</option>
-                            ))}
-                        </select>
-                        <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">expand_more</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div>
+                        <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 block">Assigned Instructor</label>
+                        <div className="relative">
+                            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none">person</span>
+                            <select
+                                value={courseForm.instructorId}
+                                onChange={(e) => setCourseForm({ ...courseForm, instructorId: e.target.value })}
+                                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 pl-10 pr-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none"
+                            >
+                                <option value="">Unassigned (All Admins)</option>
+                                {users.filter((u: any) => u.role === 'ADMIN').map((admin: any) => (
+                                    <option key={admin.id} value={admin.id}>{admin.name || admin.email}</option>
+                                ))}
+                            </select>
+                            <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">expand_more</span>
+                        </div>
+                        <p className="text-[10px] text-slate-400 mt-1.5">Certificates and notifications will be routed to the assigned instructor. Leave unassigned for all admins.</p>
                     </div>
-                    <p className="text-[10px] text-slate-400 mt-1.5">Certificates and notifications will be routed to the assigned instructor. Leave unassigned for all admins.</p>
+                    <div>
+                        <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 block">Site Number</label>
+                        <select
+                            value={courseForm.siteNumber}
+                            onChange={(e) => setCourseForm({ ...courseForm, siteNumber: parseInt(e.target.value) })}
+                            className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                        >
+                            <option value={1}>Site 1 (Main)</option>
+                            <option value={2}>Site 2</option>
+                        </select>
+                        <p className="text-[10px] text-slate-400 mt-1.5">Select which website this course belongs to.</p>
+                    </div>
                 </div>
                 <div>
                     <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Tags (select multiple)</label>
@@ -1193,7 +1208,7 @@ export default function AdminDashboard() {
                                                 <button
                                                     onClick={() => {
                                                         setEditingCourse(null);
-                                                        setCourseForm({ title: '', description: '', price: '0', category: '', thumbnail: '', tags: [], instructorId: '', credit: '0' });
+                                                        setCourseForm({ title: '', description: '', price: '0', category: '', thumbnail: '', tags: [], instructorId: '', credit: '0', siteNumber: 1 });
                                                         setShowCourseForm(!showCourseForm);
                                                     }}
                                                     className="flex items-center justify-center gap-2 px-6 py-2.5 bg-gradient-to-r from-primary to-cyan-500 hover:from-sky-400 hover:to-cyan-400 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-primary/30 hover:shadow-primary/40 hover:-translate-y-0.5 w-full sm:w-auto overflow-hidden relative group"
@@ -1255,13 +1270,16 @@ export default function AdminDashboard() {
                                                                         </div>
                                                                     )}
                                                                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60"></div>
-                                                                    {course.category && (
-                                                                        <div className="absolute bottom-3 left-3 flex gap-2">
+                                                                    <div className="absolute bottom-3 left-3 flex gap-2">
+                                                                        {course.category && (
                                                                             <span className="backdrop-blur-md bg-white/20 dark:bg-black/40 border border-white/20 text-white px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg">
                                                                                 {course.category}
                                                                             </span>
-                                                                        </div>
-                                                                    )}
+                                                                        )}
+                                                                        <span className="backdrop-blur-md bg-primary/20 dark:bg-primary/40 border border-primary/20 text-white px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg">
+                                                                            Site {course.siteNumber || 1}
+                                                                        </span>
+                                                                    </div>
                                                                 </div>
 
                                                                 {/* Content Details */}

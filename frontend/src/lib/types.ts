@@ -21,6 +21,7 @@ export interface Course {
     hours?: number | null;
     instructorId?: string | null;
     instructor?: { id: string; name: string } | null;
+    siteNumber?: number;
     createdAt: string;
     _count: { modules: number; quizzes: number; enrollments: number; lessons?: number };
 }

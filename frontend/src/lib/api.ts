@@ -7,8 +7,13 @@ const api = axios.create({
     headers: { 'Content-Type': 'application/json' },
 });
 
-// Attach JWT token from localStorage
+// Attach JWT token from localStorage and Site Number
 api.interceptors.request.use((config) => {
+    const siteNumber = process.env.NEXT_PUBLIC_SITE_NUMBER;
+    if (siteNumber) {
+        config.headers['X-Site-Number'] = siteNumber;
+    }
+
     if (typeof window !== 'undefined') {
         const token = localStorage.getItem('token');
         if (token) {

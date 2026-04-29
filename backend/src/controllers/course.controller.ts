@@ -1,12 +1,33 @@
 import { Request, Response } from 'express';
 import prisma from '../utils/prisma';
 import { createInstructorNotification } from '../utils/notificationHelper';
-// IDE Refresh Poke 2
+import { verifyToken } from '../utils/jwt';
+// IDE Refresh Poke 3
 
 
 export const getAllCourses = async (req: Request, res: Response) => {
     try {
+        let isAdmin = false;
+        const authHeader = req.headers.authorization;
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            try {
+                const token = authHeader.split(' ')[1];
+                const decoded = verifyToken(token) as any;
+                if (decoded?.role === 'ADMIN') {
+                    isAdmin = true;
+                }
+            } catch (e) {}
+        }
+
+        const siteNumberHeader = req.headers['x-site-number'];
+        const whereClause: any = {};
+        
+        if (!isAdmin && siteNumberHeader) {
+            whereClause.siteNumber = parseInt(siteNumberHeader as string);
+        }
+
         const courses = await prisma.course.findMany({
+            where: whereClause,
             select: {
                 id: true,
                 title: true,
@@ -18,6 +39,8 @@ export const getAllCourses = async (req: Request, res: Response) => {
                 category: true,
                 createdAt: true,
                 instructorId: true,
+                // @ts-ignore - IDE caching issue with Prisma client types
+                siteNumber: true,
                 instructor: { select: { id: true, name: true } },
                 _count: { select: { modules: true, quizzes: true, enrollments: true } },
             },
@@ -65,7 +88,7 @@ export const getCourseById = async (req: Request, res: Response) => {
 
 export const createCourse = async (req: Request, res: Response) => {
     try {
-        const { title, description, price, credit, hours, thumbnail, category, tags, instructorId: bodyInstructorId } = req.body;
+        const { title, description, price, credit, hours, thumbnail, category, tags, instructorId: bodyInstructorId, siteNumber } = req.body;
         // Use body instructorId if provided, otherwise null (unassigned)
         const instructorId = (bodyInstructorId && bodyInstructorId !== 'unassigned') ? bodyInstructorId : null;
 
@@ -80,6 +103,8 @@ export const createCourse = async (req: Request, res: Response) => {
                 category: category || null,
                 tags: Array.isArray(tags) && tags.length > 0 ? tags : null,
                 instructorId,
+                // @ts-ignore - IDE caching issue with Prisma client types
+                siteNumber: siteNumber ? parseInt(siteNumber.toString()) : 1,
             },
         });
         res.status(201).json(course);
@@ -95,11 +120,12 @@ export const createCourse = async (req: Request, res: Response) => {
 export const updateCourse = async (req: Request, res: Response) => {
     try {
         const id = req.params.id as string;
-        const { title, description, price, credit, hours, thumbnail, category, tags, instructorId: bodyInstructorId } = req.body;
+        const { title, description, price, credit, hours, thumbnail, category, tags, instructorId: bodyInstructorId, siteNumber } = req.body;
 
         const parsedPrice = price !== undefined && price !== null && price !== '' ? parseFloat(price.toString()) : undefined;
         const parsedCredit = credit !== undefined && credit !== null && credit !== '' ? parseFloat(credit.toString()) : undefined;
         const parsedHours = hours !== undefined && hours !== null && hours !== '' ? parseInt(hours.toString()) : undefined;
+        const parsedSiteNumber = siteNumber !== undefined && siteNumber !== null && siteNumber !== '' ? parseInt(siteNumber.toString()) : undefined;
 
         // Resolve instructorId: 'unassigned' or empty string => null
         let instructorId: string | null | undefined = undefined;
@@ -119,6 +145,7 @@ export const updateCourse = async (req: Request, res: Response) => {
                 ...(category !== undefined ? { category: category || null } : {}),
                 ...(instructorId !== undefined ? { instructorId } : {}),
                 ...(tags !== undefined ? { tags: Array.isArray(tags) && tags.length > 0 ? tags : null } : {}),
+                ...(parsedSiteNumber !== undefined ? { siteNumber: parsedSiteNumber } : {}),
             },
         });
         res.json(course);
@@ -617,3 +644,4 @@ export const reorderPdfs = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Error reordering PDFs' });
     }
 };
+// touch

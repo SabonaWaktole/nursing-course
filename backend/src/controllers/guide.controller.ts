@@ -75,7 +75,7 @@ export const uploadGuideImage = async (req: Request, res: Response) => {
 // Admin: Update title/description of a guide image
 export const updateGuideImage = async (req: Request, res: Response) => {
     try {
-        const { id } = req.params;
+        const id = req.params.id as string;
         const { title, description } = req.body;
 
         const image = await prisma.guideImage.update({
@@ -123,7 +123,7 @@ export const reorderGuideImages = async (req: Request, res: Response) => {
 // Admin: Delete a guide image
 export const deleteGuideImage = async (req: Request, res: Response) => {
     try {
-        const { id } = req.params;
+        const id = req.params.id as string;
 
         const image = await prisma.guideImage.findUnique({ where: { id } });
         if (!image) return res.status(404).json({ message: 'Guide image not found' });
