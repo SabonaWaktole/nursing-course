@@ -41,6 +41,7 @@ export interface Lesson {
     title: string;
     description: string | null;
     videoUrl: string | null;
+    youtubeUrl?: string | null;
     materialUrl: string | null;
     order: number;
     moduleId: string;

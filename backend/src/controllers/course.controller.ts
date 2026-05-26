@@ -223,13 +223,13 @@ export const deleteModule = async (req: Request, res: Response) => {
 export const addLesson = async (req: Request, res: Response) => {
     try {
         const moduleId = req.params.moduleId as string;
-        const { title, description, videoUrl, materialUrl } = req.body;
+        const { title, description, videoUrl, youtubeUrl, materialUrl } = req.body;
 
         // Auto-order
         const count = await prisma.lesson.count({ where: { moduleId } });
 
         const lesson = await prisma.lesson.create({
-            data: { title, description, videoUrl, materialUrl, moduleId, order: count + 1 },
+            data: { title, description, videoUrl, youtubeUrl, materialUrl, moduleId, order: count + 1 },
         });
         res.status(201).json(lesson);
     } catch (error: any) {
@@ -241,7 +241,7 @@ export const addLesson = async (req: Request, res: Response) => {
 export const updateLesson = async (req: Request, res: Response) => {
     try {
         const lessonId = req.params.lessonId as string;
-        const { title, description, videoUrl, materialUrl, videoFirst } = req.body;
+        const { title, description, videoUrl, youtubeUrl, materialUrl, videoFirst } = req.body;
 
         const lesson = await prisma.lesson.update({
             where: { id: lessonId },
@@ -249,6 +249,7 @@ export const updateLesson = async (req: Request, res: Response) => {
                 title, 
                 description, 
                 videoUrl, 
+                youtubeUrl,
                 materialUrl,
                 ...(videoFirst !== undefined && { videoFirst })
             },
@@ -318,8 +319,14 @@ export const enrollInCourse = async (req: Request, res: Response) => {
 export const getMyEnrollments = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user.userId;
+        const siteNumberHeader = req.headers['x-site-number'];
+        const siteFilter = siteNumberHeader ? parseInt(siteNumberHeader as string) : undefined;
+
         const enrollments = await prisma.enrollment.findMany({
-            where: { userId },
+            where: {
+                userId,
+                ...(siteFilter ? { course: { siteNumber: siteFilter } } : {}),
+            },
             include: {
                 course: {
                     include: {
@@ -579,15 +586,15 @@ export const movePdf = async (req: Request, res: Response) => {
 export const removeMaterial = async (req: Request, res: Response) => {
     try {
         const lessonId = req.params.lessonId as string;
-        const { type, url } = req.body; // type: 'video' | 'pdf'
+        const { type, url } = req.body; // type: 'video' | 'pdf' | 'youtube'
 
-        if (!type || !['video', 'pdf'].includes(type)) {
-            return res.status(400).json({ message: 'type must be "video" or "pdf"' });
+        if (!type || !['video', 'pdf', 'youtube'].includes(type)) {
+            return res.status(400).json({ message: 'type must be "video", "youtube", or "pdf"' });
         }
 
         const lesson = await prisma.lesson.findUnique({
             where: { id: lessonId },
-            select: { videoUrl: true, materialUrl: true },
+            select: { videoUrl: true, youtubeUrl: true, materialUrl: true },
         });
 
         if (!lesson) {
@@ -598,6 +605,11 @@ export const removeMaterial = async (req: Request, res: Response) => {
             await prisma.lesson.update({
                 where: { id: lessonId },
                 data: { videoUrl: null },
+            });
+        } else if (type === 'youtube') {
+            await prisma.lesson.update({
+                where: { id: lessonId },
+                data: { youtubeUrl: null },
             });
         } else {
             // Remove specific PDF from comma-separated list
@@ -614,7 +626,7 @@ export const removeMaterial = async (req: Request, res: Response) => {
             });
         }
 
-        res.json({ message: `${type === 'video' ? 'Video' : 'PDF'} removed successfully` });
+        res.json({ message: `${type === 'video' ? 'Video' : type === 'youtube' ? 'YouTube' : 'PDF'} removed successfully` });
     } catch (error: any) {
         console.error('removeMaterial error:', error);
         res.status(500).json({ message: 'Error removing material' });

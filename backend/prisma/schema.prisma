@@ -72,6 +72,7 @@ model Lesson {
   title       String
   description String?  @db.Text
   videoUrl    String?  @db.Text
+  youtubeUrl  String?  @db.Text
   materialUrl String?  @db.Text
   videoFirst  Boolean  @default(false)
   order       Int      @default(0)

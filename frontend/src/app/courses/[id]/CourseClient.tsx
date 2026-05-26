@@ -43,7 +43,7 @@ export default function CourseDetailPage() {
                 // Filter out lessons with no material, and then filter out empty modules
                 data.modules = data.modules.map(mod => ({
                     ...mod,
-                    lessons: mod.lessons?.filter(l => l.videoUrl || l.materialUrl) || []
+                    lessons: mod.lessons?.filter(l => l.videoUrl || l.youtubeUrl || l.materialUrl) || []
                 })).filter(mod => mod.lessons.length > 0 || (mod.quizzes && mod.quizzes.length > 0));
             }
             setCourse(data);
@@ -236,19 +236,22 @@ export default function CourseDetailPage() {
     const totalLessons = allLessons.length;
 
     // Build sequential materials list for current lesson: respect videoFirst ordering
-    const currentMaterials: { type: 'pdf' | 'video'; url: string }[] = [];
+    const currentMaterials: { type: 'pdf' | 'video' | 'youtube'; url: string }[] = [];
     if (currentLesson) {
         const videoMaterial = currentLesson.videoUrl ? { type: 'video' as const, url: currentLesson.videoUrl } : null;
+        const youtubeMaterial = currentLesson.youtubeUrl ? { type: 'youtube' as const, url: currentLesson.youtubeUrl } : null;
         const pdfMaterials = (currentLesson.materialUrl || '').split(',').filter(Boolean).map(u => ({ type: 'pdf' as const, url: u.trim() })).filter(m => m.url);
         
-        if ((currentLesson as any).videoFirst && videoMaterial) {
-            currentMaterials.push(videoMaterial);
+        if ((currentLesson as any).videoFirst) {
+            if (videoMaterial) currentMaterials.push(videoMaterial);
+            if (youtubeMaterial) currentMaterials.push(youtubeMaterial);
         }
         
         currentMaterials.push(...pdfMaterials);
         
-        if (!(currentLesson as any).videoFirst && videoMaterial) {
-            currentMaterials.push(videoMaterial);
+        if (!(currentLesson as any).videoFirst) {
+            if (videoMaterial) currentMaterials.push(videoMaterial);
+            if (youtubeMaterial) currentMaterials.push(youtubeMaterial);
         }
     }
 
@@ -425,6 +428,9 @@ export default function CourseDetailPage() {
                                                     {lesson.videoUrl && (
                                                         <span className={`material-symbols-outlined text-[14px] shrink-0 ${isActive ? 'text-emerald-400' : 'text-slate-400/60'}`} title="Video Lesson">videocam</span>
                                                     )}
+                                                    {lesson.youtubeUrl && (
+                                                        <span className={`material-symbols-outlined text-[14px] shrink-0 ${isActive ? 'text-red-400' : 'text-slate-400/60'}`} title="YouTube Video">smart_display</span>
+                                                    )}
                                                 </button>
                                             );
                                     })}
@@ -566,6 +572,70 @@ export default function CourseDetailPage() {
                                                 <div className="flex-1 overflow-auto flex justify-center items-center bg-black p-4 md:p-8">
                                                     <div className="w-full h-full max-w-[1200px] flex justify-center items-center">
                                                         <video key={`${currentLesson.id}-${materialIndex}`} controls className="max-h-full max-w-full rounded-xl shadow-2xl ring-1 ring-white/10" src={getFileUrl(mat.url)} />
+                                                    </div>
+                                                </div>
+
+                                                {/* ─── Bottom Navigation Bar ─── */}
+                                                <div className="flex items-center justify-between h-[40px] min-h-[40px] bg-[#f0f0f0] dark:bg-[#2a2d31] border-t border-gray-300 dark:border-gray-600 px-5 shrink-0 z-10 relative">
+                                                    {!isFirstMaterialOverall ? (
+                                                        <button
+                                                            onClick={handleBack}
+                                                            className="text-[13px] text-blue-700 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 font-medium transition-colors"
+                                                        >
+                                                            « Back
+                                                        </button>
+                                                    ) : (
+                                                        <div />
+                                                    )}
+                                                    <button
+                                                        onClick={handleNext}
+                                                        className="text-[13px] text-blue-700 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 font-medium transition-colors"
+                                                    >
+                                                        {getNextLabel()}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        );
+                                    }
+
+                                    if (mat.type === 'youtube') {
+                                        const getYouTubeEmbedUrl = (url: string) => {
+                                            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+                                            const match = url.match(regExp);
+                                            return (match && match[2].length === 11)
+                                              ? `https://www.youtube.com/embed/${match[2]}`
+                                              : url;
+                                        };
+                                        return (
+                                            <div className="flex flex-col h-full w-full bg-black overflow-hidden">
+                                                {/* ─── Top Toolbar ─── */}
+                                                <div className="flex items-center justify-between h-[42px] min-h-[42px] bg-[#323639] text-white text-sm px-4 select-none shrink-0 border-b border-white/10 shadow-sm z-10 relative">
+                                                    <div className="flex items-center gap-2 min-w-0 flex-shrink overflow-hidden">
+                                                        <span className="truncate text-[13px] text-gray-200 font-medium max-w-[280px]">{currentLesson.title}</span>
+                                                        {currentMaterials.length > 1 && (
+                                                            <span className="text-[11px] text-gray-400 ml-2">({materialIndex + 1}/{currentMaterials.length})</span>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center gap-1">
+                                                        <button
+                                                            onClick={() => router.push('/my-learning?tab=courses')}
+                                                            className="px-3 h-7 rounded hover:bg-white/10 transition-colors text-[13px] text-gray-200 font-medium"
+                                                        >
+                                                            Close
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                {/* ─── YouTube Area ─── */}
+                                                <div className="flex-1 overflow-auto flex justify-center items-center bg-black p-4 md:p-8">
+                                                    <div className="w-full h-full max-w-[1200px] flex justify-center items-center">
+                                                        <iframe 
+                                                            key={`${currentLesson.id}-${materialIndex}`} 
+                                                            src={getYouTubeEmbedUrl(mat.url)} 
+                                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                            allowFullScreen
+                                                            className="w-full h-full max-h-[800px] rounded-xl shadow-2xl ring-1 ring-white/10 border-0" 
+                                                        />
                                                     </div>
                                                 </div>
 

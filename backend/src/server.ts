@@ -25,10 +25,10 @@ app.set('trust proxy', 1);
 
 const allowedOrigins = [
   'https://cnaceus.excelcommunityliving.website',
-  'https://cna.excelcommunityliving.website/login',
   'http://localhost:3000',
   'http://localhost:3001',
-  'https://nursing-course.vercel.app'
+  'https://nursing-course.vercel.app',
+  'https://excel-community-living.vercel.app'
 ];
 
 const isDev = process.env.NODE_ENV !== 'production';

@@ -39,7 +39,7 @@ export default function AdminDashboard() {
 
     // Lesson form — needs moduleId
     const [showLessonForm, setShowLessonForm] = useState<string | null>(null); // moduleId
-    const [lessonForm, setLessonForm] = useState({ title: '', description: '', videoUrl: '', materialUrl: '' });
+    const [lessonForm, setLessonForm] = useState({ title: '', description: '', videoUrl: '', youtubeUrl: '', materialUrl: '' });
     const [uploading, setUploading] = useState<{ video?: boolean; material?: boolean }>({});
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
@@ -317,7 +317,7 @@ export default function AdminDashboard() {
     const handleAddLesson = async (moduleId: string) => {
         try {
             await api.post(`/courses/modules/${moduleId}/lessons`, lessonForm);
-            setLessonForm({ title: '', description: '', videoUrl: '', materialUrl: '' });
+            setLessonForm({ title: '', description: '', videoUrl: '', youtubeUrl: '', materialUrl: '' });
             setShowLessonForm(null);
             // Reload course detail
             if (courseDetails) loadCourseDetail(courseDetails.id);
@@ -479,9 +479,9 @@ export default function AdminDashboard() {
         }
     };
 
-    // Remove material (video or specific PDF)
-    const handleRemoveMaterial = async (lessonId: string, type: 'video' | 'pdf', url?: string) => {
-        if (!confirm(`Remove this ${type === 'video' ? 'video' : 'PDF'}?`)) return;
+    // Remove material (video, youtube, or specific PDF)
+    const handleRemoveMaterial = async (lessonId: string, type: 'video' | 'pdf' | 'youtube', url?: string) => {
+        if (!confirm(`Remove this ${type === 'video' ? 'video' : type === 'youtube' ? 'YouTube link' : 'PDF'}?`)) return;
 
         // Optimistic UI
         if (courseDetails) {
@@ -490,6 +490,7 @@ export default function AdminDashboard() {
                 lessons: mod.lessons.map((l: any) => {
                     if (l.id !== lessonId) return l;
                     if (type === 'video') return { ...l, videoUrl: null };
+                    if (type === 'youtube') return { ...l, youtubeUrl: null };
                     const pdfs = (l.materialUrl || '').split(',').filter(Boolean);
                     const remaining = pdfs.filter((u: string) => u.trim() !== (url || '').trim());
                     return { ...l, materialUrl: remaining.length > 0 ? remaining.join(',') : null };
@@ -500,7 +501,7 @@ export default function AdminDashboard() {
 
         try {
             await api.put(`/courses/lessons/${lessonId}/remove-material`, { type, url });
-            setPdfMoveToast(`${type === 'video' ? 'Video' : 'PDF'} removed!`);
+            setPdfMoveToast(`${type === 'video' ? 'Video' : type === 'youtube' ? 'YouTube link' : 'PDF'} removed!`);
             setTimeout(() => setPdfMoveToast(null), 3000);
             if (courseDetails) loadCourseDetail(courseDetails.id);
         } catch (err: any) {
@@ -1510,6 +1511,20 @@ export default function AdminDashboard() {
                                                                                                                         </span>
                                                                                                                     );
 
+                                                                                                                    const renderYoutubeBadge = () => lesson.youtubeUrl && (
+                                                                                                                        <span className="text-[9px] font-black uppercase text-red-500 flex items-center gap-0.5 px-1.5 py-0.5 rounded-md border border-transparent hover:border-red-200 dark:hover:border-red-800 transition-all group/yt">
+                                                                                                                            <span className="material-symbols-outlined text-[10px]">smart_display</span>
+                                                                                                                            <span>YouTube</span>
+                                                                                                                            <button
+                                                                                                                                onClick={(e) => { e.stopPropagation(); handleRemoveMaterial(lesson.id, 'youtube'); }}
+                                                                                                                                className="ml-0.5 opacity-0 group-hover/yt:opacity-100 text-red-400 hover:text-red-600 transition-all"
+                                                                                                                                title="Remove YouTube URL"
+                                                                                                                            >
+                                                                                                                                <span className="material-symbols-outlined text-[10px]">close</span>
+                                                                                                                            </button>
+                                                                                                                        </span>
+                                                                                                                    );
+
                                                                                                                     const renderPdfBadges = () => lesson.materialUrl && (() => {
                                                                                                                         const pdfList = lesson.materialUrl.split(',').filter(Boolean);
                                                                                                                         return pdfList.map((pdfUrl: string, pi: number) => (
@@ -1584,12 +1599,14 @@ export default function AdminDashboard() {
                                                                                                                             {lesson.videoFirst ? (
                                                                                                                                 <>
                                                                                                                                     {renderVideoBadge()}
+                                                                                                                                    {renderYoutubeBadge()}
                                                                                                                                     {renderPdfBadges()}
                                                                                                                                 </>
                                                                                                                             ) : (
                                                                                                                                 <>
                                                                                                                                     {renderPdfBadges()}
                                                                                                                                     {renderVideoBadge()}
+                                                                                                                                    {renderYoutubeBadge()}
                                                                                                                                 </>
                                                                                                                             )}
                                                                                                                         </>
@@ -1698,6 +1715,16 @@ export default function AdminDashboard() {
                                                                                                                 {uploading.material ? 'Uploading...' : (lessonForm.materialUrl ? 'PDF Added' : 'Add PDF')}
                                                                                                             </button>
                                                                                                         </div>
+                                                                                                    </div>
+                                                                                                    
+                                                                                                    <div>
+                                                                                                        <input
+                                                                                                            type="text"
+                                                                                                            placeholder="Optional: External Video URL (e.g. YouTube)"
+                                                                                                            value={lessonForm.youtubeUrl || ''}
+                                                                                                            onChange={(e) => setLessonForm({ ...lessonForm, youtubeUrl: e.target.value })}
+                                                                                                            className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder:text-slate-400"
+                                                                                                        />
                                                                                                     </div>
 
                                                                                                     {uploadProgress !== null && (

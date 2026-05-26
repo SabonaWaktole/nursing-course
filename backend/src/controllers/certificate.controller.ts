@@ -326,9 +326,14 @@ export const downloadCertificate = async (req: Request, res: Response) => {
 export const getMyCertificates = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user.userId;
+        const siteNumberHeader = req.headers['x-site-number'];
+        const siteFilter = siteNumberHeader ? parseInt(siteNumberHeader as string) : undefined;
 
         const certificates = await prisma.certificate.findMany({
-            where: { userId },
+            where: {
+                userId,
+                ...(siteFilter ? { course: { siteNumber: siteFilter } } : {}),
+            },
             include: {
                 course: { select: { id: true, title: true } },
             },
