@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 import api from '@/lib/api';
 import { Course } from '@/lib/types';
@@ -495,10 +496,12 @@ function GettingStartedSlideshow() {
                                     transition={{ duration: 0.4, ease: [0.25, 0.8, 0.25, 1] }}
                                     className="absolute inset-0"
                                 >
-                                    <img
+                                    <Image
                                         src={currentStep.image}
                                         alt={`Step ${currentStep.step}: ${currentStep.title}`}
-                                        className="w-full h-full object-contain"
+                                        fill
+                                        sizes="(max-width: 1024px) 100vw, 50vw"
+                                        className="object-contain"
                                     />
                                 </motion.div>
                             </AnimatePresence>

@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, type HTMLMotionProps } from 'framer-motion';
 import { ArrowRight, Star, Clock } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useCardHoverMotion } from '@/lib/motion';
 import { formatPrice } from '@/lib/utils';
 
@@ -65,10 +66,12 @@ export default function CourseCard({
             {category}
           </div>
         )}
-        <img
+        <Image
           src={thumbnail}
           alt={name}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+          fill
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          className="object-cover transition-transform duration-700 group-hover:scale-110"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
       </div>

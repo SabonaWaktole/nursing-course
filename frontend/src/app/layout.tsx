@@ -7,8 +7,28 @@ import ApprovalBanner from "@/components/ApprovalBanner";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Excel Community Living Inc - Nursing Assistant Training",
-  description: "Start your career in healthcare with Certified Nursing Assistant courses. Get certified, gain practical skills, and secure a job in healthcare.",
+  metadataBase: new URL("https://cnaceus.excelcommunityliving.website"),
+  title: "CNACEUS | Official Healthcare Education Platform",
+  description: "CNACEUS offers top-tier healthcare education and online certifications. Advance your career with our state-approved healthcare courses.",
+  alternates: {
+    canonical: "/",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  openGraph: {
+    type: "website",
+    title: "CNACEUS | Official Healthcare Education Platform",
+    description: "CNACEUS offers top-tier healthcare education and online certifications. Advance your career with our state-approved healthcare courses.",
+    url: "https://cnaceus.excelcommunityliving.website",
+    siteName: "CNACEUS",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "CNACEUS | Official Healthcare Education Platform",
+    description: "CNACEUS offers top-tier healthcare education and online certifications. Advance your career with our state-approved healthcare courses.",
+  },
 };
 
 export default function RootLayout({
@@ -31,6 +51,31 @@ export default function RootLayout({
             } catch(e) {}
           })();
         `}} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@graph": [
+                {
+                  "@type": "Organization",
+                  "@id": "https://cnaceus.excelcommunityliving.website/#organization",
+                  "name": "CNACEUS",
+                  "url": "https://cnaceus.excelcommunityliving.website"
+                },
+                {
+                  "@type": "WebSite",
+                  "@id": "https://cnaceus.excelcommunityliving.website/#website",
+                  "url": "https://cnaceus.excelcommunityliving.website",
+                  "name": "CNACEUS",
+                  "publisher": {
+                    "@id": "https://cnaceus.excelcommunityliving.website/#organization"
+                  }
+                }
+              ]
+            })
+          }}
+        />
       </head>
       <body className={`${inter.className} bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 antialiased`}>
         <ApprovalBanner />

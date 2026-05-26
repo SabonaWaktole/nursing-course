@@ -7,7 +7,24 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   
   images: {
-    unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      },
+      {
+        protocol: 'https',
+        hostname: '**', // Allow production API domains if needed
+      },
+    ],
   },
 
   // Required for react-pdf: alias canvas to false to prevent SSR bundling errors
