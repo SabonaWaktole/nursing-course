@@ -43,6 +43,15 @@ export default function AdminDashboard() {
     const [uploading, setUploading] = useState<{ video?: boolean; material?: boolean }>({});
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
+    // Folder Upload Form
+    const folderInputRef = useRef<HTMLInputElement>(null);
+    const [showFolderPreview, setShowFolderPreview] = useState(false);
+    const [folderFiles, setFolderFiles] = useState<File[]>([]);
+    const [folderCourseTitle, setFolderCourseTitle] = useState('');
+    const [folderSiteNumber, setFolderSiteNumber] = useState(1);
+    const [isFolderUploading, setIsFolderUploading] = useState(false);
+
+
     // Quiz form
     const [showQuizForm, setShowQuizForm] = useState<{ id: string; type: 'course' | 'module'; mode?: 'create' | 'edit'; quizId?: string } | null>(null);
     const [quizForm, setQuizForm] = useState({
@@ -629,7 +638,7 @@ export default function AdminDashboard() {
                 const parsedQuestions = res.data.questions.map((q: any) => ({
                     text: q.text,
                     options: q.options,
-                    correctAnswer: -1 // Enforce admin to select the answer
+                    correctAnswer: q.correctAnswer !== undefined ? q.correctAnswer : -1
                 }));
 
                 const noun = type === 'course' ? 'Final Exam' : 'Module Quiz';
@@ -656,7 +665,7 @@ export default function AdminDashboard() {
     const handleUpload = async (type: 'video' | 'material') => {
         const input = document.createElement('input');
         input.type = 'file';
-        input.accept = type === 'video' ? '.mp4,.webm,.mov' : '.pdf,.doc,.docx,.zip';
+        input.accept = type === 'video' ? '.mp4,.webm,.mov' : '.pdf,.txt,.doc,.docx,.zip';
         input.onchange = async (e: any) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -682,10 +691,69 @@ export default function AdminDashboard() {
         input.click();
     };
 
+    // Folder Upload Handlers
+    const handleFolderSelection = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
+
+        // Auto-detect course title from the first file's relative path (the top folder name)
+        // webkitRelativePath looks like "Course Name/01_lesson.txt"
+        let detectedTitle = 'New Bulk Course';
+        if (files[0].webkitRelativePath) {
+            const parts = files[0].webkitRelativePath.split('/');
+            if (parts.length > 0) {
+                // Replace underscores with spaces
+                detectedTitle = parts[0].replace(/_/g, ' ');
+            }
+        }
+
+        setFolderFiles(files);
+        setFolderCourseTitle(detectedTitle);
+        setFolderSiteNumber(1);
+        setShowFolderPreview(true);
+        // Reset input so the same folder can be selected again if needed
+        if (folderInputRef.current) folderInputRef.current.value = '';
+    };
+
+    const handleFolderUpload = async () => {
+        if (folderFiles.length === 0) return;
+        setIsFolderUploading(true);
+        setUploadProgress(0);
+
+        const formData = new FormData();
+        formData.append('courseTitle', folderCourseTitle);
+        formData.append('siteNumber', folderSiteNumber.toString());
+
+        folderFiles.forEach(file => {
+            formData.append('files', file);
+        });
+
+        try {
+            const res = await api.post('/upload/course-folder', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+                onUploadProgress: (progressEvent) => {
+                    if (progressEvent.total) {
+                        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                        setUploadProgress(percentCompleted);
+                    }
+                }
+            });
+            alert(`Success! ${res.data.message}.`);
+            setShowFolderPreview(false);
+            setFolderFiles([]);
+            loadData();
+        } catch (err: any) {
+            alert(err.response?.data?.message || 'Upload failed');
+        } finally {
+            setIsFolderUploading(false);
+            setUploadProgress(null);
+        }
+    };
+
     const handleLessonUpload = async (type: 'video' | 'material') => {
         const input = document.createElement('input');
         input.type = 'file';
-        input.accept = type === 'video' ? '.mp4,.webm,.mov' : '.pdf,.doc,.docx,.zip';
+        input.accept = type === 'video' ? '.mp4,.webm,.mov' : '.pdf,.txt,.doc,.docx,.zip';
         input.onchange = async (e: any) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -723,16 +791,23 @@ export default function AdminDashboard() {
 
     const updateQuestion = (index: number, field: string, value: any) => {
         setQuizForm((prev) => {
-            const qs = [...prev.questions];
-            (qs[index] as any)[field] = value;
+            const qs = prev.questions.map((q, i) => 
+                i === index ? { ...q, [field]: value } : q
+            );
             return { ...prev, questions: qs };
         });
     };
 
     const updateOption = (qi: number, oi: number, value: string) => {
         setQuizForm((prev) => {
-            const qs = [...prev.questions];
-            qs[qi].options[oi] = value;
+            const qs = prev.questions.map((q, i) => {
+                if (i === qi) {
+                    const newOptions = [...q.options];
+                    newOptions[oi] = value;
+                    return { ...q, options: newOptions };
+                }
+                return q;
+            });
             return { ...prev, questions: qs };
         });
     };
@@ -1206,18 +1281,37 @@ export default function AdminDashboard() {
                                                         ))}
                                                     </select>
                                                 </div>
-                                                <button
-                                                    onClick={() => {
-                                                        setEditingCourse(null);
-                                                        setCourseForm({ title: '', description: '', price: '0', category: '', thumbnail: '', tags: [], instructorId: '', credit: '0', siteNumber: 1 });
-                                                        setShowCourseForm(!showCourseForm);
-                                                    }}
-                                                    className="flex items-center justify-center gap-2 px-6 py-2.5 bg-gradient-to-r from-primary to-cyan-500 hover:from-sky-400 hover:to-cyan-400 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-primary/30 hover:shadow-primary/40 hover:-translate-y-0.5 w-full sm:w-auto overflow-hidden relative group"
-                                                >
-                                                    <div className="absolute inset-0 bg-white/20 translate-x-[-150%] skew-x-[-20deg] group-hover:translate-x-[150%] transition-transform duration-700 ease-in-out"></div>
-                                                    <span className="material-symbols-outlined text-xl relative z-10">add_circle</span>
-                                                    <span className="relative z-10">Add New Course</span>
-                                                </button>
+                                                <div className="flex gap-2 w-full sm:w-auto">
+                                                    <input 
+                                                        type="file" 
+                                                        // @ts-ignore - webkitdirectory is non-standard but widely supported
+                                                        webkitdirectory="" 
+                                                        directory="" 
+                                                        multiple 
+                                                        ref={folderInputRef}
+                                                        onChange={handleFolderSelection}
+                                                        className="hidden" 
+                                                    />
+                                                    <button
+                                                        onClick={() => folderInputRef.current?.click()}
+                                                        className="flex items-center justify-center gap-2 px-6 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-primary/50 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-bold transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5 w-full sm:w-auto"
+                                                    >
+                                                        <span className="material-symbols-outlined text-xl">folder_zip</span>
+                                                        <span>Upload Course Folder</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            setEditingCourse(null);
+                                                            setCourseForm({ title: '', description: '', price: '0', category: '', thumbnail: '', tags: [], instructorId: '', credit: '0', siteNumber: 1 });
+                                                            setShowCourseForm(!showCourseForm);
+                                                        }}
+                                                        className="flex items-center justify-center gap-2 px-6 py-2.5 bg-gradient-to-r from-primary to-cyan-500 hover:from-sky-400 hover:to-cyan-400 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-primary/30 hover:shadow-primary/40 hover:-translate-y-0.5 w-full sm:w-auto overflow-hidden relative group"
+                                                    >
+                                                        <div className="absolute inset-0 bg-white/20 translate-x-[-150%] skew-x-[-20deg] group-hover:translate-x-[150%] transition-transform duration-700 ease-in-out"></div>
+                                                        <span className="material-symbols-outlined text-xl relative z-10">add_circle</span>
+                                                        <span className="relative z-10">Add New Course</span>
+                                                    </button>
+                                                </div>
                                             </div>
 
                                             <AnimatePresence>
@@ -1232,6 +1326,91 @@ export default function AdminDashboard() {
                                                 >
                                                     {renderCourseFormUI(false)}
                                                 </motion.div>
+                                                </div>
+                                            )}
+                                            
+                                            {showFolderPreview && (
+                                                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+                                                    <motion.div
+                                                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                                                        className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden max-h-[85vh]"
+                                                    >
+                                                        <div className="p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+                                                            <h3 className="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                                                                <span className="material-symbols-outlined text-primary">folder_zip</span>
+                                                                Bulk Import Course
+                                                            </h3>
+                                                        </div>
+                                                        <div className="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6">
+                                                            <div>
+                                                                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 block">Course Title</label>
+                                                                <input 
+                                                                    value={folderCourseTitle} 
+                                                                    onChange={(e) => setFolderCourseTitle(e.target.value)} 
+                                                                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all" 
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 block">Site Number</label>
+                                                                <select
+                                                                    value={folderSiteNumber}
+                                                                    onChange={(e) => setFolderSiteNumber(parseInt(e.target.value))}
+                                                                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                                                                >
+                                                                    <option value={1}>Site 1 (Main)</option>
+                                                                    <option value={2}>Site 2</option>
+                                                                </select>
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2 block">
+                                                                    Files to process ({folderFiles.length})
+                                                                </label>
+                                                                <div className="bg-slate-50 dark:bg-slate-950 rounded-xl p-4 border border-slate-200 dark:border-slate-800 text-sm max-h-48 overflow-y-auto custom-scrollbar">
+                                                                    {folderFiles.map((file, i) => {
+                                                                        const isLinkFile = file.name.toLowerCase().includes('link');
+                                                                        const isActualVideo = /\.(mp4|webm|mov|mkv|avi)$/i.test(file.name);
+                                                                        const isYoutubeLink = file.name.toLowerCase().includes('video') && !isActualVideo;
+                                                                        return (
+                                                                            <div key={i} className={`flex items-center gap-2 py-1 ${isLinkFile ? 'text-slate-400 line-through' : 'text-slate-700 dark:text-slate-300'}`}>
+                                                                                <span className="material-symbols-outlined text-[16px]">{isLinkFile ? 'block' : isYoutubeLink ? 'smart_display' : isActualVideo ? 'videocam' : 'draft'}</span>
+                                                                                <span className="truncate">{file.webkitRelativePath || file.name}</span>
+                                                                                {isYoutubeLink && <span className="text-xs text-red-500 ml-auto bg-red-100 dark:bg-red-900/30 px-2 rounded-full">YouTube Link</span>}
+                                                                                {isActualVideo && <span className="text-xs text-emerald-500 ml-auto bg-emerald-100 dark:bg-emerald-900/30 px-2 rounded-full">Video File</span>}
+                                                                                {isLinkFile && <span className="text-xs text-rose-500 ml-auto bg-rose-100 dark:bg-rose-900/30 px-2 rounded-full">Ignored</span>}
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                                <p className="text-xs text-slate-500 mt-2">
+                                                                    Files with &quot;video&quot; in the name (any format) will be scanned for embedded YouTube URLs. Actual video files (.mp4, .webm, .mov) will be uploaded directly. Files containing &quot;link&quot; will be ignored. Other files will be uploaded as materials.
+                                                                </p>
+                                                            </div>
+                                                            
+                                                            {uploadProgress !== null && (
+                                                                <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 mb-2">
+                                                                    <div className="bg-primary h-2 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div className="p-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex justify-end gap-3">
+                                                            <button 
+                                                                onClick={() => { setShowFolderPreview(false); setFolderFiles([]); }} 
+                                                                className="px-6 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors font-bold text-sm"
+                                                                disabled={isFolderUploading}
+                                                            >
+                                                                Cancel
+                                                            </button>
+                                                            <button 
+                                                                onClick={handleFolderUpload} 
+                                                                disabled={isFolderUploading}
+                                                                className="px-6 py-2 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:bg-sky-500 transition-colors disabled:opacity-50 flex items-center gap-2 text-sm"
+                                                            >
+                                                                {isFolderUploading ? `Uploading ${uploadProgress || 0}%...` : 'Confirm & Upload'}
+                                                            </button>
+                                                        </div>
+                                                    </motion.div>
                                                 </div>
                                             )}
                                             </AnimatePresence>
@@ -1616,15 +1795,15 @@ export default function AdminDashboard() {
                                                                                                         </div>
                                                                                                     </div>
                                                                                                     <div className="flex items-center gap-1 shrink-0">
-                                                                                                        {lesson.materialUrl && lesson.materialUrl.split(',').some((u: string) => u.trim().toLowerCase().endsWith('.pdf')) && (
+                                                                                                        {lesson.materialUrl && lesson.materialUrl.split(',').some((u: string) => u.trim().toLowerCase().endsWith('.pdf') || u.trim().toLowerCase().endsWith('.txt')) && (
                                                                                                             <button
                                                                                                                 onClick={(e) => {
                                                                                                                     e.stopPropagation();
-                                                                                                                    const firstPdf = lesson.materialUrl.split(',').find((u: string) => u.trim().toLowerCase().endsWith('.pdf'))?.trim();
+                                                                                                                    const firstPdf = lesson.materialUrl.split(',').find((u: string) => u.trim().toLowerCase().endsWith('.pdf') || u.trim().toLowerCase().endsWith('.txt'))?.trim();
                                                                                                                     if (firstPdf) setPreviewPdfUrl(previewPdfUrl === firstPdf ? null : firstPdf);
                                                                                                                 }}
                                                                                                                 className={`p-1 rounded-md transition-all ${previewPdfUrl && lesson.materialUrl?.includes(previewPdfUrl) ? 'text-sky-500 bg-sky-50 dark:bg-sky-900/30' : 'text-slate-400 hover:text-sky-500 opacity-0 group-hover/lesson:opacity-100'}`}
-                                                                                                                title="Preview PDFs"
+                                                                                                                title="Preview PDF/TXT"
                                                                                                             >
                                                                                                                 <span className="material-symbols-outlined text-sm">{previewPdfUrl && lesson.materialUrl?.includes(previewPdfUrl) ? 'visibility_off' : 'visibility'}</span>
                                                                                                             </button>
@@ -1636,7 +1815,7 @@ export default function AdminDashboard() {
                                                                                                 {/* Inline PDF Previews — stacked for each PDF */}
                                                                                                 {lesson.materialUrl && lesson.materialUrl.split(',').filter(Boolean).map((pUrl: string, pi: number) => {
                                                                                                     const trimUrl = pUrl.trim();
-                                                                                                    if (!trimUrl.toLowerCase().endsWith('.pdf')) return null;
+                                                                                                    if (!trimUrl.toLowerCase().endsWith('.pdf') && !trimUrl.toLowerCase().endsWith('.txt')) return null;
                                                                                                     if (previewPdfUrl !== trimUrl) return null;
                                                                                                     return (
                                                                                                         <motion.div
@@ -1676,7 +1855,10 @@ export default function AdminDashboard() {
                                                                                         {mod.quizzes?.map((quiz: any) => (
                                                                                             <div key={quiz.id} className="flex justify-between items-center p-2 bg-emerald-500/5 rounded-lg border border-emerald-500/10">
                                                                                                 <div className="flex items-center gap-2"><span className="material-symbols-outlined text-emerald-500 text-sm">task_alt</span><span className="text-xs font-bold text-emerald-600">Quiz: {quiz.title}</span></div>
-                                                                                                <button onClick={() => handleDeleteQuiz(quiz.id)} className="p-1 text-emerald-400 hover:text-red-500"><span className="material-symbols-outlined text-sm">close</span></button>
+                                                                                                <div className="flex items-center gap-1">
+                                                                                                    <button onClick={() => openQuizEdit(quiz, 'module')} className="p-1 text-emerald-400 hover:text-emerald-600" title="Edit Quiz"><span className="material-symbols-outlined text-sm">edit</span></button>
+                                                                                                    <button onClick={() => handleDeleteQuiz(quiz.id)} className="p-1 text-emerald-400 hover:text-red-500" title="Delete Quiz"><span className="material-symbols-outlined text-sm">close</span></button>
+                                                                                                </div>
                                                                                             </div>
                                                                                         ))}
                                                                                         {showLessonForm === mod.id && (
