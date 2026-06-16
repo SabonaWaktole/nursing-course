@@ -379,11 +379,18 @@ export const updateProgress = async (req: Request, res: Response) => {
         const courseId = req.params.courseId as string;
         const { progress } = req.body;
 
+        const numProgress = parseInt(progress);
+        const isCompleted = numProgress >= 100;
+
+        const currentEnrollment = await prisma.enrollment.findUnique({
+            where: { userId_courseId: { userId, courseId } }
+        });
+
         const updateCount = await prisma.enrollment.updateMany({
             where: { userId, courseId },
             data: {
-                progress: Math.min(100, Math.max(0, parseInt(progress))),
-                completed: parseInt(progress) >= 100,
+                progress: Math.min(100, Math.max(0, numProgress)),
+                completed: isCompleted,
             },
         });
 
@@ -394,6 +401,73 @@ export const updateProgress = async (req: Request, res: Response) => {
                     data: { userId, type: 'PROGRESS_UPDATE', courseId },
                 });
             } catch {}
+
+            // Send notification for course completion
+            if (isCompleted && currentEnrollment && !currentEnrollment.completed) {
+                try {
+                    const course = await prisma.course.findUnique({ where: { id: courseId }, select: { title: true } });
+                    const student = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+                    if (course) {
+                        await createInstructorNotification(courseId, {
+                            title: 'Course Completed',
+                            message: `${student?.name || 'A student'} has completed "${course.title}" and is waiting for approval.`,
+                            type: 'COURSE_COMPLETED',
+                        });
+                    }
+                } catch (notifErr) {
+                    console.warn('Failed to create course completion notification:', notifErr);
+                }
+            }
+
+            // Auto-generate certificate if course completed and has no final exams
+            if (isCompleted) {
+                try {
+                    const finalExams = await prisma.quiz.findMany({
+                        where: { courseId, moduleId: null },
+                        select: { id: true }
+                    });
+
+                    if (finalExams.length === 0) {
+                        const existingCert = await prisma.certificate.findFirst({
+                            where: { userId, courseId }
+                        });
+
+                        if (!existingCert) {
+                            const user = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+                            const course = await prisma.course.findUnique({ where: { id: courseId }, select: { title: true, hours: true } });
+                            
+                            let settings = await prisma.adminSettings.findUnique({ where: { id: 'singleton' } });
+                            if (!settings) {
+                                settings = await prisma.adminSettings.create({ data: { id: 'singleton' } });
+                            }
+
+                            await prisma.certificate.create({
+                                data: {
+                                    userId,
+                                    courseId,
+                                    status: 'PENDING',
+                                    hoursAttended: course?.hours || 0,
+                                    courseTitle: course?.title,
+                                    organizationName: settings.organizationName,
+                                    organizationAddress: settings.organizationAddress,
+                                    organizationPhone: settings.organizationPhone,
+                                    directorName: settings.directorName,
+                                    directorTitle: settings.directorTitle,
+                                    providerId: settings.providerId
+                                }
+                            });
+
+                            await createInstructorNotification(courseId, {
+                                title: 'Certificate Approval Required',
+                                message: `${user?.name || 'A student'} has completed "${course?.title}" and is waiting for certificate approval.`,
+                                type: 'COURSE_COMPLETED',
+                            });
+                        }
+                    }
+                } catch (certError) {
+                    console.error('Error auto-generating certificate on progress update:', certError);
+                }
+            }
         }
 
         res.json({ message: 'Progress processed', progress });

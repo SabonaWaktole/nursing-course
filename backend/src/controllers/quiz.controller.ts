@@ -122,36 +122,32 @@ export const submitQuiz = async (req: Request, res: Response) => {
             });
         } catch {}
 
-        // Check if course is fully completed (passed all final exams)
+        // Check if course is fully completed (passed all exams)
         let courseCompleted = false;
         let nextExamId: string | undefined = undefined;
 
         if (passed) {
-            const finalExams = await prisma.quiz.findMany({
-                where: { courseId: quiz.courseId, moduleId: null },
-                select: { id: true },
+            const allExams = await prisma.quiz.findMany({
+                where: { courseId: quiz.courseId },
+                select: { id: true, moduleId: true },
                 orderBy: { createdAt: 'asc' }
             });
 
-            if (finalExams.length > 0) {
-                const passedFinalExams = await prisma.result.findMany({
-                    where: {
-                        userId,
-                        passed: true,
-                        quiz: { courseId: quiz.courseId, moduleId: null }
-                    },
+            if (allExams.length > 0) {
+                const passedExams = await prisma.result.findMany({
+                    where: { userId, passed: true, quiz: { courseId: quiz.courseId } },
                     select: { quizId: true },
                     distinct: ['quizId']
                 });
 
-                const passedExamIds = new Set(passedFinalExams.map(pe => pe.quizId));
-                courseCompleted = finalExams.every(exam => passedExamIds.has(exam.id));
-
+                const passedExamIds = new Set(passedExams.map(pe => pe.quizId));
+                courseCompleted = allExams.every(exam => passedExamIds.has(exam.id));
+                
                 // Only suggest next FINAL exam if we are currently taking a FINAL exam
                 // For module quizzes, we want to route back to the course to find the next module
                 if (!courseCompleted && !quiz.moduleId) {
-                    // Find the next unpassed exam in the sequence
-                    const nextExam = finalExams.find(exam => !passedExamIds.has(exam.id));
+                    // Find the next unpassed final exam in the sequence
+                    const nextExam = allExams.find(exam => !exam.moduleId && !passedExamIds.has(exam.id));
                     if (nextExam) {
                         nextExamId = nextExam.id;
                     }
@@ -193,13 +189,27 @@ export const submitQuiz = async (req: Request, res: Response) => {
                 }
             } else {
                 const user = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
-                const course = await prisma.course.findUnique({ where: { id: quiz.courseId }, select: { title: true } });
+                const course = await prisma.course.findUnique({ where: { id: quiz.courseId }, select: { title: true, hours: true } });
+
+                // Fetch admin settings for certificate snapshot data
+                let settings = await prisma.adminSettings.findUnique({ where: { id: 'singleton' } });
+                if (!settings) {
+                    settings = await prisma.adminSettings.create({ data: { id: 'singleton' } });
+                }
 
                 const newCert = await (prisma.certificate as any).create({
                     data: {
                         userId,
                         courseId: quiz.courseId,
-                        status: 'PENDING'
+                        status: 'PENDING',
+                        hoursAttended: course?.hours || 0,
+                        courseTitle: course?.title,
+                        organizationName: settings.organizationName,
+                        organizationAddress: settings.organizationAddress,
+                        organizationPhone: settings.organizationPhone,
+                        directorName: settings.directorName,
+                        directorTitle: settings.directorTitle,
+                        providerId: settings.providerId
                     },
                 });
 

@@ -359,7 +359,15 @@ export const verifyCertificate = async (req: Request, res: Response) => {
         });
         const certificate = cert as any;
 
-        if (!certificate || certificate.status !== 'APPROVED') {
+        if (!certificate) {
+            return res.status(404).json({ valid: false, message: 'Certificate not found' });
+        }
+
+        if (certificate.status === 'PENDING') {
+            return res.json({ valid: false, status: 'PENDING', message: 'Certificate is awaiting admin approval' });
+        }
+
+        if (certificate.status !== 'APPROVED') {
             return res.status(404).json({ valid: false, message: 'Certificate not found or invalid' });
         }
 
