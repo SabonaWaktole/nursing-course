@@ -16,13 +16,14 @@ export const uploadTxtOnly = multer({
 interface ParsedQuestion {
     text: string;
     options: string[];
+    correctAnswer?: number;
 }
 
 /**
  * Parse a TXT file containing quiz questions in the format:
- * Q: Question text?
+ * Q: Question text? OR 1. Question text?
  * A. Option 1
- * B. Option 2
+ * B. Option 2 *
  * C. Option 3
  * D. Option 4
  */
@@ -35,6 +36,7 @@ function parseTxtContent(content: string): { questions: ParsedQuestion[]; errors
 
     let currentQuestion: string | null = null;
     let currentOptions: string[] = [];
+    let currentCorrectAnswer: number = -1;
     let questionNumber = 0;
 
     const pushCurrentQuestion = () => {
@@ -48,6 +50,7 @@ function parseTxtContent(content: string): { questions: ParsedQuestion[]; errors
                 questions.push({
                     text: currentQuestion.trim(),
                     options: currentOptions.map(o => o.trim()),
+                    correctAnswer: currentCorrectAnswer !== -1 ? currentCorrectAnswer : undefined,
                 });
             }
         }
@@ -57,20 +60,31 @@ function parseTxtContent(content: string): { questions: ParsedQuestion[]; errors
         const line = rawLine.trim();
         if (!line) continue;
 
-        // Check for question line: starts with Q: or Q.
-        if (/^Q[\s]*[:.]/i.test(line)) {
+        // Check for question line: starts with Q:, Q., 1., 1) etc.
+        if (/^(?:Q[\s]*[:.]|\d+[\s]*[.)])/i.test(line)) {
             // Save previous question if any
             pushCurrentQuestion();
             // Start new question
-            currentQuestion = line.replace(/^Q[\s]*[:.]\s*/i, '').trim();
+            currentQuestion = line.replace(/^(?:Q[\s]*[:.]|\d+[\s]*[.)])\s*/i, '').trim();
             currentOptions = [];
+            currentCorrectAnswer = -1;
             continue;
         }
 
         // Check for option lines: A. B. C. D.
         const optionMatch = line.match(/^([A-D])[\s]*[.)]\s*(.*)/i);
         if (optionMatch && currentQuestion !== null) {
-            currentOptions.push(optionMatch[2].trim());
+            let optionText = optionMatch[2].trim();
+            
+            // Check if option ends with a non-alphanumeric character (e.g. *, ^, #) indicating it is the correct answer
+            // Excluding common punctuation like ., ?, ! etc.
+            const markerMatch = optionText.match(/^(.*?)\s*([^a-zA-Z0-9.,;:'"!?\s()\[\]{}%]+)$/);
+            if (markerMatch) {
+                optionText = markerMatch[1].trim();
+                currentCorrectAnswer = currentOptions.length;
+            }
+
+            currentOptions.push(optionText);
             continue;
         }
 
@@ -84,7 +98,7 @@ function parseTxtContent(content: string): { questions: ParsedQuestion[]; errors
     pushCurrentQuestion();
 
     if (questions.length === 0 && errors.length === 0) {
-        errors.push('No valid questions found. Make sure questions start with "Q:" and options with "A.", "B.", "C.", "D."');
+        errors.push('No valid questions found. Make sure questions start with a number or "Q:" and options with "A.", "B.", "C.", "D."');
     }
 
     return { questions, errors };

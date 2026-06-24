@@ -326,9 +326,14 @@ export const downloadCertificate = async (req: Request, res: Response) => {
 export const getMyCertificates = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user.userId;
+        const siteNumberHeader = req.headers['x-site-number'];
+        const siteFilter = siteNumberHeader ? parseInt(siteNumberHeader as string) : undefined;
 
         const certificates = await prisma.certificate.findMany({
-            where: { userId },
+            where: {
+                userId,
+                ...(siteFilter ? { course: { siteNumber: siteFilter } } : {}),
+            },
             include: {
                 course: { select: { id: true, title: true } },
             },
@@ -354,7 +359,15 @@ export const verifyCertificate = async (req: Request, res: Response) => {
         });
         const certificate = cert as any;
 
-        if (!certificate || certificate.status !== 'APPROVED') {
+        if (!certificate) {
+            return res.status(404).json({ valid: false, message: 'Certificate not found' });
+        }
+
+        if (certificate.status === 'PENDING') {
+            return res.json({ valid: false, status: 'PENDING', message: 'Certificate is awaiting admin approval' });
+        }
+
+        if (certificate.status !== 'APPROVED') {
             return res.status(404).json({ valid: false, message: 'Certificate not found or invalid' });
         }
 

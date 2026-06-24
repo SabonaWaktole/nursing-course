@@ -7,6 +7,7 @@ import {
     updateCourse,
     deleteCourse,
     addModule,
+    updateModule,
     deleteModule,
     addLesson,
     updateLesson,
@@ -17,7 +18,7 @@ import {
     getMyActivity,
     reorderModules,
     reorderLessons,
-    movePdf,
+    moveMaterial,
     removeMaterial,
     reorderPdfs,
 } from '../controllers/course.controller';
@@ -44,12 +45,13 @@ router.delete('/:id', authenticate, requireAdmin, deleteCourse);
 // Admin - Modules
 router.post('/:courseId/modules', authenticate, requireAdmin, addModule);
 router.put('/:courseId/modules/reorder', authenticate, requireAdmin, reorderModules);
+router.put('/modules/:moduleId', authenticate, requireAdmin, updateModule);
 router.delete('/modules/:moduleId', authenticate, requireAdmin, deleteModule);
 
 // Admin - Lessons (under modules)
 router.post('/modules/:moduleId/lessons', authenticate, requireAdmin, addLesson);
 router.put('/modules/:moduleId/lessons/reorder', authenticate, requireAdmin, reorderLessons);
-router.put('/lessons/move-pdf', authenticate, requireAdmin, movePdf);
+router.put('/lessons/move-material', authenticate, requireAdmin, moveMaterial);
 router.put('/lessons/:lessonId/remove-material', authenticate, requireAdmin, removeMaterial);
 router.put('/lessons/:lessonId/reorder-pdfs', authenticate, requireAdmin, reorderPdfs);
 router.put('/lessons/:lessonId', authenticate, requireAdmin, updateLesson);

@@ -29,7 +29,7 @@ export default function AdminDashboard() {
 
     // Course form
     const [showCourseForm, setShowCourseForm] = useState(false);
-    const [courseForm, setCourseForm] = useState({ title: '', description: '', price: '0', credit: '0', category: '', thumbnail: '', tags: [] as string[], instructorId: '' });
+    const [courseForm, setCourseForm] = useState({ title: '', description: '', price: '0', credit: '0', category: '', thumbnail: '', tags: [] as string[], instructorId: '', siteNumber: 1 });
     const [editingCourse, setEditingCourse] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
 
@@ -39,9 +39,18 @@ export default function AdminDashboard() {
 
     // Lesson form — needs moduleId
     const [showLessonForm, setShowLessonForm] = useState<string | null>(null); // moduleId
-    const [lessonForm, setLessonForm] = useState({ title: '', description: '', videoUrl: '', materialUrl: '' });
+    const [lessonForm, setLessonForm] = useState({ title: '', description: '', videoUrl: '', youtubeUrl: '', materialUrl: '' });
     const [uploading, setUploading] = useState<{ video?: boolean; material?: boolean }>({});
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+
+    // Folder Upload Form
+    const folderInputRef = useRef<HTMLInputElement>(null);
+    const [showFolderPreview, setShowFolderPreview] = useState(false);
+    const [folderFiles, setFolderFiles] = useState<File[]>([]);
+    const [folderCourseTitle, setFolderCourseTitle] = useState('');
+    const [folderSiteNumber, setFolderSiteNumber] = useState(1);
+    const [isFolderUploading, setIsFolderUploading] = useState(false);
+
 
     // Quiz form
     const [showQuizForm, setShowQuizForm] = useState<{ id: string; type: 'course' | 'module'; mode?: 'create' | 'edit'; quizId?: string } | null>(null);
@@ -78,14 +87,20 @@ export default function AdminDashboard() {
     const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
     const [dragModuleId, setDragModuleId] = useState<string | null>(null);
 
-    // PDF drag-and-drop across lessons
-    const [pdfDragSourceId, setPdfDragSourceId] = useState<string | null>(null);
-    const [pdfDragUrl, setPdfDragUrl] = useState<string | null>(null);
-    const [pdfDragOverLessonId, setPdfDragOverLessonId] = useState<string | null>(null);
-    const [pdfMoveToast, setPdfMoveToast] = useState<string | null>(null);
+    // Material drag-and-drop across lessons (video, youtube, pdf)
+    const [materialDrag, setMaterialDrag] = useState<{ lessonId: string, type: 'video' | 'youtube' | 'pdf', url: string } | null>(null);
+    const [materialDragOverLessonId, setMaterialDragOverLessonId] = useState<string | null>(null);
+    const [materialDragOverZone, setMaterialDragOverZone] = useState<'top' | 'bottom' | null>(null);
+    const [materialMoveToast, setMaterialMoveToast] = useState<string | null>(null);
 
     // Inline PDF preview state (tracks specific PDF url, not lesson)
     const [previewPdfUrl, setPreviewPdfUrl] = useState<string | null>(null);
+
+    // Inline editing state for module/lesson names
+    const [editingModuleId, setEditingModuleId] = useState<string | null>(null);
+    const [editingModuleTitle, setEditingModuleTitle] = useState('');
+    const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
+    const [editingLessonTitle, setEditingLessonTitle] = useState('');
 
     // Search & filter state
     const [adminSearch, setAdminSearch] = useState('');
@@ -203,7 +218,7 @@ export default function AdminDashboard() {
             } else {
                 await api.post('/courses', courseForm);
             }
-            setCourseForm({ title: '', description: '', price: '0', credit: '0', category: '', thumbnail: '', tags: [], instructorId: '' });
+            setCourseForm({ title: '', description: '', price: '0', credit: '0', category: '', thumbnail: '', tags: [], instructorId: '', siteNumber: 1 });
             setShowCourseForm(false);
             loadData();
         } catch (err: any) {
@@ -272,7 +287,8 @@ export default function AdminDashboard() {
             category: course.category || '',
             thumbnail: course.thumbnail || '',
             tags: course.tags || [],
-            instructorId: course.instructor?.id || course.instructorId || ''
+            instructorId: course.instructor?.id || course.instructorId || '',
+            siteNumber: course.siteNumber || 1
         });
         setEditingCourse(course.id);
         setShowCourseForm(true);
@@ -313,10 +329,54 @@ export default function AdminDashboard() {
         }
     };
 
+    const handleRenameModule = async (moduleId: string, courseId: string) => {
+        const newTitle = editingModuleTitle.trim();
+        if (!newTitle) { setEditingModuleId(null); return; }
+        // Optimistic UI
+        if (courseDetails) {
+            const updatedModules = courseDetails.modules.map((mod: any) =>
+                mod.id === moduleId ? { ...mod, title: newTitle } : mod
+            );
+            setCourseDetails({ ...courseDetails, modules: updatedModules });
+        }
+        setEditingModuleId(null);
+        try {
+            await api.put(`/courses/modules/${moduleId}`, { title: newTitle });
+            loadCourseDetail(courseId);
+            loadData();
+        } catch (err: any) {
+            alert(err.response?.data?.message || 'Error renaming module');
+            loadCourseDetail(courseId);
+        }
+    };
+
+    const handleRenameLesson = async (lessonId: string) => {
+        const newTitle = editingLessonTitle.trim();
+        if (!newTitle) { setEditingLessonId(null); return; }
+        // Optimistic UI
+        if (courseDetails) {
+            const updatedModules = courseDetails.modules.map((mod: any) => ({
+                ...mod,
+                lessons: mod.lessons.map((l: any) =>
+                    l.id === lessonId ? { ...l, title: newTitle } : l
+                ),
+            }));
+            setCourseDetails({ ...courseDetails, modules: updatedModules });
+        }
+        setEditingLessonId(null);
+        try {
+            await api.put(`/courses/lessons/${lessonId}`, { title: newTitle });
+            if (courseDetails) loadCourseDetail(courseDetails.id);
+        } catch (err: any) {
+            alert(err.response?.data?.message || 'Error renaming lesson');
+            if (courseDetails) loadCourseDetail(courseDetails.id);
+        }
+    };
+
     const handleAddLesson = async (moduleId: string) => {
         try {
             await api.post(`/courses/modules/${moduleId}/lessons`, lessonForm);
-            setLessonForm({ title: '', description: '', videoUrl: '', materialUrl: '' });
+            setLessonForm({ title: '', description: '', videoUrl: '', youtubeUrl: '', materialUrl: '' });
             setShowLessonForm(null);
             // Reload course detail
             if (courseDetails) loadCourseDetail(courseDetails.id);
@@ -374,113 +434,239 @@ export default function AdminDashboard() {
 
     const handleLessonDragOver = (e: React.DragEvent, moduleId: string, index: number) => {
         e.preventDefault();
-        if (dragType === 'lesson' && dragModuleId === moduleId) setDragOverIndex(index);
+        if (dragType === 'lesson') setDragOverIndex(index);
     };
 
     const handleLessonDrop = async (e: React.DragEvent, moduleId: string, dropIndex: number) => {
         e.preventDefault();
-        if (dragType !== 'lesson' || dragModuleId !== moduleId || dragIndex === null || dragIndex === dropIndex || !courseDetails) {
+        if (dragType !== 'lesson' || dragIndex === null || dragModuleId === null || !courseDetails) {
             setDragIndex(null); setDragOverIndex(null); setDragType(null); setDragModuleId(null);
             return;
         }
-        const modules = courseDetails.modules.map((mod: any) => {
-            if (mod.id !== moduleId) return mod;
-            const lessons = [...mod.lessons];
-            const [moved] = lessons.splice(dragIndex, 1);
-            lessons.splice(dropIndex, 0, moved);
-            return { ...mod, lessons };
-        });
-        setCourseDetails({ ...courseDetails, modules });
-        setDragIndex(null); setDragOverIndex(null); setDragType(null); setDragModuleId(null);
-        try {
-            const targetMod = modules.find((m: any) => m.id === moduleId);
-            await api.put(`/courses/modules/${moduleId}/lessons/reorder`, { orderedIds: targetMod.lessons.map((l: any) => l.id) });
-        } catch (err: any) {
-            alert(err.response?.data?.message || 'Error reordering lessons');
-            loadCourseDetail(courseDetails.id);
+
+        // Intra-module drag
+        if (dragModuleId === moduleId) {
+            if (dragIndex === dropIndex) {
+                setDragIndex(null); setDragOverIndex(null); setDragType(null); setDragModuleId(null);
+                return;
+            }
+            const modules = courseDetails.modules.map((mod: any) => {
+                if (mod.id !== moduleId) return mod;
+                const lessons = [...mod.lessons];
+                const [moved] = lessons.splice(dragIndex, 1);
+                lessons.splice(dropIndex, 0, moved);
+                return { ...mod, lessons };
+            });
+            setCourseDetails({ ...courseDetails, modules });
+            setDragIndex(null); setDragOverIndex(null); setDragType(null); setDragModuleId(null);
+            try {
+                const targetMod = modules.find((m: any) => m.id === moduleId);
+                await api.put(`/courses/modules/${moduleId}/lessons/reorder`, { orderedIds: targetMod.lessons.map((l: any) => l.id) });
+            } catch (err: any) {
+                alert(err.response?.data?.message || 'Error reordering lessons');
+                loadCourseDetail(courseDetails.id);
+            }
+        } else {
+            // Cross-module drag
+            let movedLesson: any = null;
+            const modules = courseDetails.modules.map((mod: any) => {
+                if (mod.id === dragModuleId) {
+                    const lessons = [...mod.lessons];
+                    movedLesson = lessons.splice(dragIndex, 1)[0];
+                    return { ...mod, lessons };
+                }
+                return mod;
+            });
+            if (!movedLesson) return;
+
+            const finalModules = modules.map((mod: any) => {
+                if (mod.id === moduleId) {
+                    const lessons = [...mod.lessons];
+                    lessons.splice(dropIndex, 0, movedLesson);
+                    return { ...mod, lessons };
+                }
+                return mod;
+            });
+
+            setCourseDetails({ ...courseDetails, modules: finalModules });
+            setDragIndex(null); setDragOverIndex(null); setDragType(null); setDragModuleId(null);
+
+            try {
+                // 1. Change the module of the lesson
+                await api.put(`/courses/lessons/${movedLesson.id}`, { moduleId });
+                // 2. Reorder the target module
+                const targetMod = finalModules.find((m: any) => m.id === moduleId);
+                await api.put(`/courses/modules/${moduleId}/lessons/reorder`, { orderedIds: targetMod.lessons.map((l: any) => l.id) });
+                // 3. Reorder the source module
+                const sourceMod = finalModules.find((m: any) => m.id === dragModuleId);
+                await api.put(`/courses/modules/${dragModuleId}/lessons/reorder`, { orderedIds: sourceMod.lessons.map((l: any) => l.id) });
+            } catch (err: any) {
+                alert(err.response?.data?.message || 'Error moving lesson between modules');
+                loadCourseDetail(courseDetails.id);
+            }
         }
     };
 
     const handleDragEnd = () => {
         setDragIndex(null); setDragOverIndex(null); setDragType(null); setDragModuleId(null);
-        setPdfDragSourceId(null); setPdfDragUrl(null); setPdfDragOverLessonId(null);
+        setMaterialDrag(null); setMaterialDragOverLessonId(null); setMaterialDragOverZone(null);
     };
 
     // PDF drag-and-drop handlers
-    const handlePdfDragStart = (e: React.DragEvent, lessonId: string, pdfUrl: string) => {
+    const handleMaterialDragStart = (e: React.DragEvent, lessonId: string, type: 'video' | 'youtube' | 'pdf', url: string) => {
         e.stopPropagation();
-        e.dataTransfer.setData('application/pdf-move', JSON.stringify({ sourceLessonId: lessonId, pdfUrl }));
+        e.dataTransfer.setData('application/material-move', JSON.stringify({ sourceLessonId: lessonId, type, url }));
         e.dataTransfer.effectAllowed = 'move';
-        setPdfDragSourceId(lessonId);
-        setPdfDragUrl(pdfUrl);
-        // Prevent lesson reorder drag from firing
-        setDragType(null);
+        setMaterialDrag({ lessonId, type, url });
+        setDragType(null); // Prevent lesson reorder drag
     };
 
-    const handlePdfDragOverLesson = (e: React.DragEvent, lessonId: string) => {
-        if (!pdfDragSourceId || pdfDragSourceId === lessonId) return;
+    const handleMaterialDragOverLesson = (e: React.DragEvent, lessonId: string) => {
+        if (!materialDrag) return;
         e.preventDefault();
         e.stopPropagation();
         e.dataTransfer.dropEffect = 'move';
-        setPdfDragOverLessonId(lessonId);
+        setMaterialDragOverLessonId(lessonId);
+
+        // If dragging within the same lesson, detect left vs right half for intra-lesson ordering
+        if (materialDrag.lessonId === lessonId) {
+            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            if (x < rect.width / 2) {
+                setMaterialDragOverZone('top');
+            } else {
+                setMaterialDragOverZone('bottom');
+            }
+        }
     };
 
-    const handlePdfDragLeaveLesson = (e: React.DragEvent) => {
+    const handleMaterialDragLeaveLesson = (e: React.DragEvent) => {
         e.stopPropagation();
-        setPdfDragOverLessonId(null);
+        setMaterialDragOverLessonId(null);
+        setMaterialDragOverZone(null);
     };
 
-    const handlePdfDrop = async (e: React.DragEvent, targetLessonId: string) => {
+    const handleMaterialDrop = async (e: React.DragEvent, targetLessonId: string) => {
         e.preventDefault();
         e.stopPropagation();
+        
         let sourceLessonId = '';
-        let pdfUrl = '';
+        let type: 'video' | 'youtube' | 'pdf' = 'pdf';
+        let url = '';
         try {
-            const data = JSON.parse(e.dataTransfer.getData('application/pdf-move'));
+            const data = JSON.parse(e.dataTransfer.getData('application/material-move'));
             sourceLessonId = data.sourceLessonId;
-            pdfUrl = data.pdfUrl;
+            type = data.type;
+            url = data.url;
         } catch { return; }
-        setPdfDragSourceId(null);
-        setPdfDragUrl(null);
-        setPdfDragOverLessonId(null);
 
-        if (!sourceLessonId || !pdfUrl || sourceLessonId === targetLessonId) return;
+        const zone = materialDragOverZone;
+        
+        setMaterialDrag(null);
+        setMaterialDragOverLessonId(null);
+        setMaterialDragOverZone(null);
 
-        // Optimistic UI update for multi-pdf
-        if (courseDetails) {
+        if (!sourceLessonId || !url || !courseDetails) return;
+
+        // Intra-lesson ordering 
+        if (sourceLessonId === targetLessonId) {
+            let targetLesson: any = null;
+            courseDetails.modules.forEach((mod: any) => {
+                const found = mod.lessons.find((l: any) => l.id === targetLessonId);
+                if (found) targetLesson = found;
+            });
+            
+            if (!targetLesson) return;
+            
+            let newVideoFirst = targetLesson.videoFirst; // default to current
+            
+            if (type === 'video' || type === 'youtube') {
+                // If dragging video/youtube, 'top' means left -> video first
+                newVideoFirst = zone === 'top';
+            } else if (type === 'pdf') {
+                // If dragging a PDF, 'top' means left -> PDF first (so videoFirst = false)
+                newVideoFirst = zone !== 'top';
+            }
+            
+            // Optimistic UI
             const updatedModules = courseDetails.modules.map((mod: any) => ({
                 ...mod,
-                lessons: mod.lessons.map((l: any) => {
-                    if (l.id === sourceLessonId) {
-                        const pdfs = (l.materialUrl || '').split(',').filter(Boolean);
-                        const remaining = pdfs.filter((u: string) => u.trim() !== pdfUrl.trim());
-                        return { ...l, materialUrl: remaining.length > 0 ? remaining.join(',') : null };
-                    }
-                    if (l.id === targetLessonId) {
-                        const existing = l.materialUrl ? l.materialUrl.split(',').filter(Boolean) : [];
-                        existing.push(pdfUrl.trim());
-                        return { ...l, materialUrl: existing.join(',') };
-                    }
-                    return l;
-                }),
+                lessons: mod.lessons.map((l: any) => l.id === targetLessonId ? { ...l, videoFirst: newVideoFirst } : l)
             }));
             setCourseDetails({ ...courseDetails, modules: updatedModules });
+
+            try {
+                await api.put(`/courses/lessons/${targetLessonId}`, { videoFirst: newVideoFirst });
+            } catch (err: any) {
+                alert('Error updating order');
+                loadCourseDetail(courseDetails.id);
+            }
+            return;
         }
 
+        // Cross-lesson move
+        // Optimistic UI
+        const updatedModules = courseDetails.modules.map((mod: any) => ({
+            ...mod,
+            lessons: mod.lessons.map((l: any) => {
+                let updatedL = { ...l };
+                
+                if (l.id === sourceLessonId) {
+                    if (type === 'pdf') {
+                        const pdfs = (l.materialUrl || '').split(',').filter(Boolean);
+                        const remaining = pdfs.filter((u: string) => u.trim() !== url.trim());
+                        updatedL.materialUrl = remaining.length > 0 ? remaining.join(',') : null;
+                    } else if (type === 'video') {
+                        updatedL.videoUrl = null; // will be swapped below if target has one
+                    } else if (type === 'youtube') {
+                        updatedL.youtubeUrl = null;
+                    }
+                }
+                
+                if (l.id === targetLessonId) {
+                    if (type === 'pdf') {
+                        const existing = l.materialUrl ? l.materialUrl.split(',').filter(Boolean) : [];
+                        existing.push(url.trim());
+                        updatedL.materialUrl = existing.join(',');
+                    } else if (type === 'video') {
+                        // Swap logic for optimistic UI
+                        const sourceLessonObj = courseDetails.modules.flatMap((m: any) => m.lessons).find((ll: any) => ll.id === sourceLessonId);
+                        if (sourceLessonObj) {
+                            updatedL.videoUrl = sourceLessonObj.videoUrl;
+                            // Target's old video goes to source
+                            if (l.id === sourceLessonId) {
+                                updatedL.videoUrl = l.videoUrl; // Actually we handle source above, this gets complex for UI, backend will handle swap safely
+                            }
+                        }
+                    } else if (type === 'youtube') {
+                        const sourceLessonObj = courseDetails.modules.flatMap((m: any) => m.lessons).find((ll: any) => ll.id === sourceLessonId);
+                        if (sourceLessonObj) {
+                            updatedL.youtubeUrl = sourceLessonObj.youtubeUrl;
+                        }
+                    }
+                }
+                return updatedL;
+            }),
+        }));
+        
+        // For video/youtube swap, just rely on backend reload for exact correctness if target had a video, 
+        // otherwise optimistic works fine for empty targets.
+        setCourseDetails({ ...courseDetails, modules: updatedModules });
+
         try {
-            await api.put('/courses/lessons/move-pdf', { sourceLessonId, targetLessonId, pdfUrl });
-            setPdfMoveToast('PDF moved successfully!');
-            setTimeout(() => setPdfMoveToast(null), 3000);
-            if (courseDetails) loadCourseDetail(courseDetails.id);
+            await api.put('/courses/lessons/move-material', { sourceLessonId, targetLessonId, type, url });
+            setMaterialMoveToast('Material moved successfully!');
+            setTimeout(() => setMaterialMoveToast(null), 3000);
+            loadCourseDetail(courseDetails.id); // Reload to ensure swap correctness
         } catch (err: any) {
-            alert(err.response?.data?.message || 'Error moving PDF');
-            if (courseDetails) loadCourseDetail(courseDetails.id);
+            alert(err.response?.data?.message || 'Error moving material');
+            loadCourseDetail(courseDetails.id);
         }
     };
 
-    // Remove material (video or specific PDF)
-    const handleRemoveMaterial = async (lessonId: string, type: 'video' | 'pdf', url?: string) => {
-        if (!confirm(`Remove this ${type === 'video' ? 'video' : 'PDF'}?`)) return;
+    // Remove material (video, youtube, or specific PDF)
+    const handleRemoveMaterial = async (lessonId: string, type: 'video' | 'pdf' | 'youtube', url?: string) => {
+        if (!confirm(`Remove this ${type === 'video' ? 'video' : type === 'youtube' ? 'YouTube link' : 'PDF'}?`)) return;
 
         // Optimistic UI
         if (courseDetails) {
@@ -489,6 +675,7 @@ export default function AdminDashboard() {
                 lessons: mod.lessons.map((l: any) => {
                     if (l.id !== lessonId) return l;
                     if (type === 'video') return { ...l, videoUrl: null };
+                    if (type === 'youtube') return { ...l, youtubeUrl: null };
                     const pdfs = (l.materialUrl || '').split(',').filter(Boolean);
                     const remaining = pdfs.filter((u: string) => u.trim() !== (url || '').trim());
                     return { ...l, materialUrl: remaining.length > 0 ? remaining.join(',') : null };
@@ -499,8 +686,8 @@ export default function AdminDashboard() {
 
         try {
             await api.put(`/courses/lessons/${lessonId}/remove-material`, { type, url });
-            setPdfMoveToast(`${type === 'video' ? 'Video' : 'PDF'} removed!`);
-            setTimeout(() => setPdfMoveToast(null), 3000);
+            setMaterialMoveToast(`${type === 'video' ? 'Video' : type === 'youtube' ? 'YouTube link' : 'PDF'} removed!`);
+            setTimeout(() => setMaterialMoveToast(null), 3000);
             if (courseDetails) loadCourseDetail(courseDetails.id);
         } catch (err: any) {
             alert(err.response?.data?.message || 'Error removing material');
@@ -627,7 +814,7 @@ export default function AdminDashboard() {
                 const parsedQuestions = res.data.questions.map((q: any) => ({
                     text: q.text,
                     options: q.options,
-                    correctAnswer: -1 // Enforce admin to select the answer
+                    correctAnswer: q.correctAnswer !== undefined ? q.correctAnswer : -1
                 }));
 
                 const noun = type === 'course' ? 'Final Exam' : 'Module Quiz';
@@ -654,7 +841,7 @@ export default function AdminDashboard() {
     const handleUpload = async (type: 'video' | 'material') => {
         const input = document.createElement('input');
         input.type = 'file';
-        input.accept = type === 'video' ? '.mp4,.webm,.mov' : '.pdf,.doc,.docx,.zip';
+        input.accept = type === 'video' ? '.mp4,.webm,.mov' : '.pdf,.txt,.doc,.docx,.zip';
         input.onchange = async (e: any) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -680,10 +867,69 @@ export default function AdminDashboard() {
         input.click();
     };
 
+    // Folder Upload Handlers
+    const handleFolderSelection = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
+
+        // Auto-detect course title from the first file's relative path (the top folder name)
+        // webkitRelativePath looks like "Course Name/01_lesson.txt"
+        let detectedTitle = 'New Bulk Course';
+        if (files[0].webkitRelativePath) {
+            const parts = files[0].webkitRelativePath.split('/');
+            if (parts.length > 0) {
+                // Replace underscores with spaces
+                detectedTitle = parts[0].replace(/_/g, ' ');
+            }
+        }
+
+        setFolderFiles(files);
+        setFolderCourseTitle(detectedTitle);
+        setFolderSiteNumber(1);
+        setShowFolderPreview(true);
+        // Reset input so the same folder can be selected again if needed
+        if (folderInputRef.current) folderInputRef.current.value = '';
+    };
+
+    const handleFolderUpload = async () => {
+        if (folderFiles.length === 0) return;
+        setIsFolderUploading(true);
+        setUploadProgress(0);
+
+        const formData = new FormData();
+        formData.append('courseTitle', folderCourseTitle);
+        formData.append('siteNumber', folderSiteNumber.toString());
+
+        folderFiles.forEach(file => {
+            formData.append('files', file);
+        });
+
+        try {
+            const res = await api.post('/upload/course-folder', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+                onUploadProgress: (progressEvent) => {
+                    if (progressEvent.total) {
+                        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                        setUploadProgress(percentCompleted);
+                    }
+                }
+            });
+            alert(`Success! ${res.data.message}.`);
+            setShowFolderPreview(false);
+            setFolderFiles([]);
+            loadData();
+        } catch (err: any) {
+            alert(err.response?.data?.message || 'Upload failed');
+        } finally {
+            setIsFolderUploading(false);
+            setUploadProgress(null);
+        }
+    };
+
     const handleLessonUpload = async (type: 'video' | 'material') => {
         const input = document.createElement('input');
         input.type = 'file';
-        input.accept = type === 'video' ? '.mp4,.webm,.mov' : '.pdf,.doc,.docx,.zip';
+        input.accept = type === 'video' ? '.mp4,.webm,.mov' : '.pdf,.txt,.doc,.docx,.zip';
         input.onchange = async (e: any) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -721,16 +967,23 @@ export default function AdminDashboard() {
 
     const updateQuestion = (index: number, field: string, value: any) => {
         setQuizForm((prev) => {
-            const qs = [...prev.questions];
-            (qs[index] as any)[field] = value;
+            const qs = prev.questions.map((q, i) => 
+                i === index ? { ...q, [field]: value } : q
+            );
             return { ...prev, questions: qs };
         });
     };
 
     const updateOption = (qi: number, oi: number, value: string) => {
         setQuizForm((prev) => {
-            const qs = [...prev.questions];
-            qs[qi].options[oi] = value;
+            const qs = prev.questions.map((q, i) => {
+                if (i === qi) {
+                    const newOptions = [...q.options];
+                    newOptions[oi] = value;
+                    return { ...q, options: newOptions };
+                }
+                return q;
+            });
             return { ...prev, questions: qs };
         });
     };
@@ -808,23 +1061,37 @@ export default function AdminDashboard() {
                         <input type="number" step="0.1" value={courseForm.credit} onChange={(e) => setCourseForm({ ...courseForm, credit: e.target.value })} placeholder="E.g., 1.5" className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all" />
                     </div>
                 </div>
-                <div>
-                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 block">Assigned Instructor</label>
-                    <div className="relative">
-                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none">person</span>
-                        <select
-                            value={courseForm.instructorId}
-                            onChange={(e) => setCourseForm({ ...courseForm, instructorId: e.target.value })}
-                            className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 pl-10 pr-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none"
-                        >
-                            <option value="">Unassigned (All Admins)</option>
-                            {users.filter((u: any) => u.role === 'ADMIN').map((admin: any) => (
-                                <option key={admin.id} value={admin.id}>{admin.name || admin.email}</option>
-                            ))}
-                        </select>
-                        <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">expand_more</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div>
+                        <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 block">Assigned Instructor</label>
+                        <div className="relative">
+                            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none">person</span>
+                            <select
+                                value={courseForm.instructorId}
+                                onChange={(e) => setCourseForm({ ...courseForm, instructorId: e.target.value })}
+                                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 pl-10 pr-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none"
+                            >
+                                <option value="">Unassigned (All Admins)</option>
+                                {users.filter((u: any) => u.role === 'ADMIN').map((admin: any) => (
+                                    <option key={admin.id} value={admin.id}>{admin.name || admin.email}</option>
+                                ))}
+                            </select>
+                            <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">expand_more</span>
+                        </div>
+                        <p className="text-[10px] text-slate-400 mt-1.5">Certificates and notifications will be routed to the assigned instructor. Leave unassigned for all admins.</p>
                     </div>
-                    <p className="text-[10px] text-slate-400 mt-1.5">Certificates and notifications will be routed to the assigned instructor. Leave unassigned for all admins.</p>
+                    <div>
+                        <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 block">Site Number</label>
+                        <select
+                            value={courseForm.siteNumber}
+                            onChange={(e) => setCourseForm({ ...courseForm, siteNumber: parseInt(e.target.value) })}
+                            className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                        >
+                            <option value={1}>Site 1 (Main)</option>
+                            <option value={2}>Site 2</option>
+                        </select>
+                        <p className="text-[10px] text-slate-400 mt-1.5">Select which website this course belongs to.</p>
+                    </div>
                 </div>
                 <div>
                     <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">Tags (select multiple)</label>
@@ -1190,18 +1457,37 @@ export default function AdminDashboard() {
                                                         ))}
                                                     </select>
                                                 </div>
-                                                <button
-                                                    onClick={() => {
-                                                        setEditingCourse(null);
-                                                        setCourseForm({ title: '', description: '', price: '0', category: '', thumbnail: '', tags: [], instructorId: '', credit: '0' });
-                                                        setShowCourseForm(!showCourseForm);
-                                                    }}
-                                                    className="flex items-center justify-center gap-2 px-6 py-2.5 bg-gradient-to-r from-primary to-cyan-500 hover:from-sky-400 hover:to-cyan-400 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-primary/30 hover:shadow-primary/40 hover:-translate-y-0.5 w-full sm:w-auto overflow-hidden relative group"
-                                                >
-                                                    <div className="absolute inset-0 bg-white/20 translate-x-[-150%] skew-x-[-20deg] group-hover:translate-x-[150%] transition-transform duration-700 ease-in-out"></div>
-                                                    <span className="material-symbols-outlined text-xl relative z-10">add_circle</span>
-                                                    <span className="relative z-10">Add New Course</span>
-                                                </button>
+                                                <div className="flex gap-2 w-full sm:w-auto">
+                                                    <input 
+                                                        type="file" 
+                                                        // @ts-ignore - webkitdirectory is non-standard but widely supported
+                                                        webkitdirectory="" 
+                                                        directory="" 
+                                                        multiple 
+                                                        ref={folderInputRef}
+                                                        onChange={handleFolderSelection}
+                                                        className="hidden" 
+                                                    />
+                                                    <button
+                                                        onClick={() => folderInputRef.current?.click()}
+                                                        className="flex items-center justify-center gap-2 px-6 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-primary/50 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-bold transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5 w-full sm:w-auto"
+                                                    >
+                                                        <span className="material-symbols-outlined text-xl">folder_zip</span>
+                                                        <span>Upload Course Folder</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            setEditingCourse(null);
+                                                            setCourseForm({ title: '', description: '', price: '0', category: '', thumbnail: '', tags: [], instructorId: '', credit: '0', siteNumber: 1 });
+                                                            setShowCourseForm(!showCourseForm);
+                                                        }}
+                                                        className="flex items-center justify-center gap-2 px-6 py-2.5 bg-gradient-to-r from-primary to-cyan-500 hover:from-sky-400 hover:to-cyan-400 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-primary/30 hover:shadow-primary/40 hover:-translate-y-0.5 w-full sm:w-auto overflow-hidden relative group"
+                                                    >
+                                                        <div className="absolute inset-0 bg-white/20 translate-x-[-150%] skew-x-[-20deg] group-hover:translate-x-[150%] transition-transform duration-700 ease-in-out"></div>
+                                                        <span className="material-symbols-outlined text-xl relative z-10">add_circle</span>
+                                                        <span className="relative z-10">Add New Course</span>
+                                                    </button>
+                                                </div>
                                             </div>
 
                                             <AnimatePresence>
@@ -1216,6 +1502,91 @@ export default function AdminDashboard() {
                                                 >
                                                     {renderCourseFormUI(false)}
                                                 </motion.div>
+                                                </div>
+                                            )}
+                                            
+                                            {showFolderPreview && (
+                                                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+                                                    <motion.div
+                                                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                                                        className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden max-h-[85vh]"
+                                                    >
+                                                        <div className="p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+                                                            <h3 className="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                                                                <span className="material-symbols-outlined text-primary">folder_zip</span>
+                                                                Bulk Import Course
+                                                            </h3>
+                                                        </div>
+                                                        <div className="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6">
+                                                            <div>
+                                                                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 block">Course Title</label>
+                                                                <input 
+                                                                    value={folderCourseTitle} 
+                                                                    onChange={(e) => setFolderCourseTitle(e.target.value)} 
+                                                                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all" 
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 block">Site Number</label>
+                                                                <select
+                                                                    value={folderSiteNumber}
+                                                                    onChange={(e) => setFolderSiteNumber(parseInt(e.target.value))}
+                                                                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                                                                >
+                                                                    <option value={1}>Site 1 (Main)</option>
+                                                                    <option value={2}>Site 2</option>
+                                                                </select>
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2 block">
+                                                                    Files to process ({folderFiles.length})
+                                                                </label>
+                                                                <div className="bg-slate-50 dark:bg-slate-950 rounded-xl p-4 border border-slate-200 dark:border-slate-800 text-sm max-h-48 overflow-y-auto custom-scrollbar">
+                                                                    {folderFiles.map((file, i) => {
+                                                                        const isLinkFile = file.name.toLowerCase().includes('link');
+                                                                        const isActualVideo = /\.(mp4|webm|mov|mkv|avi)$/i.test(file.name);
+                                                                        const isYoutubeLink = file.name.toLowerCase().includes('video') && !isActualVideo;
+                                                                        return (
+                                                                            <div key={i} className={`flex items-center gap-2 py-1 ${isLinkFile ? 'text-slate-400 line-through' : 'text-slate-700 dark:text-slate-300'}`}>
+                                                                                <span className="material-symbols-outlined text-[16px]">{isLinkFile ? 'block' : isYoutubeLink ? 'smart_display' : isActualVideo ? 'videocam' : 'draft'}</span>
+                                                                                <span className="truncate">{file.webkitRelativePath || file.name}</span>
+                                                                                {isYoutubeLink && <span className="text-xs text-red-500 ml-auto bg-red-100 dark:bg-red-900/30 px-2 rounded-full">YouTube Link</span>}
+                                                                                {isActualVideo && <span className="text-xs text-emerald-500 ml-auto bg-emerald-100 dark:bg-emerald-900/30 px-2 rounded-full">Video File</span>}
+                                                                                {isLinkFile && <span className="text-xs text-rose-500 ml-auto bg-rose-100 dark:bg-rose-900/30 px-2 rounded-full">Ignored</span>}
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                                <p className="text-xs text-slate-500 mt-2">
+                                                                    Files with &quot;video&quot; in the name (any format) will be scanned for embedded YouTube URLs. Actual video files (.mp4, .webm, .mov) will be uploaded directly. Files containing &quot;link&quot; will be ignored. Other files will be uploaded as materials.
+                                                                </p>
+                                                            </div>
+                                                            
+                                                            {uploadProgress !== null && (
+                                                                <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 mb-2">
+                                                                    <div className="bg-primary h-2 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div className="p-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex justify-end gap-3">
+                                                            <button 
+                                                                onClick={() => { setShowFolderPreview(false); setFolderFiles([]); }} 
+                                                                className="px-6 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors font-bold text-sm"
+                                                                disabled={isFolderUploading}
+                                                            >
+                                                                Cancel
+                                                            </button>
+                                                            <button 
+                                                                onClick={handleFolderUpload} 
+                                                                disabled={isFolderUploading}
+                                                                className="px-6 py-2 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:bg-sky-500 transition-colors disabled:opacity-50 flex items-center gap-2 text-sm"
+                                                            >
+                                                                {isFolderUploading ? `Uploading ${uploadProgress || 0}%...` : 'Confirm & Upload'}
+                                                            </button>
+                                                        </div>
+                                                    </motion.div>
                                                 </div>
                                             )}
                                             </AnimatePresence>
@@ -1255,13 +1626,16 @@ export default function AdminDashboard() {
                                                                         </div>
                                                                     )}
                                                                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60"></div>
-                                                                    {course.category && (
-                                                                        <div className="absolute bottom-3 left-3 flex gap-2">
+                                                                    <div className="absolute bottom-3 left-3 flex gap-2">
+                                                                        {course.category && (
                                                                             <span className="backdrop-blur-md bg-white/20 dark:bg-black/40 border border-white/20 text-white px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg">
                                                                                 {course.category}
                                                                             </span>
-                                                                        </div>
-                                                                    )}
+                                                                        )}
+                                                                        <span className="backdrop-blur-md bg-primary/20 dark:bg-primary/40 border border-primary/20 text-white px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg">
+                                                                            Site {course.siteNumber || 1}
+                                                                        </span>
+                                                                    </div>
                                                                 </div>
 
                                                                 {/* Content Details */}
@@ -1405,7 +1779,20 @@ export default function AdminDashboard() {
                                                                                         <div className="flex items-center gap-3">
                                                                                             <span className="material-symbols-outlined text-slate-300 hover:text-primary cursor-grab active:cursor-grabbing text-lg" title="Drag to reorder">drag_indicator</span>
                                                                                             <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center">{mi + 1}</span>
-                                                                                            <h4 className="text-sm font-bold">{mod.title}</h4>
+                                                                                            {editingModuleId === mod.id ? (
+                                                                                                <form onSubmit={(e) => { e.preventDefault(); handleRenameModule(mod.id, course.id); }} className="flex items-center gap-1 flex-1 min-w-0">
+                                                                                                    <input
+                                                                                                        autoFocus
+                                                                                                        value={editingModuleTitle}
+                                                                                                        onChange={(e) => setEditingModuleTitle(e.target.value)}
+                                                                                                        onBlur={() => handleRenameModule(mod.id, course.id)}
+                                                                                                        onKeyDown={(e) => { if (e.key === 'Escape') setEditingModuleId(null); }}
+                                                                                                        className="text-sm font-bold bg-white dark:bg-slate-900 border border-primary/40 rounded-lg px-2 py-0.5 outline-none focus:ring-2 focus:ring-primary/30 w-full min-w-0 transition-all"
+                                                                                                    />
+                                                                                                </form>
+                                                                                            ) : (
+                                                                                                <h4 className="text-sm font-bold cursor-pointer hover:text-primary transition-colors" onDoubleClick={() => { setEditingModuleId(mod.id); setEditingModuleTitle(mod.title); }}>{mod.title}</h4>
+                                                                                            )}
                                                                                         </div>
                                                                                         <div className="flex gap-1">
                                                                                             <button onClick={() => setShowLessonForm(showLessonForm === mod.id ? null : mod.id)} className="p-1 hover:text-primary transition-colors" title="Add Lesson"><span className="material-symbols-outlined text-lg">add_circle</span></button>
@@ -1417,6 +1804,7 @@ export default function AdminDashboard() {
                                                                                                     setShowQuizForm({ id: mod.id, type: 'module', mode: 'create' });
                                                                                                 }
                                                                                             }} className="p-1 hover:text-emerald-500 transition-colors" title="Create Quiz Manually"><span className="material-symbols-outlined text-lg">quiz</span></button>
+                                                                                            <button onClick={() => { setEditingModuleId(mod.id); setEditingModuleTitle(mod.title); }} className="p-1 hover:text-amber-500 transition-colors" title="Rename Module"><span className="material-symbols-outlined text-lg">edit</span></button>
                                                                                             <button onClick={() => handleDeleteModule(mod.id, course.id)} className="p-1 hover:text-red-500 transition-colors" title="Delete Module"><span className="material-symbols-outlined text-lg">delete</span></button>
                                                                                         </div>
                                                                                     </div>
@@ -1424,23 +1812,23 @@ export default function AdminDashboard() {
                                                                                         {mod.lessons?.map((lesson: any, li: number) => (
                                                                                             <div
                                                                                                 key={lesson.id}
-                                                                                                draggable={!pdfDragSourceId}
-                                                                                                onDragStart={(e) => { if (pdfDragSourceId) { e.preventDefault(); return; } e.stopPropagation(); handleLessonDragStart(mod.id, li); }}
+                                                                                                draggable={!materialDrag}
+                                                                                                onDragStart={(e) => { if (materialDrag) { e.preventDefault(); return; } e.stopPropagation(); handleLessonDragStart(mod.id, li); }}
                                                                                                 onDragOver={(e) => {
-                                                                                                    if (pdfDragSourceId) { handlePdfDragOverLesson(e, lesson.id); return; }
+                                                                                                    if (materialDrag) { handleMaterialDragOverLesson(e, lesson.id); return; }
                                                                                                     e.stopPropagation(); handleLessonDragOver(e, mod.id, li);
                                                                                                 }}
-                                                                                                onDragLeave={(e) => { if (pdfDragSourceId) handlePdfDragLeaveLesson(e); }}
+                                                                                                onDragLeave={(e) => { if (materialDrag) handleMaterialDragLeaveLesson(e); }}
                                                                                                 onDrop={(e) => {
-                                                                                                    if (pdfDragSourceId) { handlePdfDrop(e, lesson.id); return; }
+                                                                                                    if (materialDrag) { handleMaterialDrop(e, lesson.id); return; }
                                                                                                     e.stopPropagation(); handleLessonDrop(e, mod.id, li);
                                                                                                 }}
                                                                                                 onDragEnd={handleDragEnd}
-                                                                                                className={`rounded-xl group/lesson transition-all duration-300 shadow-sm border overflow-hidden ${
-                                                                                                    pdfDragOverLessonId === lesson.id && pdfDragSourceId !== lesson.id
-                                                                                                        ? 'border-sky-400 bg-sky-50 dark:bg-sky-900/20 ring-2 ring-sky-400/30 shadow-[0_0_20px_rgba(14,165,233,0.15)] scale-[1.01]'
-                                                                                                        : pdfDragSourceId === lesson.id
-                                                                                                            ? 'border-sky-300 bg-sky-50/50 dark:bg-sky-900/10 opacity-60 scale-[0.98]'
+                                                                                                className={`rounded-xl group/lesson transition-all duration-300 shadow-sm border overflow-hidden relative ${
+                                                                                                    materialDragOverLessonId === lesson.id && materialDrag?.lessonId !== lesson.id
+                                                                                                        ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 ring-2 ring-emerald-400/30 shadow-[0_0_20px_rgba(52,211,153,0.15)] scale-[1.01]'
+                                                                                                        : materialDrag?.lessonId === lesson.id
+                                                                                                            ? 'border-emerald-300 bg-emerald-50/50 dark:bg-emerald-900/10 opacity-60 scale-[0.98]'
                                                                                                             : dragType === 'lesson' && dragModuleId === mod.id && dragOverIndex === li
                                                                                                                 ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
                                                                                                                 : 'bg-slate-50 dark:bg-slate-950/50 border-transparent hover:bg-white dark:hover:bg-slate-900 hover:border-slate-200 dark:hover:border-slate-800'
@@ -1451,17 +1839,36 @@ export default function AdminDashboard() {
                                                                                                         <span className="material-symbols-outlined text-slate-300 hover:text-primary cursor-grab active:cursor-grabbing text-sm shrink-0" title="Drag to reorder">drag_indicator</span>
                                                                                                         <span className={`material-symbols-outlined text-sm shrink-0 ${lesson.videoUrl ? 'text-emerald-500' : lesson.materialUrl ? 'text-sky-500' : 'text-slate-400'}`}>{lesson.videoUrl ? 'videocam' : lesson.materialUrl ? 'picture_as_pdf' : 'play_circle'}</span>
                                                                                                         <div className="flex flex-col min-w-0">
-                                                                                                            <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate">{lesson.title}</span>
+                                                                                                            {editingLessonId === lesson.id ? (
+                                                                                                                <form onSubmit={(e) => { e.preventDefault(); handleRenameLesson(lesson.id); }} className="flex items-center min-w-0 w-full">
+                                                                                                                    <input
+                                                                                                                        autoFocus
+                                                                                                                        value={editingLessonTitle}
+                                                                                                                        onChange={(e) => setEditingLessonTitle(e.target.value)}
+                                                                                                                        onBlur={() => handleRenameLesson(lesson.id)}
+                                                                                                                        onKeyDown={(e) => { if (e.key === 'Escape') setEditingLessonId(null); }}
+                                                                                                                        className="text-[11px] font-bold bg-white dark:bg-slate-900 border border-primary/40 rounded-lg px-2 py-0.5 outline-none focus:ring-2 focus:ring-primary/30 w-full min-w-0 transition-all"
+                                                                                                                    />
+                                                                                                                </form>
+                                                                                                            ) : (
+                                                                                                                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate cursor-pointer hover:text-primary transition-colors" onDoubleClick={() => { setEditingLessonId(lesson.id); setEditingLessonTitle(lesson.title); }}>{lesson.title}</span>
+                                                                                                            )}
                                                                                                             <div className="flex gap-2 items-center flex-wrap">
                                                                                                                 {/* Render either Video or PDFs first based on lesson.videoFirst */}
                                                                                                                 {(() => {
                                                                                                                     const renderVideoBadge = () => lesson.videoUrl && (
-                                                                                                                        <span className="text-[9px] font-black uppercase text-emerald-500 flex items-center gap-0.5 px-1.5 py-0.5 rounded-md border border-transparent hover:border-emerald-200 dark:hover:border-emerald-800 transition-all group/vid">
-                                                                                                                            <span className="material-symbols-outlined text-[10px]">videocam</span>
+                                                                                                                        <div 
+                                                                                                                            className={`text-[9px] font-black uppercase text-emerald-500 flex items-center gap-0.5 px-1.5 py-0.5 rounded-md border transition-all select-none group/video ${
+                                                                                                                                materialDrag?.lessonId === lesson.id && materialDrag?.type === 'video' ? 'opacity-50 border-emerald-200 border-dashed' : 'border-transparent hover:border-emerald-200 dark:hover:border-emerald-800 cursor-grab active:cursor-grabbing hover:bg-emerald-50 dark:hover:bg-emerald-900/30'
+                                                                                                                            }`}
+                                                                                                                            draggable
+                                                                                                                            onDragStart={(e) => handleMaterialDragStart(e, lesson.id, 'video', lesson.videoUrl)}
+                                                                                                                        >
+                                                                                                                            <span className="material-symbols-outlined text-[11px]">videocam</span>
                                                                                                                             <span>Video</span>
                                                                                                                             {/* Swap arrows for video to toggle with PDFs */}
                                                                                                                             {lesson.materialUrl && (
-                                                                                                                                <span className="opacity-0 group-hover/vid:opacity-100 flex items-center ml-0.5 transition-all">
+                                                                                                                                <span className="opacity-0 group-hover/video:opacity-100 flex items-center ml-0.5 transition-all">
                                                                                                                                     {!lesson.videoFirst && (
                                                                                                                                         <button
                                                                                                                                             onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleToggleVideoFirst(lesson, true); }}
@@ -1484,12 +1891,32 @@ export default function AdminDashboard() {
                                                                                                                             )}
                                                                                                                             <button
                                                                                                                                 onClick={(e) => { e.stopPropagation(); handleRemoveMaterial(lesson.id, 'video'); }}
-                                                                                                                                className="ml-0.5 opacity-0 group-hover/vid:opacity-100 text-red-400 hover:text-red-600 transition-all"
+                                                                                                                                className="ml-0.5 opacity-0 group-hover/video:opacity-100 text-red-400 hover:text-red-600 transition-all"
                                                                                                                                 title="Remove video"
                                                                                                                             >
                                                                                                                                 <span className="material-symbols-outlined text-[10px]">close</span>
                                                                                                                             </button>
-                                                                                                                        </span>
+                                                                                                                        </div>
+                                                                                                                    );
+
+                                                                                                                    const renderYoutubeBadge = () => lesson.youtubeUrl && (
+                                                                                                                        <div 
+                                                                                                                            className={`text-[9px] font-black uppercase text-red-500 flex items-center gap-0.5 px-1.5 py-0.5 rounded-md border transition-all select-none group/yt ${
+                                                                                                                                materialDrag?.lessonId === lesson.id && materialDrag?.type === 'youtube' ? 'opacity-50 border-red-200 border-dashed' : 'border-transparent hover:border-red-200 dark:hover:border-red-800 cursor-grab active:cursor-grabbing hover:bg-red-50 dark:hover:bg-red-900/30'
+                                                                                                                            }`}
+                                                                                                                            draggable
+                                                                                                                            onDragStart={(e) => handleMaterialDragStart(e, lesson.id, 'youtube', lesson.youtubeUrl)}
+                                                                                                                        >
+                                                                                                                            <span className="material-symbols-outlined text-[11px]">play_circle</span>
+                                                                                                                            <span>YouTube</span>
+                                                                                                                            <button
+                                                                                                                                onClick={(e) => { e.stopPropagation(); handleRemoveMaterial(lesson.id, 'youtube'); }}
+                                                                                                                                className="ml-0.5 opacity-0 group-hover/yt:opacity-100 text-red-400 hover:text-red-600 transition-all"
+                                                                                                                                title="Remove YouTube URL"
+                                                                                                                            >
+                                                                                                                                <span className="material-symbols-outlined text-[10px]">close</span>
+                                                                                                                            </button>
+                                                                                                                        </div>
                                                                                                                     );
 
                                                                                                                     const renderPdfBadges = () => lesson.materialUrl && (() => {
@@ -1498,9 +1925,11 @@ export default function AdminDashboard() {
                                                                                                                         <span
                                                                                                                             key={pi}
                                                                                                                             draggable
-                                                                                                                            onDragStart={(e) => handlePdfDragStart(e, lesson.id, pdfUrl.trim())}
-                                                                                                                            className="text-[9px] font-black uppercase text-sky-500 flex items-center gap-0.5 cursor-grab active:cursor-grabbing hover:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900/30 px-1.5 py-0.5 rounded-md border border-transparent hover:border-sky-200 dark:hover:border-sky-800 transition-all select-none group/pdf"
-                                                                                                                            title="Drag this PDF to move it to another lesson"
+                                                                                                                            onDragStart={(e) => handleMaterialDragStart(e, lesson.id, 'pdf', pdfUrl.trim())}
+                                                                                                                            className={`text-[9px] font-black uppercase text-sky-500 flex items-center gap-0.5 cursor-grab active:cursor-grabbing hover:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900/30 px-1.5 py-0.5 rounded-md border transition-all select-none group/pdf ${
+                                                                                                                                materialDrag?.lessonId === lesson.id && materialDrag?.type === 'pdf' && materialDrag?.url === pdfUrl.trim() ? 'opacity-50 border-sky-200 border-dashed' : 'border-transparent hover:border-sky-200 dark:hover:border-sky-800'
+                                                                                                                            }`}
+                                                                                                                            title="Drag this PDF to move it"
                                                                                                                         >
                                                                                                                             <span className="material-symbols-outlined text-[10px]">description</span>
                                                                                                                             <span className="max-w-[60px] truncate">{pdfUrl.trim().split('/').pop() || `PDF ${pi + 1}`}</span>
@@ -1563,16 +1992,26 @@ export default function AdminDashboard() {
 
                                                                                                                     return (
                                                                                                                         <>
+                                                                                                                            {/* Intra-lesson drop zone top */}
+                                                                                                                            {materialDrag?.lessonId === lesson.id && materialDragOverZone === 'top' && (
+                                                                                                                                <div className="w-[2px] h-4 bg-emerald-400 dark:bg-emerald-500 rounded-full animate-pulse mr-1" />
+                                                                                                                            )}
                                                                                                                             {lesson.videoFirst ? (
                                                                                                                                 <>
                                                                                                                                     {renderVideoBadge()}
+                                                                                                                                    {renderYoutubeBadge()}
                                                                                                                                     {renderPdfBadges()}
                                                                                                                                 </>
                                                                                                                             ) : (
                                                                                                                                 <>
                                                                                                                                     {renderPdfBadges()}
                                                                                                                                     {renderVideoBadge()}
+                                                                                                                                    {renderYoutubeBadge()}
                                                                                                                                 </>
+                                                                                                                            )}
+                                                                                                                            {/* Intra-lesson drop zone bottom */}
+                                                                                                                            {materialDrag?.lessonId === lesson.id && materialDragOverZone === 'bottom' && (
+                                                                                                                                <div className="w-[2px] h-4 bg-emerald-400 dark:bg-emerald-500 rounded-full animate-pulse ml-1" />
                                                                                                                             )}
                                                                                                                         </>
                                                                                                                     );
@@ -1581,19 +2020,20 @@ export default function AdminDashboard() {
                                                                                                         </div>
                                                                                                     </div>
                                                                                                     <div className="flex items-center gap-1 shrink-0">
-                                                                                                        {lesson.materialUrl && lesson.materialUrl.split(',').some((u: string) => u.trim().toLowerCase().endsWith('.pdf')) && (
+                                                                                                        {lesson.materialUrl && lesson.materialUrl.split(',').some((u: string) => u.trim().toLowerCase().endsWith('.pdf') || u.trim().toLowerCase().endsWith('.txt')) && (
                                                                                                             <button
                                                                                                                 onClick={(e) => {
                                                                                                                     e.stopPropagation();
-                                                                                                                    const firstPdf = lesson.materialUrl.split(',').find((u: string) => u.trim().toLowerCase().endsWith('.pdf'))?.trim();
+                                                                                                                    const firstPdf = lesson.materialUrl.split(',').find((u: string) => u.trim().toLowerCase().endsWith('.pdf') || u.trim().toLowerCase().endsWith('.txt'))?.trim();
                                                                                                                     if (firstPdf) setPreviewPdfUrl(previewPdfUrl === firstPdf ? null : firstPdf);
                                                                                                                 }}
                                                                                                                 className={`p-1 rounded-md transition-all ${previewPdfUrl && lesson.materialUrl?.includes(previewPdfUrl) ? 'text-sky-500 bg-sky-50 dark:bg-sky-900/30' : 'text-slate-400 hover:text-sky-500 opacity-0 group-hover/lesson:opacity-100'}`}
-                                                                                                                title="Preview PDFs"
+                                                                                                                title="Preview PDF/TXT"
                                                                                                             >
                                                                                                                 <span className="material-symbols-outlined text-sm">{previewPdfUrl && lesson.materialUrl?.includes(previewPdfUrl) ? 'visibility_off' : 'visibility'}</span>
                                                                                                             </button>
                                                                                                         )}
+                                                                                                        <button onClick={() => { setEditingLessonId(lesson.id); setEditingLessonTitle(lesson.title); }} className="opacity-0 group-hover/lesson:opacity-100 p-1 text-slate-400 hover:text-amber-500 transition-opacity" title="Rename Lesson"><span className="material-symbols-outlined text-sm">edit</span></button>
                                                                                                         <button onClick={() => handleDeleteLesson(lesson.id)} className="opacity-0 group-hover/lesson:opacity-100 p-1 text-slate-400 hover:text-red-500 transition-opacity"><span className="material-symbols-outlined text-sm">delete</span></button>
                                                                                                     </div>
                                                                                                 </div>
@@ -1601,7 +2041,7 @@ export default function AdminDashboard() {
                                                                                                 {/* Inline PDF Previews — stacked for each PDF */}
                                                                                                 {lesson.materialUrl && lesson.materialUrl.split(',').filter(Boolean).map((pUrl: string, pi: number) => {
                                                                                                     const trimUrl = pUrl.trim();
-                                                                                                    if (!trimUrl.toLowerCase().endsWith('.pdf')) return null;
+                                                                                                    if (!trimUrl.toLowerCase().endsWith('.pdf') && !trimUrl.toLowerCase().endsWith('.txt')) return null;
                                                                                                     if (previewPdfUrl !== trimUrl) return null;
                                                                                                     return (
                                                                                                         <motion.div
@@ -1630,10 +2070,10 @@ export default function AdminDashboard() {
                                                                                                 })}
 
                                                                                                 {/* PDF Drop Zone Indicator */}
-                                                                                                {pdfDragSourceId && pdfDragSourceId !== lesson.id && pdfDragOverLessonId === lesson.id && (
-                                                                                                    <div className="px-3 py-2 bg-sky-50 dark:bg-sky-900/20 border-t border-sky-200 dark:border-sky-800 flex items-center gap-2 text-sky-600 dark:text-sky-400 animate-pulse">
-                                                                                                        <span className="material-symbols-outlined text-sm">file_download</span>
-                                                                                                        <span className="text-[10px] font-bold uppercase tracking-wider">Drop PDF here</span>
+                                                                                                {materialDrag && materialDrag.lessonId !== lesson.id && materialDragOverLessonId === lesson.id && (
+                                                                                                    <div className="px-3 py-2 bg-emerald-50 dark:bg-emerald-900/20 border-t border-emerald-200 dark:border-emerald-800 flex items-center gap-2 text-emerald-600 dark:text-emerald-400 animate-pulse">
+                                                                                                        <span className="material-symbols-outlined text-sm">move_down</span>
+                                                                                                        <span className="text-xs font-semibold">Drop material here</span>
                                                                                                     </div>
                                                                                                 )}
                                                                                             </div>
@@ -1641,7 +2081,10 @@ export default function AdminDashboard() {
                                                                                         {mod.quizzes?.map((quiz: any) => (
                                                                                             <div key={quiz.id} className="flex justify-between items-center p-2 bg-emerald-500/5 rounded-lg border border-emerald-500/10">
                                                                                                 <div className="flex items-center gap-2"><span className="material-symbols-outlined text-emerald-500 text-sm">task_alt</span><span className="text-xs font-bold text-emerald-600">Quiz: {quiz.title}</span></div>
-                                                                                                <button onClick={() => handleDeleteQuiz(quiz.id)} className="p-1 text-emerald-400 hover:text-red-500"><span className="material-symbols-outlined text-sm">close</span></button>
+                                                                                                <div className="flex items-center gap-1">
+                                                                                                    <button onClick={() => openQuizEdit(quiz, 'module')} className="p-1 text-emerald-400 hover:text-emerald-600" title="Edit Quiz"><span className="material-symbols-outlined text-sm">edit</span></button>
+                                                                                                    <button onClick={() => handleDeleteQuiz(quiz.id)} className="p-1 text-emerald-400 hover:text-red-500" title="Delete Quiz"><span className="material-symbols-outlined text-sm">close</span></button>
+                                                                                                </div>
                                                                                             </div>
                                                                                         ))}
                                                                                         {showLessonForm === mod.id && (
@@ -1680,6 +2123,16 @@ export default function AdminDashboard() {
                                                                                                                 {uploading.material ? 'Uploading...' : (lessonForm.materialUrl ? 'PDF Added' : 'Add PDF')}
                                                                                                             </button>
                                                                                                         </div>
+                                                                                                    </div>
+                                                                                                    
+                                                                                                    <div>
+                                                                                                        <input
+                                                                                                            type="text"
+                                                                                                            placeholder="Optional: External Video URL (e.g. YouTube)"
+                                                                                                            value={lessonForm.youtubeUrl || ''}
+                                                                                                            onChange={(e) => setLessonForm({ ...lessonForm, youtubeUrl: e.target.value })}
+                                                                                                            className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder:text-slate-400"
+                                                                                                        />
                                                                                                     </div>
 
                                                                                                     {uploadProgress !== null && (
@@ -2256,9 +2709,9 @@ export default function AdminDashboard() {
                 </main>
             </motion.div>
 
-                {/* PDF Move Toast */}
+                {/* Material Move Toast */}
                 <AnimatePresence>
-                    {pdfMoveToast && (
+                    {materialMoveToast && (
                         <motion.div
                             initial={{ opacity: 0, y: 40, scale: 0.95 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -2267,7 +2720,7 @@ export default function AdminDashboard() {
                             className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[200] flex items-center gap-3 px-6 py-3 bg-slate-900/90 dark:bg-white/90 backdrop-blur-xl text-white dark:text-slate-900 rounded-2xl shadow-2xl border border-white/10 dark:border-slate-200"
                         >
                             <span className="material-symbols-outlined text-emerald-400 dark:text-emerald-600">check_circle</span>
-                            <span className="text-sm font-bold">{pdfMoveToast}</span>
+                            <span className="text-sm font-bold">{materialMoveToast}</span>
                         </motion.div>
                     )}
                 </AnimatePresence>

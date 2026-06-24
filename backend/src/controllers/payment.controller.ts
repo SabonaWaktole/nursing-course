@@ -17,11 +17,13 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 export const createCheckoutSession = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user.userId;
-        const { courseId } = req.body;
+        const { courseId, origin } = req.body;
 
         if (!courseId) {
             return res.status(400).json({ message: 'courseId is required' });
         }
+
+        const baseUrl = origin || FRONTEND_URL;
 
         // 1. Fetch the course
         const course = await prisma.course.findUnique({
@@ -158,8 +160,8 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
                 userId,
                 courseId,
             },
-            success_url: `${FRONTEND_URL}/courses/${courseId}?payment=success&session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${FRONTEND_URL}/courses/${courseId}?payment=cancelled`,
+            success_url: `${baseUrl}/courses/${courseId}?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${baseUrl}/courses/${courseId}?payment=cancelled`,
         });
 
         // 6. Save the payment record

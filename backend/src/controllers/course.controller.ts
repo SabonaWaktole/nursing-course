@@ -1,12 +1,33 @@
 import { Request, Response } from 'express';
 import prisma from '../utils/prisma';
 import { createInstructorNotification } from '../utils/notificationHelper';
-// IDE Refresh Poke 2
+import { verifyToken } from '../utils/jwt';
+// IDE Refresh Poke 3
 
 
 export const getAllCourses = async (req: Request, res: Response) => {
     try {
+        let isAdmin = false;
+        const authHeader = req.headers.authorization;
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            try {
+                const token = authHeader.split(' ')[1];
+                const decoded = verifyToken(token) as any;
+                if (decoded?.role === 'ADMIN') {
+                    isAdmin = true;
+                }
+            } catch (e) {}
+        }
+
+        const siteNumberHeader = req.headers['x-site-number'];
+        const whereClause: any = {};
+        
+        if (!isAdmin && siteNumberHeader) {
+            whereClause.siteNumber = parseInt(siteNumberHeader as string);
+        }
+
         const courses = await prisma.course.findMany({
+            where: whereClause,
             select: {
                 id: true,
                 title: true,
@@ -18,6 +39,8 @@ export const getAllCourses = async (req: Request, res: Response) => {
                 category: true,
                 createdAt: true,
                 instructorId: true,
+                // @ts-ignore - IDE caching issue with Prisma client types
+                siteNumber: true,
                 instructor: { select: { id: true, name: true } },
                 _count: { select: { modules: true, quizzes: true, enrollments: true } },
             },
@@ -65,7 +88,7 @@ export const getCourseById = async (req: Request, res: Response) => {
 
 export const createCourse = async (req: Request, res: Response) => {
     try {
-        const { title, description, price, credit, hours, thumbnail, category, tags, instructorId: bodyInstructorId } = req.body;
+        const { title, description, price, credit, hours, thumbnail, category, tags, instructorId: bodyInstructorId, siteNumber } = req.body;
         // Use body instructorId if provided, otherwise null (unassigned)
         const instructorId = (bodyInstructorId && bodyInstructorId !== 'unassigned') ? bodyInstructorId : null;
 
@@ -80,6 +103,8 @@ export const createCourse = async (req: Request, res: Response) => {
                 category: category || null,
                 tags: Array.isArray(tags) && tags.length > 0 ? tags : null,
                 instructorId,
+                // @ts-ignore - IDE caching issue with Prisma client types
+                siteNumber: siteNumber ? parseInt(siteNumber.toString()) : 1,
             },
         });
         res.status(201).json(course);
@@ -95,11 +120,12 @@ export const createCourse = async (req: Request, res: Response) => {
 export const updateCourse = async (req: Request, res: Response) => {
     try {
         const id = req.params.id as string;
-        const { title, description, price, credit, hours, thumbnail, category, tags, instructorId: bodyInstructorId } = req.body;
+        const { title, description, price, credit, hours, thumbnail, category, tags, instructorId: bodyInstructorId, siteNumber } = req.body;
 
         const parsedPrice = price !== undefined && price !== null && price !== '' ? parseFloat(price.toString()) : undefined;
         const parsedCredit = credit !== undefined && credit !== null && credit !== '' ? parseFloat(credit.toString()) : undefined;
         const parsedHours = hours !== undefined && hours !== null && hours !== '' ? parseInt(hours.toString()) : undefined;
+        const parsedSiteNumber = siteNumber !== undefined && siteNumber !== null && siteNumber !== '' ? parseInt(siteNumber.toString()) : undefined;
 
         // Resolve instructorId: 'unassigned' or empty string => null
         let instructorId: string | null | undefined = undefined;
@@ -119,6 +145,7 @@ export const updateCourse = async (req: Request, res: Response) => {
                 ...(category !== undefined ? { category: category || null } : {}),
                 ...(instructorId !== undefined ? { instructorId } : {}),
                 ...(tags !== undefined ? { tags: Array.isArray(tags) && tags.length > 0 ? tags : null } : {}),
+                ...(parsedSiteNumber !== undefined ? { siteNumber: parsedSiteNumber } : {}),
             },
         });
         res.json(course);
@@ -192,17 +219,33 @@ export const deleteModule = async (req: Request, res: Response) => {
     }
 };
 
+export const updateModule = async (req: Request, res: Response) => {
+    try {
+        const moduleId = req.params.moduleId as string;
+        const { title } = req.body;
+
+        const mod = await prisma.module.update({
+            where: { id: moduleId },
+            data: { title },
+        });
+        res.json(mod);
+    } catch (error: any) {
+        console.error('updateModule error:', error);
+        res.status(500).json({ message: 'Error updating module' });
+    }
+};
+
 // Lessons (under modules)
 export const addLesson = async (req: Request, res: Response) => {
     try {
         const moduleId = req.params.moduleId as string;
-        const { title, description, videoUrl, materialUrl } = req.body;
+        const { title, description, videoUrl, youtubeUrl, materialUrl } = req.body;
 
         // Auto-order
         const count = await prisma.lesson.count({ where: { moduleId } });
 
         const lesson = await prisma.lesson.create({
-            data: { title, description, videoUrl, materialUrl, moduleId, order: count + 1 },
+            data: { title, description, videoUrl, youtubeUrl, materialUrl, moduleId, order: count + 1 },
         });
         res.status(201).json(lesson);
     } catch (error: any) {
@@ -214,7 +257,7 @@ export const addLesson = async (req: Request, res: Response) => {
 export const updateLesson = async (req: Request, res: Response) => {
     try {
         const lessonId = req.params.lessonId as string;
-        const { title, description, videoUrl, materialUrl, videoFirst } = req.body;
+        const { title, description, videoUrl, youtubeUrl, materialUrl, videoFirst, moduleId } = req.body;
 
         const lesson = await prisma.lesson.update({
             where: { id: lessonId },
@@ -222,8 +265,10 @@ export const updateLesson = async (req: Request, res: Response) => {
                 title, 
                 description, 
                 videoUrl, 
+                youtubeUrl,
                 materialUrl,
-                ...(videoFirst !== undefined && { videoFirst })
+                ...(videoFirst !== undefined && { videoFirst }),
+                ...(moduleId && { moduleId })
             },
         });
         res.json(lesson);
@@ -291,8 +336,14 @@ export const enrollInCourse = async (req: Request, res: Response) => {
 export const getMyEnrollments = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user.userId;
+        const siteNumberHeader = req.headers['x-site-number'];
+        const siteFilter = siteNumberHeader ? parseInt(siteNumberHeader as string) : undefined;
+
         const enrollments = await prisma.enrollment.findMany({
-            where: { userId },
+            where: {
+                userId,
+                ...(siteFilter ? { course: { siteNumber: siteFilter } } : {}),
+            },
             include: {
                 course: {
                     include: {
@@ -345,11 +396,18 @@ export const updateProgress = async (req: Request, res: Response) => {
         const courseId = req.params.courseId as string;
         const { progress } = req.body;
 
+        const numProgress = parseInt(progress);
+        const isCompleted = numProgress >= 100;
+
+        const currentEnrollment = await prisma.enrollment.findUnique({
+            where: { userId_courseId: { userId, courseId } }
+        });
+
         const updateCount = await prisma.enrollment.updateMany({
             where: { userId, courseId },
             data: {
-                progress: Math.min(100, Math.max(0, parseInt(progress))),
-                completed: parseInt(progress) >= 100,
+                progress: Math.min(100, Math.max(0, numProgress)),
+                completed: isCompleted,
             },
         });
 
@@ -360,6 +418,73 @@ export const updateProgress = async (req: Request, res: Response) => {
                     data: { userId, type: 'PROGRESS_UPDATE', courseId },
                 });
             } catch {}
+
+            // Send notification for course completion
+            if (isCompleted && currentEnrollment && !currentEnrollment.completed) {
+                try {
+                    const course = await prisma.course.findUnique({ where: { id: courseId }, select: { title: true } });
+                    const student = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+                    if (course) {
+                        await createInstructorNotification(courseId, {
+                            title: 'Course Completed',
+                            message: `${student?.name || 'A student'} has completed "${course.title}" and is waiting for approval.`,
+                            type: 'COURSE_COMPLETED',
+                        });
+                    }
+                } catch (notifErr) {
+                    console.warn('Failed to create course completion notification:', notifErr);
+                }
+            }
+
+            // Auto-generate certificate if course completed and has no final exams
+            if (isCompleted) {
+                try {
+                    const finalExams = await prisma.quiz.findMany({
+                        where: { courseId, moduleId: null },
+                        select: { id: true }
+                    });
+
+                    if (finalExams.length === 0) {
+                        const existingCert = await prisma.certificate.findFirst({
+                            where: { userId, courseId }
+                        });
+
+                        if (!existingCert) {
+                            const user = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+                            const course = await prisma.course.findUnique({ where: { id: courseId }, select: { title: true, hours: true } });
+                            
+                            let settings = await prisma.adminSettings.findUnique({ where: { id: 'singleton' } });
+                            if (!settings) {
+                                settings = await prisma.adminSettings.create({ data: { id: 'singleton' } });
+                            }
+
+                            await prisma.certificate.create({
+                                data: {
+                                    userId,
+                                    courseId,
+                                    status: 'PENDING',
+                                    hoursAttended: course?.hours || 0,
+                                    courseTitle: course?.title,
+                                    organizationName: settings.organizationName,
+                                    organizationAddress: settings.organizationAddress,
+                                    organizationPhone: settings.organizationPhone,
+                                    directorName: settings.directorName,
+                                    directorTitle: settings.directorTitle,
+                                    providerId: settings.providerId
+                                }
+                            });
+
+                            await createInstructorNotification(courseId, {
+                                title: 'Certificate Approval Required',
+                                message: `${user?.name || 'A student'} has completed "${course?.title}" and is waiting for certificate approval.`,
+                                type: 'COURSE_COMPLETED',
+                            });
+                        }
+                    }
+                } catch (certError) {
+                    console.error('Error auto-generating certificate on progress update:', certError);
+                }
+            }
         }
 
         res.json({ message: 'Progress processed', progress });
@@ -494,12 +619,12 @@ export const reorderLessons = async (req: Request, res: Response) => {
 
 // Move a specific PDF (materialUrl) from one lesson to another atomically
 // Supports comma-separated multi-PDF in materialUrl
-export const movePdf = async (req: Request, res: Response) => {
+export const moveMaterial = async (req: Request, res: Response) => {
     try {
-        const { sourceLessonId, targetLessonId, pdfUrl } = req.body;
+        const { sourceLessonId, targetLessonId, type, url } = req.body;
 
-        if (!sourceLessonId || !targetLessonId || !pdfUrl) {
-            return res.status(400).json({ message: 'sourceLessonId, targetLessonId, and pdfUrl are required' });
+        if (!sourceLessonId || !targetLessonId || !type || !url) {
+            return res.status(400).json({ message: 'sourceLessonId, targetLessonId, type, and url are required' });
         }
 
         if (sourceLessonId === targetLessonId) {
@@ -508,43 +633,50 @@ export const movePdf = async (req: Request, res: Response) => {
 
         // Fetch both lessons
         const [sourceLesson, targetLesson] = await Promise.all([
-            prisma.lesson.findUnique({ where: { id: sourceLessonId }, select: { materialUrl: true } }),
-            prisma.lesson.findUnique({ where: { id: targetLessonId }, select: { id: true, materialUrl: true } }),
+            prisma.lesson.findUnique({ where: { id: sourceLessonId }, select: { materialUrl: true, videoUrl: true, youtubeUrl: true } }),
+            prisma.lesson.findUnique({ where: { id: targetLessonId }, select: { id: true, materialUrl: true, videoUrl: true, youtubeUrl: true } }),
         ]);
 
-        if (!sourceLesson || !sourceLesson.materialUrl) {
-            return res.status(404).json({ message: 'Source lesson has no PDF to move' });
+        if (!sourceLesson) return res.status(404).json({ message: 'Source lesson not found' });
+        if (!targetLesson) return res.status(404).json({ message: 'Target lesson not found' });
+
+        if (type === 'pdf') {
+            if (!sourceLesson.materialUrl) {
+                return res.status(404).json({ message: 'Source lesson has no PDF to move' });
+            }
+
+            // Remove the specific pdfUrl from source's comma-separated list
+            const sourcePdfs = sourceLesson.materialUrl.split(',').filter(Boolean);
+            const newSourcePdfs = sourcePdfs.filter(u => u.trim() !== url.trim());
+            const newSourceUrl = newSourcePdfs.length > 0 ? newSourcePdfs.join(',') : null;
+
+            // Append to target's comma-separated list
+            const targetPdfs = targetLesson.materialUrl ? targetLesson.materialUrl.split(',').filter(Boolean) : [];
+            targetPdfs.push(url.trim());
+            const newTargetUrl = targetPdfs.join(',');
+
+            await prisma.$transaction([
+                prisma.lesson.update({ where: { id: sourceLessonId }, data: { materialUrl: newSourceUrl } }),
+                prisma.lesson.update({ where: { id: targetLessonId }, data: { materialUrl: newTargetUrl } }),
+            ]);
+        } else if (type === 'video') {
+            await prisma.$transaction([
+                prisma.lesson.update({ where: { id: sourceLessonId }, data: { videoUrl: targetLesson.videoUrl } }),
+                prisma.lesson.update({ where: { id: targetLessonId }, data: { videoUrl: sourceLesson.videoUrl } }),
+            ]);
+        } else if (type === 'youtube') {
+            await prisma.$transaction([
+                prisma.lesson.update({ where: { id: sourceLessonId }, data: { youtubeUrl: targetLesson.youtubeUrl } }),
+                prisma.lesson.update({ where: { id: targetLessonId }, data: { youtubeUrl: sourceLesson.youtubeUrl } }),
+            ]);
+        } else {
+            return res.status(400).json({ message: 'Invalid material type' });
         }
-        if (!targetLesson) {
-            return res.status(404).json({ message: 'Target lesson not found' });
-        }
 
-        // Remove the specific pdfUrl from source's comma-separated list
-        const sourcePdfs = sourceLesson.materialUrl.split(',').filter(Boolean);
-        const newSourcePdfs = sourcePdfs.filter(u => u.trim() !== pdfUrl.trim());
-        const newSourceUrl = newSourcePdfs.length > 0 ? newSourcePdfs.join(',') : null;
-
-        // Append to target's comma-separated list
-        const targetPdfs = targetLesson.materialUrl ? targetLesson.materialUrl.split(',').filter(Boolean) : [];
-        targetPdfs.push(pdfUrl.trim());
-        const newTargetUrl = targetPdfs.join(',');
-
-        // Atomically update both lessons
-        await prisma.$transaction([
-            prisma.lesson.update({
-                where: { id: sourceLessonId },
-                data: { materialUrl: newSourceUrl },
-            }),
-            prisma.lesson.update({
-                where: { id: targetLessonId },
-                data: { materialUrl: newTargetUrl },
-            }),
-        ]);
-
-        res.json({ message: 'PDF moved successfully', materialUrl: pdfUrl });
+        res.json({ message: 'Material moved successfully', url });
     } catch (error: any) {
-        console.error('movePdf error:', error);
-        res.status(500).json({ message: 'Error moving PDF' });
+        console.error('moveMaterial error:', error);
+        res.status(500).json({ message: 'Error moving material' });
     }
 };
 
@@ -552,15 +684,15 @@ export const movePdf = async (req: Request, res: Response) => {
 export const removeMaterial = async (req: Request, res: Response) => {
     try {
         const lessonId = req.params.lessonId as string;
-        const { type, url } = req.body; // type: 'video' | 'pdf'
+        const { type, url } = req.body; // type: 'video' | 'pdf' | 'youtube'
 
-        if (!type || !['video', 'pdf'].includes(type)) {
-            return res.status(400).json({ message: 'type must be "video" or "pdf"' });
+        if (!type || !['video', 'pdf', 'youtube'].includes(type)) {
+            return res.status(400).json({ message: 'type must be "video", "youtube", or "pdf"' });
         }
 
         const lesson = await prisma.lesson.findUnique({
             where: { id: lessonId },
-            select: { videoUrl: true, materialUrl: true },
+            select: { videoUrl: true, youtubeUrl: true, materialUrl: true },
         });
 
         if (!lesson) {
@@ -571,6 +703,11 @@ export const removeMaterial = async (req: Request, res: Response) => {
             await prisma.lesson.update({
                 where: { id: lessonId },
                 data: { videoUrl: null },
+            });
+        } else if (type === 'youtube') {
+            await prisma.lesson.update({
+                where: { id: lessonId },
+                data: { youtubeUrl: null },
             });
         } else {
             // Remove specific PDF from comma-separated list
@@ -587,7 +724,7 @@ export const removeMaterial = async (req: Request, res: Response) => {
             });
         }
 
-        res.json({ message: `${type === 'video' ? 'Video' : 'PDF'} removed successfully` });
+        res.json({ message: `${type === 'video' ? 'Video' : type === 'youtube' ? 'YouTube' : 'PDF'} removed successfully` });
     } catch (error: any) {
         console.error('removeMaterial error:', error);
         res.status(500).json({ message: 'Error removing material' });
@@ -617,3 +754,4 @@ export const reorderPdfs = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Error reordering PDFs' });
     }
 };
+// touch
