@@ -219,6 +219,22 @@ export const deleteModule = async (req: Request, res: Response) => {
     }
 };
 
+export const updateModule = async (req: Request, res: Response) => {
+    try {
+        const moduleId = req.params.moduleId as string;
+        const { title } = req.body;
+
+        const mod = await prisma.module.update({
+            where: { id: moduleId },
+            data: { title },
+        });
+        res.json(mod);
+    } catch (error: any) {
+        console.error('updateModule error:', error);
+        res.status(500).json({ message: 'Error updating module' });
+    }
+};
+
 // Lessons (under modules)
 export const addLesson = async (req: Request, res: Response) => {
     try {
@@ -241,7 +257,7 @@ export const addLesson = async (req: Request, res: Response) => {
 export const updateLesson = async (req: Request, res: Response) => {
     try {
         const lessonId = req.params.lessonId as string;
-        const { title, description, videoUrl, youtubeUrl, materialUrl, videoFirst } = req.body;
+        const { title, description, videoUrl, youtubeUrl, materialUrl, videoFirst, moduleId } = req.body;
 
         const lesson = await prisma.lesson.update({
             where: { id: lessonId },
@@ -251,7 +267,8 @@ export const updateLesson = async (req: Request, res: Response) => {
                 videoUrl, 
                 youtubeUrl,
                 materialUrl,
-                ...(videoFirst !== undefined && { videoFirst })
+                ...(videoFirst !== undefined && { videoFirst }),
+                ...(moduleId && { moduleId })
             },
         });
         res.json(lesson);
@@ -602,12 +619,12 @@ export const reorderLessons = async (req: Request, res: Response) => {
 
 // Move a specific PDF (materialUrl) from one lesson to another atomically
 // Supports comma-separated multi-PDF in materialUrl
-export const movePdf = async (req: Request, res: Response) => {
+export const moveMaterial = async (req: Request, res: Response) => {
     try {
-        const { sourceLessonId, targetLessonId, pdfUrl } = req.body;
+        const { sourceLessonId, targetLessonId, type, url } = req.body;
 
-        if (!sourceLessonId || !targetLessonId || !pdfUrl) {
-            return res.status(400).json({ message: 'sourceLessonId, targetLessonId, and pdfUrl are required' });
+        if (!sourceLessonId || !targetLessonId || !type || !url) {
+            return res.status(400).json({ message: 'sourceLessonId, targetLessonId, type, and url are required' });
         }
 
         if (sourceLessonId === targetLessonId) {
@@ -616,43 +633,50 @@ export const movePdf = async (req: Request, res: Response) => {
 
         // Fetch both lessons
         const [sourceLesson, targetLesson] = await Promise.all([
-            prisma.lesson.findUnique({ where: { id: sourceLessonId }, select: { materialUrl: true } }),
-            prisma.lesson.findUnique({ where: { id: targetLessonId }, select: { id: true, materialUrl: true } }),
+            prisma.lesson.findUnique({ where: { id: sourceLessonId }, select: { materialUrl: true, videoUrl: true, youtubeUrl: true } }),
+            prisma.lesson.findUnique({ where: { id: targetLessonId }, select: { id: true, materialUrl: true, videoUrl: true, youtubeUrl: true } }),
         ]);
 
-        if (!sourceLesson || !sourceLesson.materialUrl) {
-            return res.status(404).json({ message: 'Source lesson has no PDF to move' });
+        if (!sourceLesson) return res.status(404).json({ message: 'Source lesson not found' });
+        if (!targetLesson) return res.status(404).json({ message: 'Target lesson not found' });
+
+        if (type === 'pdf') {
+            if (!sourceLesson.materialUrl) {
+                return res.status(404).json({ message: 'Source lesson has no PDF to move' });
+            }
+
+            // Remove the specific pdfUrl from source's comma-separated list
+            const sourcePdfs = sourceLesson.materialUrl.split(',').filter(Boolean);
+            const newSourcePdfs = sourcePdfs.filter(u => u.trim() !== url.trim());
+            const newSourceUrl = newSourcePdfs.length > 0 ? newSourcePdfs.join(',') : null;
+
+            // Append to target's comma-separated list
+            const targetPdfs = targetLesson.materialUrl ? targetLesson.materialUrl.split(',').filter(Boolean) : [];
+            targetPdfs.push(url.trim());
+            const newTargetUrl = targetPdfs.join(',');
+
+            await prisma.$transaction([
+                prisma.lesson.update({ where: { id: sourceLessonId }, data: { materialUrl: newSourceUrl } }),
+                prisma.lesson.update({ where: { id: targetLessonId }, data: { materialUrl: newTargetUrl } }),
+            ]);
+        } else if (type === 'video') {
+            await prisma.$transaction([
+                prisma.lesson.update({ where: { id: sourceLessonId }, data: { videoUrl: targetLesson.videoUrl } }),
+                prisma.lesson.update({ where: { id: targetLessonId }, data: { videoUrl: sourceLesson.videoUrl } }),
+            ]);
+        } else if (type === 'youtube') {
+            await prisma.$transaction([
+                prisma.lesson.update({ where: { id: sourceLessonId }, data: { youtubeUrl: targetLesson.youtubeUrl } }),
+                prisma.lesson.update({ where: { id: targetLessonId }, data: { youtubeUrl: sourceLesson.youtubeUrl } }),
+            ]);
+        } else {
+            return res.status(400).json({ message: 'Invalid material type' });
         }
-        if (!targetLesson) {
-            return res.status(404).json({ message: 'Target lesson not found' });
-        }
 
-        // Remove the specific pdfUrl from source's comma-separated list
-        const sourcePdfs = sourceLesson.materialUrl.split(',').filter(Boolean);
-        const newSourcePdfs = sourcePdfs.filter(u => u.trim() !== pdfUrl.trim());
-        const newSourceUrl = newSourcePdfs.length > 0 ? newSourcePdfs.join(',') : null;
-
-        // Append to target's comma-separated list
-        const targetPdfs = targetLesson.materialUrl ? targetLesson.materialUrl.split(',').filter(Boolean) : [];
-        targetPdfs.push(pdfUrl.trim());
-        const newTargetUrl = targetPdfs.join(',');
-
-        // Atomically update both lessons
-        await prisma.$transaction([
-            prisma.lesson.update({
-                where: { id: sourceLessonId },
-                data: { materialUrl: newSourceUrl },
-            }),
-            prisma.lesson.update({
-                where: { id: targetLessonId },
-                data: { materialUrl: newTargetUrl },
-            }),
-        ]);
-
-        res.json({ message: 'PDF moved successfully', materialUrl: pdfUrl });
+        res.json({ message: 'Material moved successfully', url });
     } catch (error: any) {
-        console.error('movePdf error:', error);
-        res.status(500).json({ message: 'Error moving PDF' });
+        console.error('moveMaterial error:', error);
+        res.status(500).json({ message: 'Error moving material' });
     }
 };
 
