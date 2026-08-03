@@ -17,14 +17,7 @@ if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma;
 }
 
-// Graceful shutdown — release DB connections on process exit
-const shutdown = async () => {
-  console.log('🔌 Disconnecting Prisma client...');
-  await prisma.$disconnect();
-  process.exit(0);
-};
-
-process.on('SIGINT', shutdown);
-process.on('SIGTERM', shutdown);
+// Shutdown is orchestrated centrally in server.ts (HTTP server drains first,
+// then this client disconnects) so we don't race two independent exit paths.
 
 export default prisma;

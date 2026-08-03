@@ -107,3 +107,84 @@ const server = app.listen(PORT, async () => {
 server.timeout = 7200000;          // 2 hour request timeout
 server.keepAliveTimeout = 7220000; // slightly longer than timeout
 server.headersTimeout = 7240000;   // slightly longer than keepAliveTimeout
+
+// --- Crash diagnostics -----------------------------------------------------
+// Pure logging additions to help identify what's causing Hostinger restarts.
+// Nothing here changes exit codes, timing, or control flow.
+
+function formatMemory(mem: NodeJS.MemoryUsage) {
+  const mb = (n: number) => `${(n / 1024 / 1024).toFixed(1)}MB`;
+  return {
+    rss: mb(mem.rss),
+    heapTotal: mb(mem.heapTotal),
+    heapUsed: mb(mem.heapUsed),
+    external: mb(mem.external),
+  };
+}
+
+function logDiagnostic(label: string, extra?: Record<string, unknown>) {
+  console.log(`[diag] ${label}`, {
+    pid: process.pid,
+    uptimeSec: process.uptime().toFixed(1),
+    memory: formatMemory(process.memoryUsage()),
+    ...extra,
+  });
+}
+
+logDiagnostic('process started');
+
+const memoryLogInterval = setInterval(() => {
+  logDiagnostic('memory snapshot');
+}, 60000);
+memoryLogInterval.unref();
+
+process.on('exit', (code) => {
+  logDiagnostic('process exit', { exitCode: code });
+});
+
+// Log-and-survive instead of letting Node hard-crash the process on a single
+// bad request/promise. An abrupt crash skips the shutdown drain below and is
+// what was producing runaway process/thread counts under the host's supervisor.
+process.on('unhandledRejection', (reason: unknown) => {
+  logDiagnostic('unhandledRejection', {
+    reason: reason instanceof Error ? { message: reason.message, stack: reason.stack } : reason,
+  });
+  console.error('Unhandled Rejection:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  logDiagnostic('uncaughtException', { message: err.message, stack: err.stack });
+  console.error('Uncaught Exception:', err);
+});
+
+// Single graceful-shutdown path: stop accepting new connections, let in-flight
+// requests finish, disconnect Prisma, then exit. A timeout forces exit if
+// something (e.g. a stalled upload) never drains.
+let isShuttingDown = false;
+const gracefulShutdown = (signal: string) => {
+  logDiagnostic(`signal ${signal}`, { alreadyShuttingDown: isShuttingDown });
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+  console.log(`${signal} received: closing server...`);
+
+  const forceExit = setTimeout(() => {
+    console.error('Graceful shutdown timed out, forcing exit.');
+    process.exit(1);
+  }, 15000);
+  forceExit.unref();
+
+  server.close(async (err) => {
+    if (err) console.error('Error closing HTTP server:', err);
+    try {
+      await prisma.$disconnect();
+      console.log('🔌 Prisma disconnected.');
+    } catch (e) {
+      console.error('Error disconnecting Prisma:', e);
+    }
+    clearTimeout(forceExit);
+    process.exit(err ? 1 : 0);
+  });
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
