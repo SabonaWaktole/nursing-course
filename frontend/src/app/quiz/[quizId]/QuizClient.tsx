@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import api from '@/lib/api';
+import api, { getCached } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { Quiz, QuizResult, Course } from '@/lib/types';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -377,7 +377,11 @@ function QuizResultScreen({ result, user, quiz, onRetry, courseCompleted, nextEx
     const buttonHover = useButtonHoverMotion();
 
     useEffect(() => {
-        api.get('/courses').then(res => setCourses(res.data.slice(0, 4)));
+        // Same URL as the other card consumers so the shared cache applies — see the
+        // note in app/page.tsx.
+        getCached<Course[]>('/courses?fields=card')
+            .then((data) => setCourses(data.slice(0, 4)))
+            .catch(() => { });
     }, []);
 
     return (

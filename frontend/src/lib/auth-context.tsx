@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import api from '@/lib/api';
+import api, { invalidate } from '@/lib/api';
 import { User } from '@/lib/types';
 
 interface AuthContextType {
@@ -54,6 +54,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const login = async (email: string, password: string) => {
         const res = await api.post('/auth/login', { email, password });
         const { token: newToken, user: newUser } = res.data;
+        // An admin sees a different /courses list than an anonymous visitor, so
+        // anything cached before this point is not theirs.
+        invalidate();
         localStorage.setItem('token', newToken);
         localStorage.setItem('user', JSON.stringify(newUser));
         // Reset activeRole on login — derive fresh from new user's true role
@@ -66,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const register = async (email: string, password: string, name: string) => {
         const res = await api.post('/auth/register', { email, password, name });
         const { token: newToken, user: newUser } = res.data;
+        invalidate();
         localStorage.setItem('token', newToken);
         localStorage.setItem('user', JSON.stringify(newUser));
         localStorage.removeItem('activeRole');
@@ -75,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const logout = () => {
+        invalidate();
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         localStorage.removeItem('activeRole');

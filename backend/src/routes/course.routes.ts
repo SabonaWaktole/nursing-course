@@ -23,11 +23,13 @@ import {
     reorderPdfs,
 } from '../controllers/course.controller';
 import { authenticate, requireAdmin } from '../middleware/auth.middleware';
+import { publicCache, responseCache } from '../middleware/cache.middleware';
 
 const router = Router();
 
-// Public
-router.get('/', withConcurrencyLimit(5), getAllCourses);
+// Public. responseCache sits before the concurrency limiter so a cache hit never
+// consumes one of its slots.
+router.get('/', publicCache(300), responseCache(60), withConcurrencyLimit(5), getAllCourses);
 
 // Student (must be before /:id to prevent "my" matching as courseId)
 router.get('/my/enrollments', authenticate, getMyEnrollments);

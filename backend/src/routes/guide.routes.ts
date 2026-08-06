@@ -1,11 +1,12 @@
 import { Router } from 'express';
 import { getGuideImages, uploadGuideImage, updateGuideImage, reorderGuideImages, deleteGuideImage, guideUpload } from '../controllers/guide.controller';
 import { authenticate, requireAdmin } from '../middleware/auth.middleware';
+import { publicCache, responseCache } from '../middleware/cache.middleware';
 
 const router = Router();
 
 // Public
-router.get('/', getGuideImages);
+router.get('/', publicCache(300), responseCache(60), getGuideImages);
 
 // Admin only
 router.post('/', authenticate, requireAdmin, guideUpload.single('image'), uploadGuideImage);

@@ -3,6 +3,8 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import prisma from '../utils/prisma';
+import { generateDerivatives } from '../utils/image';
+import { invalidateResponseCache } from '../middleware/cache.middleware';
 
 const uploadDir = process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads');
 const guidesDir = path.join(uploadDir, 'guides');
@@ -18,7 +20,7 @@ const storage = multer.diskStorage({
 
 export const guideUpload = multer({
     storage,
-    limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB — screenshots are resized on upload anyway
     fileFilter: (_req, file, cb) => {
         const allowed = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
         const ext = path.extname(file.originalname).toLowerCase();
@@ -54,17 +56,24 @@ export const uploadGuideImage = async (req: Request, res: Response) => {
         const maxOrder = await prisma.guideImage.aggregate({ _max: { order: true } });
         const nextOrder = (maxOrder._max.order ?? -1) + 1;
 
-        const imageUrl = `/uploads/guides/${req.file.filename}`;
+        // Resize once here rather than letting the Next.js optimizer re-encode the
+        // original on every cold cache. Falls back to the original if sharp is missing.
+        const derivatives = await generateDerivatives(req.file.path, '/uploads/guides');
+
+        const imageUrl = derivatives?.displayUrl ?? `/uploads/guides/${req.file.filename}`;
+        const thumbUrl = derivatives?.thumbUrl ?? null;
 
         const image = await prisma.guideImage.create({
             data: {
                 imageUrl,
+                thumbUrl,
                 title,
                 description,
                 order: nextOrder
             }
         });
 
+        invalidateResponseCache('/api/guide');
         res.json(image);
     } catch (error: any) {
         console.error('uploadGuideImage error:', error);
@@ -86,6 +95,7 @@ export const updateGuideImage = async (req: Request, res: Response) => {
             }
         });
 
+        invalidateResponseCache('/api/guide');
         res.json(image);
     } catch (error: any) {
         console.error('updateGuideImage error:', error);
@@ -113,6 +123,7 @@ export const reorderGuideImages = async (req: Request, res: Response) => {
         );
 
         const images = await prisma.guideImage.findMany({ orderBy: { order: 'asc' } });
+        invalidateResponseCache('/api/guide');
         res.json(images);
     } catch (error: any) {
         console.error('reorderGuideImages error:', error);
@@ -131,16 +142,30 @@ export const deleteGuideImage = async (req: Request, res: Response) => {
         // Delete from database
         await prisma.guideImage.delete({ where: { id } });
 
-        // Try to delete the file from disk
-        if (image.imageUrl) {
-            const filePath = path.join(uploadDir, image.imageUrl.replace('/uploads/', ''));
+        // Remove the display image, its thumbnail, and any retained original from disk
+        const urls = [image.imageUrl, (image as any).thumbUrl].filter(Boolean) as string[];
+        for (const url of urls) {
+            const filePath = path.join(uploadDir, url.replace('/uploads/', ''));
             try {
                 if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
             } catch (err) {
                 console.warn('Could not delete guide image file:', filePath);
             }
+
+            // The pre-resize original is kept alongside the derivative for re-derivation;
+            // sweep any sibling that shares the base name.
+            const dir = path.dirname(filePath);
+            const base = path.basename(filePath).replace(/(-sm|-lg)?\.webp$/, '');
+            try {
+                for (const sibling of fs.readdirSync(dir)) {
+                    if (sibling.startsWith(base + '.') || sibling.startsWith(base + '-')) {
+                        try { fs.unlinkSync(path.join(dir, sibling)); } catch { }
+                    }
+                }
+            } catch { }
         }
 
+        invalidateResponseCache('/api/guide');
         res.json({ message: 'Guide image deleted' });
     } catch (error: any) {
         console.error('deleteGuideImage error:', error);

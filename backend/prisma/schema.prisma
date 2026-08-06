@@ -4,7 +4,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  // Production (Hostinger) is MariaDB 11.8 — Prisma's "mysql" connector covers it.
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 model User {
@@ -25,6 +26,8 @@ model User {
   activityLogs ActivityLog[]
   payments    Payment[]
   teachingCourses Course[] // Relation for instructors/admin
+
+  @@index([role])
 }
 
 enum Role {
@@ -54,6 +57,13 @@ model Course {
   enrollments Enrollment[]
   certificates Certificate[]
   payments    Payment[]
+
+  // MySQL/MariaDB creates an index for every foreign key automatically, so
+  // instructorId is already covered by Course_instructorId_fkey. Only the columns
+  // that are filtered/sorted on without being a foreign key need declaring:
+  // siteNumber (per-site filtering) and createdAt (the default ordering).
+  @@index([siteNumber])
+  @@index([createdAt])
 }
 
 model Module {
@@ -166,7 +176,7 @@ model Enrollment {
   completed Boolean  @default(false)
   
   createdAt DateTime @default(now())
-  
+
   @@unique([userId, courseId])
 }
 
@@ -219,6 +229,9 @@ enum PaymentStatus {
 model GuideImage {
   id          String   @id @default(uuid())
   imageUrl    String   @db.Text
+  // Small WebP derivative used for the step strip. Nullable so rows created before
+  // derivative generation stay valid; consumers fall back to imageUrl.
+  thumbUrl    String?  @db.Text
   title       String   @default("")
   description String   @default("") @db.Text
   order       Int      @default(0)

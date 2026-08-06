@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import api from '@/lib/api';
+import api, { invalidate } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { DashboardStats, Course } from '@/lib/types';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -146,6 +146,11 @@ export default function AdminDashboard() {
     }, [user, router]);
 
     const loadData = async () => {
+        // Called on mount and after every course/module/lesson/quiz mutation. Dropping
+        // the cached public reads here means the admin never sees a stale list, and the
+        // /courses page picks up the change on its next visit rather than after the TTL.
+        // These requests intentionally go through `api` directly, never the cache.
+        invalidate('/courses');
         try {
             const results = await Promise.allSettled([
                 api.get('/admin/dashboard'),
@@ -2744,6 +2749,8 @@ function GuideTab() {
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     const loadImages = async () => {
+        // Re-run after every guide mutation, so drop the public cached copy too.
+        invalidate('/guide');
         try {
             const res = await api.get('/guide');
             setImages(res.data);
@@ -2952,11 +2959,14 @@ function GuideTab() {
                                 <span className="material-symbols-outlined text-white bg-black/50 backdrop-blur-sm rounded-lg p-1 text-sm">drag_indicator</span>
                             </div>
 
-                            {/* Image */}
+                            {/* Image — thumbnail derivative; falls back to the display
+                                image for rows uploaded before derivatives existed. */}
                             <div className="relative h-48 bg-slate-100 dark:bg-slate-800 overflow-hidden">
                                 <img
-                                    src={resolveUrl(img.imageUrl)}
+                                    src={resolveUrl(img.thumbUrl || img.imageUrl)}
                                     alt={img.title || `Step ${idx + 1}`}
+                                    loading="lazy"
+                                    decoding="async"
                                     className="w-full h-full object-contain"
                                 />
                             </div>
