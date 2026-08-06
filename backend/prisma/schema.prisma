@@ -4,7 +4,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  // Production (Hostinger) is MariaDB 11.8 — Prisma's "mysql" connector covers it.
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 model User {
@@ -57,9 +58,12 @@ model Course {
   certificates Certificate[]
   payments    Payment[]
 
+  // MySQL/MariaDB creates an index for every foreign key automatically, so
+  // instructorId is already covered by Course_instructorId_fkey. Only the columns
+  // that are filtered/sorted on without being a foreign key need declaring:
+  // siteNumber (per-site filtering) and createdAt (the default ordering).
   @@index([siteNumber])
   @@index([createdAt])
-  @@index([instructorId])
 }
 
 model Module {
@@ -71,8 +75,6 @@ model Module {
   lessons   Lesson[]
   quizzes   Quiz[]
   createdAt DateTime @default(now())
-
-  @@index([courseId])
 }
 
 model Lesson {
@@ -87,8 +89,6 @@ model Lesson {
   moduleId    String
   module      Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
-
-  @@index([moduleId])
 }
 
 model Quiz {
@@ -103,9 +103,6 @@ model Quiz {
   questions    Question[]
   results      Result[]
   createdAt    DateTime @default(now())
-
-  @@index([courseId])
-  @@index([moduleId])
 }
 
 model Question {
@@ -126,9 +123,6 @@ model Result {
   quizId    String
   quiz      Quiz     @relation(fields: [quizId], references: [id])
   createdAt DateTime @default(now())
-
-  @@index([quizId])
-  @@index([userId])
 }
 
 model Certificate {
@@ -154,9 +148,6 @@ model Certificate {
   directorTitle        String?
   providerId           String?
   instructorId         String? // Option A: Direct assignment to instructor at time of issuance
-
-  @@index([userId])
-  @@index([courseId])
 }
 
 enum CertificateStatus {
@@ -187,7 +178,6 @@ model Enrollment {
   createdAt DateTime @default(now())
 
   @@unique([userId, courseId])
-  @@index([courseId])
 }
 
 model ActivityLog {
