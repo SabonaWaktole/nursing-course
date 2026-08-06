@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import zlib from 'zlib';
 import prisma from '../utils/prisma';
+import { generateDerivatives } from '../utils/image';
 
 // Use UPLOAD_DIR env variable for persistent storage outside deployment directory
 // In production (Hostinger): set UPLOAD_DIR=/home/user/uploads
@@ -68,6 +69,22 @@ export const upload = multer({
     },
 });
 
+// Thumbnails get their own multer instance so images are not covered by the
+// multi-gigabyte video limit above. They are resized on upload regardless.
+export const thumbnailUpload = multer({
+    storage,
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+    fileFilter: (req, file, cb) => {
+        const allowed = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+        const ext = path.extname(file.originalname).toLowerCase();
+        if (allowed.includes(ext)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Invalid image format') as any);
+        }
+    },
+});
+
 export const uploadVideo = async (req: Request, res: Response) => {
     try {
         if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
@@ -97,7 +114,11 @@ export const uploadThumbnail = async (req: Request, res: Response) => {
     try {
         if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
 
-        const fileUrl = `/uploads/thumbnails/${req.file.filename}`;
+        // Store the resized WebP as the course thumbnail. The field still holds a plain
+        // URL string, so every existing consumer keeps working — the file is just smaller.
+        const derivatives = await generateDerivatives(req.file.path, '/uploads/thumbnails');
+        const fileUrl = derivatives?.displayUrl ?? `/uploads/thumbnails/${req.file.filename}`;
+
         res.json({ url: fileUrl, filename: req.file.originalname });
     } catch (error: any) {
         console.error('File upload error:', error);

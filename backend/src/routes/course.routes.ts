@@ -23,11 +23,12 @@ import {
     reorderPdfs,
 } from '../controllers/course.controller';
 import { authenticate, requireAdmin } from '../middleware/auth.middleware';
+import { publicCache } from '../middleware/cache.middleware';
 
 const router = Router();
 
 // Public
-router.get('/', withConcurrencyLimit(5), getAllCourses);
+router.get('/', publicCache(300), withConcurrencyLimit(5), getAllCourses);
 
 // Student (must be before /:id to prevent "my" matching as courseId)
 router.get('/my/enrollments', authenticate, getMyEnrollments);

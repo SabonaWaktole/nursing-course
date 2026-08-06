@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import compression from 'compression';
 import path from 'path';
 import dotenv from 'dotenv';
 
@@ -58,11 +59,24 @@ import { handleWebhook } from './controllers/payment.controller';
 // ⚠️ Stripe webhook MUST be registered BEFORE express.json() — it needs the raw body
 app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), handleWebhook);
 
-app.use(express.json({ limit: '50mb' }));
+// gzip/deflate every response above the default 1KB threshold. Registered after the
+// Stripe webhook (which needs its raw body untouched) and before the routes.
+app.use(compression());
 
-// Serve uploaded files from persistent upload directory
+// 2MB is ample: every file upload goes through multer as multipart, so the largest
+// JSON body is a parsed quiz's question array.
+app.use(express.json({ limit: '2mb' }));
+
+// Serve uploaded files from persistent upload directory.
+// Filenames are content-unique (`Date.now()-random.ext`) and files are never rewritten
+// in place, so they can be cached indefinitely. This was previously the express.static
+// default of max-age=0, which forced a revalidation round trip for every image, PDF and
+// video on every page view.
 const serveUploadDir = process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads');
-app.use('/uploads', express.static(serveUploadDir));
+app.use('/uploads', express.static(serveUploadDir, {
+  maxAge: '1y',
+  immutable: true,
+}));
 
 // Health check
 app.get('/', (req, res) => {
@@ -103,10 +117,14 @@ const server = app.listen(PORT, async () => {
   console.log(`🚀 Server is running on port ${PORT}`);
 });
 
-// Increase timeouts for large file uploads (2 hours)
-server.timeout = 7200000;          // 2 hour request timeout
-server.keepAliveTimeout = 7220000; // slightly longer than timeout
-server.headersTimeout = 7240000;   // slightly longer than keepAliveTimeout
+// Socket *inactivity* timeouts. Previously 2 hours globally, which let stalled or
+// abandoned connections (crawlers, dropped mobile clients) hold a process slot almost
+// indefinitely — the main cause of sustained, rather than spiky, process counts.
+// Streaming a large video keeps resetting this, so playback is unaffected.
+// Large uploads restore the 2-hour budget per-route via allowLongUpload in upload.routes.ts.
+server.timeout = 120000;          // 2 minutes of inactivity
+server.keepAliveTimeout = 125000; // slightly longer than timeout
+server.headersTimeout = 130000;   // slightly longer than keepAliveTimeout
 
 // --- Crash diagnostics -----------------------------------------------------
 // Pure logging additions to help identify what's causing Hostinger restarts.

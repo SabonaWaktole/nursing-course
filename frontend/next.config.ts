@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   
   images: {
+    // Uploaded images are resized to WebP by the backend at upload time and rendered
+    // with `unoptimized`, so they never reach the optimizer. Only the remaining
+    // third-party placeholder images are optimized here — hence the explicit host list
+    // rather than the previous `hostname: '**'`, which let any URL queue a transcode.
     remotePatterns: [
       {
         protocol: 'https',
@@ -17,14 +21,17 @@ const nextConfig: NextConfig = {
         hostname: 'lh3.googleusercontent.com',
       },
       {
+        protocol: 'https',
+        hostname: 'api.excelcommunityliving.website',
+      },
+      {
         protocol: 'http',
         hostname: 'localhost',
       },
-      {
-        protocol: 'https',
-        hostname: '**', // Allow production API domains if needed
-      },
     ],
+    // Those placeholders never change; cache each transcode for a year instead of
+    // re-running it every 4 hours.
+    minimumCacheTTL: 31536000,
   },
 
   // Required for react-pdf: alias canvas to false to prevent SSR bundling errors

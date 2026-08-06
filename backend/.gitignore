@@ -12,3 +12,7 @@ old_db_backup/*
 uploads/*
 old_db_backup/*
 *.sql
+# ...but Prisma migrations are source, not dumps. Without this the four existing
+# migrations stay tracked (they predate the rule) while every new one is silently
+# dropped from commits and never reaches production.
+!prisma/migrations/**/*.sql

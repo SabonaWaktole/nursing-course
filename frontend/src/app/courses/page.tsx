@@ -1,10 +1,8 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
+import { useEffect, useState, useCallback } from 'react';
 
-import api from '@/lib/api';
+import { getCached } from '@/lib/api';
 import { Course } from '@/lib/types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getFileUrl } from '@/lib/url-utils';
@@ -41,10 +39,13 @@ export default function CoursesPage() {
     const glowHover = useGlowHoverMotion();
 
     useEffect(() => {
-        api.get('/courses').then((res) => {
-            setCourses(res.data);
+        // `fields=card` drops the enrollment/quiz relation counts and the instructor
+        // join — nothing on this page renders them. No limit: the tag filter below is
+        // built from every course's tags.
+        getCached<Course[]>('/courses?fields=card').then((data) => {
+            setCourses(data);
             const allTags = new Set<string>();
-            res.data.forEach((c: Course) => {
+            data.forEach((c: Course) => {
                 if (c.tags) c.tags.forEach((t: string) => allTags.add(t));
             });
             setTags(['All', ...Array.from(allTags)]);
@@ -178,8 +179,8 @@ export default function CoursesPage() {
                     </div>
                 </motion.div>
 
-                {/* Getting Started Slideshow */}
-                <GettingStartedSlideshow />
+                {/* Getting Started Guide */}
+                <GettingStartedGuide />
 
                 {/* Course Grid */}
                 {loading ? (
@@ -307,70 +308,98 @@ export default function CoursesPage() {
 }
 
 /* ═══════════════════════════════════════════
-   GETTING STARTED SLIDESHOW
+   GETTING STARTED GUIDE
    ═══════════════════════════════════════════ */
 
-function GettingStartedSlideshow() {
-    const [guideSteps, setGuideSteps] = useState<{ step: number; image: string; title: string; description: string }[]>([]);
-    const [activeStep, setActiveStep] = useState(0);
-    const [isPaused, setIsPaused] = useState(false);
-    const [progress, setProgress] = useState(0);
-    const [isExpanded, setIsExpanded] = useState(true);
-    const [guideLoading, setGuideLoading] = useState(true);
-    const intervalRef = useRef<NodeJS.Timeout | null>(null);
-    const progressRef = useRef<NodeJS.Timeout | null>(null);
-    const INTERVAL_MS = 3000;
-    const PROGRESS_TICK = 30; // update progress every 30ms
+/** Shape returned by GET /api/guide */
+interface GuideImageDto {
+    id: string;
+    imageUrl: string;
+    /** Small WebP derivative; null on rows created before derivative generation. */
+    thumbUrl: string | null;
+    title: string;
+    description: string;
+    order: number;
+}
 
-    // Fetch guide images from API
+interface GuideStep {
+    step: number;
+    thumb: string;
+    full: string;
+    title: string;
+    description: string;
+}
+
+/**
+ * Step strip with click-to-enlarge.
+ *
+ * This was an auto-advancing slideshow that mounted a new full-size <Image> every
+ * 3 seconds, so all six guide screenshots — 0.86–1.66MB each — were demanded within
+ * ~18s of the page loading, whether or not anyone was watching, and each one was
+ * re-encoded by the Next.js image optimizer on a cold cache.
+ *
+ * Now: small pre-generated thumbnails (~9KB) load lazily, and the full image is
+ * requested only when a step is opened.
+ */
+function GettingStartedGuide() {
+    const [guideSteps, setGuideSteps] = useState<GuideStep[]>([]);
+    const [guideLoading, setGuideLoading] = useState(true);
+    const [isExpanded, setIsExpanded] = useState(true);
+    const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
     useEffect(() => {
-        api.get('/guide')
-            .then((res) => {
-                const data = res.data.map((img: any, idx: number) => ({
-                    step: idx + 1,
-                    image: getFileUrl(img.imageUrl),
-                    title: img.title || `Step ${idx + 1}`,
-                    description: img.description || '',
-                }));
-                setGuideSteps(data);
+        getCached<GuideImageDto[]>('/guide')
+            .then((data) => {
+                setGuideSteps(
+                    data.map((img, idx) => ({
+                        step: idx + 1,
+                        // Rows created before derivative generation have no thumbUrl yet.
+                        thumb: getFileUrl(img.thumbUrl || img.imageUrl),
+                        full: getFileUrl(img.imageUrl),
+                        title: img.title || `Step ${idx + 1}`,
+                        description: img.description || '',
+                    }))
+                );
             })
             .catch((err) => console.error('Failed to load guide:', err))
             .finally(() => setGuideLoading(false));
     }, []);
 
-    const goToStep = useCallback((index: number) => {
-        setActiveStep(index);
-        setProgress(0);
-    }, []);
+    const closeLightbox = useCallback(() => setLightboxIndex(null), []);
 
-    const nextStep = useCallback(() => {
-        setActiveStep((prev) => (prev + 1) % (guideSteps.length || 1));
-        setProgress(0);
+    const showStep = useCallback((delta: number) => {
+        setLightboxIndex((prev) => {
+            if (prev === null) return prev;
+            const next = prev + delta;
+            if (next < 0 || next >= guideSteps.length) return prev;
+            return next;
+        });
     }, [guideSteps.length]);
 
-    // Auto-advance timer
+    // Keyboard control while the lightbox is open
     useEffect(() => {
-        if (isPaused || guideSteps.length === 0) {
-            if (intervalRef.current) clearInterval(intervalRef.current);
-            if (progressRef.current) clearInterval(progressRef.current);
-            return;
-        }
+        if (lightboxIndex === null) return;
 
-        intervalRef.current = setInterval(nextStep, INTERVAL_MS);
-        progressRef.current = setInterval(() => {
-            setProgress((prev) => Math.min(prev + (PROGRESS_TICK / INTERVAL_MS) * 100, 100));
-        }, PROGRESS_TICK);
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') closeLightbox();
+            if (e.key === 'ArrowRight') showStep(1);
+            if (e.key === 'ArrowLeft') showStep(-1);
+        };
+
+        document.addEventListener('keydown', onKey);
+        // Prevent the page scrolling behind the overlay
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
 
         return () => {
-            if (intervalRef.current) clearInterval(intervalRef.current);
-            if (progressRef.current) clearInterval(progressRef.current);
+            document.removeEventListener('keydown', onKey);
+            document.body.style.overflow = previousOverflow;
         };
-    }, [isPaused, nextStep, activeStep, guideSteps.length]);
+    }, [lightboxIndex, closeLightbox, showStep]);
 
-    // Don't render if loading or no images
     if (guideLoading || guideSteps.length === 0) return null;
 
-    const currentStep = guideSteps[activeStep] || guideSteps[0];
+    const activeStep = lightboxIndex !== null ? guideSteps[lightboxIndex] : null;
 
     return (
         <motion.div
@@ -387,20 +416,22 @@ function GettingStartedSlideshow() {
                 <div className="flex items-center justify-between">
                     <div>
                         <div className="flex items-center gap-2 text-primary font-black text-xs uppercase tracking-widest mb-2">
-                            <span className="material-symbols-outlined text-sm animate-pulse">play_circle</span>
+                            <span className="material-symbols-outlined text-sm">play_circle</span>
                             How to Get Started
                         </div>
                         <h3 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-                            Login & Start Learning
+                            Login &amp; Start Learning
                         </h3>
                         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                             Follow these simple steps to create your account and begin your courses.
+                            <span className="hidden sm:inline"> Tap any step to enlarge.</span>
                         </p>
                     </div>
                     <button
                         onClick={() => setIsExpanded(!isExpanded)}
                         className="shrink-0 ml-4 w-10 h-10 rounded-xl flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-primary/10 dark:hover:bg-primary/15 border border-slate-200 dark:border-slate-700 hover:border-primary/30 text-slate-500 dark:text-slate-400 hover:text-primary transition-all duration-300"
-                        aria-label={isExpanded ? 'Collapse slideshow' : 'Expand slideshow'}
+                        aria-label={isExpanded ? 'Collapse guide' : 'Expand guide'}
+                        aria-expanded={isExpanded}
                     >
                         <motion.span
                             animate={{ rotate: isExpanded ? 180 : 0 }}
@@ -413,170 +444,135 @@ function GettingStartedSlideshow() {
                 </div>
             </div>
 
-            {/* Two-column layout */}
+            {/* Step strip */}
             <AnimatePresence initial={false}>
-            {isExpanded && (
-            <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.4, ease: [0.25, 0.8, 0.25, 1] }}
-                className="overflow-hidden"
-            >
-            <div className="flex flex-col lg:flex-row gap-0 lg:gap-6 px-6 md:px-10 pb-8">
-                {/* Left: Step list */}
-                <div className="lg:w-[280px] shrink-0 py-4 flex flex-row lg:flex-col gap-2 overflow-x-auto lg:overflow-x-visible scrollbar-hide">
-                    {guideSteps.map((step, i) => (
-                        <button
-                            key={step.step}
-                            onClick={() => goToStep(i)}
-                            className={`group flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-300 whitespace-nowrap lg:whitespace-normal min-w-[160px] lg:min-w-0 ${
-                                activeStep === i
-                                    ? 'bg-primary/10 dark:bg-primary/15 border border-primary/30'
-                                    : 'hover:bg-slate-50 dark:hover:bg-slate-800/50 border border-transparent'
-                            }`}
-                        >
-                            <div
-                                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shrink-0 transition-all duration-300 ${
-                                    activeStep === i
-                                        ? 'bg-primary text-white shadow-lg shadow-primary/30 scale-110'
-                                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-primary/20 group-hover:text-primary'
-                                }`}
-                            >
-                                {step.step}
-                            </div>
-                            <div className="flex flex-col">
-                                <span
-                                    className={`text-sm font-bold transition-colors duration-300 ${
-                                        activeStep === i
-                                            ? 'text-primary'
-                                            : 'text-slate-700 dark:text-slate-300'
-                                    }`}
+                {isExpanded && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.4, ease: [0.25, 0.8, 0.25, 1] }}
+                        className="overflow-hidden"
+                    >
+                        <div className="px-6 md:px-10 pb-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+                            {guideSteps.map((step, i) => (
+                                <button
+                                    key={step.step}
+                                    onClick={() => setLightboxIndex(i)}
+                                    className="group text-left rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700/60 bg-slate-50 dark:bg-slate-800/40 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                                    aria-label={`Open step ${step.step}: ${step.title}`}
                                 >
-                                    {step.title}
-                                </span>
-                                <span className="text-[11px] text-slate-400 dark:text-slate-500 hidden lg:block leading-tight mt-0.5">
-                                    {step.description}
-                                </span>
-                            </div>
-                        </button>
-                    ))}
-                </div>
-
-                {/* Right: Image slideshow */}
-                <div className="flex-1 relative">
-                    {/* Browser-like frame */}
-                    <div className="rounded-xl overflow-hidden border border-slate-200/80 dark:border-slate-700/50 bg-slate-100 dark:bg-slate-800/50 shadow-xl">
-                        {/* Fake browser bar */}
-                        <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
-                            <div className="flex gap-1.5">
-                                <div className="w-3 h-3 rounded-full bg-red-400/70" />
-                                <div className="w-3 h-3 rounded-full bg-yellow-400/70" />
-                                <div className="w-3 h-3 rounded-full bg-green-400/70" />
-                            </div>
-                            <div className="flex-1 mx-4">
-                                <div className="bg-white dark:bg-slate-900 rounded-md px-3 py-1 text-xs text-slate-400 dark:text-slate-500 font-mono truncate">
-                                    excelcommunityliving.com
-                                </div>
-                            </div>
+                                    <div className="relative aspect-video overflow-hidden bg-slate-200 dark:bg-slate-900">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                            src={step.thumb}
+                                            alt={`Step ${step.step}: ${step.title}`}
+                                            loading="lazy"
+                                            decoding="async"
+                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                        />
+                                        <div className="absolute top-2 left-2 w-6 h-6 rounded-full bg-primary text-white text-[11px] font-black flex items-center justify-center shadow-md">
+                                            {step.step}
+                                        </div>
+                                        <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/25 transition-colors duration-300 flex items-center justify-center">
+                                            <span className="material-symbols-outlined text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow">
+                                                zoom_in
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="p-3">
+                                        <span className="block text-xs font-bold text-slate-700 dark:text-slate-300 group-hover:text-primary transition-colors line-clamp-1">
+                                            {step.title}
+                                        </span>
+                                        {step.description && (
+                                            <span className="block text-[11px] text-slate-400 dark:text-slate-500 leading-tight mt-0.5 line-clamp-2">
+                                                {step.description}
+                                            </span>
+                                        )}
+                                    </div>
+                                </button>
+                            ))}
                         </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
-                        {/* Image container */}
-                        <div
-                            className="relative aspect-video bg-slate-200 dark:bg-slate-900 overflow-hidden"
-                            onMouseEnter={() => setIsPaused(true)}
-                            onMouseLeave={() => setIsPaused(false)}
+            {/* Lightbox — the only place the full-size image is ever requested */}
+            <AnimatePresence>
+                {activeStep && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        onClick={closeLightbox}
+                        className="fixed inset-0 z-[200] bg-slate-950/90 backdrop-blur-sm flex items-center justify-center p-4 sm:p-8"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label={`Step ${activeStep.step}: ${activeStep.title}`}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.96, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.96, opacity: 0 }}
+                            transition={{ duration: 0.25, ease: [0.25, 0.8, 0.25, 1] }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="relative w-full max-w-5xl"
                         >
-                            <AnimatePresence mode="wait">
-                                <motion.div
-                                    key={activeStep}
-                                    initial={{ opacity: 0, scale: 1.02 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, scale: 0.98 }}
-                                    transition={{ duration: 0.4, ease: [0.25, 0.8, 0.25, 1] }}
-                                    className="absolute inset-0"
-                                >
-                                    <Image
-                                        src={currentStep.image}
-                                        alt={`Step ${currentStep.step}: ${currentStep.title}`}
-                                        fill
-                                        sizes="(max-width: 1024px) 100vw, 50vw"
-                                        className="object-contain"
-                                    />
-                                </motion.div>
-                            </AnimatePresence>
-
-                            {/* Step badge overlay */}
-                            <div className="absolute top-4 left-4 z-10">
-                                <div className="bg-black/60 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5">
-                                    <span className="w-5 h-5 rounded-full bg-primary flex items-center justify-center text-[10px] font-black">
-                                        {currentStep.step}
+                            <div className="flex items-center justify-between mb-3 gap-4">
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                    <span className="shrink-0 w-7 h-7 rounded-full bg-primary text-white text-xs font-black flex items-center justify-center">
+                                        {activeStep.step}
                                     </span>
-                                    {currentStep.title}
+                                    <h4 className="text-white font-bold truncate">{activeStep.title}</h4>
                                 </div>
+                                <button
+                                    onClick={closeLightbox}
+                                    className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center bg-white/10 hover:bg-white/20 text-white transition-colors"
+                                    aria-label="Close"
+                                >
+                                    <span className="material-symbols-outlined text-lg">close</span>
+                                </button>
                             </div>
 
-                            {/* Pause indicator */}
-                            <AnimatePresence>
-                                {isPaused && (
-                                    <motion.div
-                                        initial={{ opacity: 0, scale: 0.8 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0, scale: 0.8 }}
-                                        className="absolute top-4 right-4 z-10 bg-black/60 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5"
-                                    >
-                                        <span className="material-symbols-outlined text-sm">pause</span>
-                                        Paused
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </div>
+                            <div className="rounded-xl overflow-hidden bg-slate-900 border border-white/10">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                    key={activeStep.full}
+                                    src={activeStep.full}
+                                    alt={`Step ${activeStep.step}: ${activeStep.title}`}
+                                    className="w-full max-h-[70vh] object-contain"
+                                />
+                            </div>
 
-                        {/* Progress bar */}
-                        <div className="h-1 bg-slate-200 dark:bg-slate-700 relative overflow-hidden">
-                            <motion.div
-                                className="absolute inset-y-0 left-0 bg-primary"
-                                style={{ width: `${progress}%` }}
-                                transition={{ duration: 0.03, ease: 'linear' }}
-                            />
-                        </div>
-                    </div>
+                            {activeStep.description && (
+                                <p className="text-sm text-slate-300 mt-3">{activeStep.description}</p>
+                            )}
 
-                    {/* Mobile step description */}
-                    <div className="lg:hidden mt-4 px-1">
-                        <AnimatePresence mode="wait">
-                            <motion.p
-                                key={activeStep}
-                                initial={{ opacity: 0, y: 8 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -8 }}
-                                transition={{ duration: 0.3 }}
-                                className="text-sm text-slate-600 dark:text-slate-400"
-                            >
-                                {currentStep.description}
-                            </motion.p>
-                        </AnimatePresence>
-                    </div>
-
-                    {/* Dot indicators for quick reference */}
-                    <div className="flex justify-center gap-2 mt-4">
-                        {guideSteps.map((_, i) => (
-                            <button
-                                key={i}
-                                onClick={() => goToStep(i)}
-                                className={`rounded-full transition-all duration-300 ${
-                                    activeStep === i
-                                        ? 'w-8 h-2.5 bg-primary shadow-md shadow-primary/30'
-                                        : 'w-2.5 h-2.5 bg-slate-300 dark:bg-slate-600 hover:bg-primary/50'
-                                }`}
-                                aria-label={`Go to step ${i + 1}`}
-                            />
-                        ))}
-                    </div>
-                </div>
-            </div>
-            </motion.div>
-            )}
+                            <div className="flex items-center justify-between mt-4">
+                                <button
+                                    onClick={() => showStep(-1)}
+                                    disabled={lightboxIndex === 0}
+                                    className="px-4 py-2 rounded-lg text-sm font-semibold bg-white/10 text-white hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+                                >
+                                    <span className="material-symbols-outlined text-base">chevron_left</span>
+                                    Previous
+                                </button>
+                                <span className="text-xs text-slate-400 font-medium">
+                                    {activeStep.step} of {guideSteps.length}
+                                </span>
+                                <button
+                                    onClick={() => showStep(1)}
+                                    disabled={lightboxIndex === guideSteps.length - 1}
+                                    className="px-4 py-2 rounded-lg text-sm font-semibold bg-white/10 text-white hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+                                >
+                                    Next
+                                    <span className="material-symbols-outlined text-base">chevron_right</span>
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
             </AnimatePresence>
         </motion.div>
     );

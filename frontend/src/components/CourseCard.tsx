@@ -66,10 +66,17 @@ export default function CourseCard({
             {category}
           </div>
         )}
+        {/*
+          `unoptimized`: uploaded thumbnails are already resized and WebP-encoded by the
+          backend at upload time, so routing them through /_next/image would make the
+          frontend Node process fetch the original from the API host and re-encode it —
+          one visible image costing CPU and a process slot on both apps.
+        */}
         <Image
           src={thumbnail}
           alt={name}
           fill
+          unoptimized
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           className="object-cover transition-transform duration-700 group-hover:scale-110"
         />

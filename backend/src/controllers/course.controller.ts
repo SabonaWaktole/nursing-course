@@ -21,30 +21,58 @@ export const getAllCourses = async (req: Request, res: Response) => {
 
         const siteNumberHeader = req.headers['x-site-number'];
         const whereClause: any = {};
-        
+
         if (!isAdmin && siteNumberHeader) {
             whereClause.siteNumber = parseInt(siteNumberHeader as string);
         }
 
+        // Opt-in payload reduction. Both parameters are absent by default, so callers
+        // that send nothing get the exact response shape they always have — this matters
+        // because a separately-deployed client consumes this endpoint and expects a bare
+        // array of every course.
+        const isCardView = req.query.fields === 'card';
+        const parsedLimit = parseInt(req.query.limit as string);
+        const limit = Number.isFinite(parsedLimit) && parsedLimit > 0
+            ? Math.min(parsedLimit, 100)
+            : undefined;
+
+        // The card view drops the `quizzes` and `enrollments` relation counts and the
+        // instructor join. Nothing on a course card renders them, and each aggregate is
+        // a separate scan over a table that has no index on its foreign key.
+        const cardSelect = {
+            id: true,
+            title: true,
+            description: true,
+            thumbnail: true,
+            price: true,
+            credit: true,
+            category: true,
+            tags: true,
+            _count: { select: { modules: true } },
+        };
+
+        const fullSelect = {
+            id: true,
+            title: true,
+            description: true,
+            thumbnail: true,
+            price: true,
+            credit: true,
+            hours: true,
+            category: true,
+            createdAt: true,
+            instructorId: true,
+            // @ts-ignore - IDE caching issue with Prisma client types
+            siteNumber: true,
+            instructor: { select: { id: true, name: true } },
+            _count: { select: { modules: true, quizzes: true, enrollments: true } },
+        };
+
         const courses = await prisma.course.findMany({
             where: whereClause,
-            select: {
-                id: true,
-                title: true,
-                description: true,
-                thumbnail: true,
-                price: true,
-                credit: true,
-                hours: true,
-                category: true,
-                createdAt: true,
-                instructorId: true,
-                // @ts-ignore - IDE caching issue with Prisma client types
-                siteNumber: true,
-                instructor: { select: { id: true, name: true } },
-                _count: { select: { modules: true, quizzes: true, enrollments: true } },
-            },
+            select: (isCardView ? cardSelect : fullSelect) as any,
             orderBy: { createdAt: 'desc' },
+            ...(limit ? { take: limit } : {}),
         });
         res.json(courses);
     } catch (error: any) {

@@ -16,7 +16,11 @@ export const getDashboardStats = async (req: Request, res: Response) => {
             ]);
 
         // Batch 2: Trend counts + heavier data (separate batch to limit peak connections)
-        const [prevUsers, prevCourses, prevEnrollments, prevCertificates, recentEnrollments, allResults] =
+        //
+        // Quiz analytics are computed in the database. This previously loaded every Result
+        // row ever recorded into Node memory just to derive an average and a pass rate —
+        // an unbounded query that grew linearly forever.
+        const [prevUsers, prevCourses, prevEnrollments, prevCertificates, recentEnrollments, resultStats, passedExams] =
             await Promise.all([
                 prisma.user.count({ where: { createdAt: { lt: thirtyDaysAgo } } }),
                 prisma.course.count({ where: { createdAt: { lt: thirtyDaysAgo } } }),
@@ -30,9 +34,8 @@ export const getDashboardStats = async (req: Request, res: Response) => {
                         course: { select: { title: true } },
                     },
                 }),
-                prisma.result.findMany({
-                    select: { score: true, passed: true }
-                }),
+                prisma.result.aggregate({ _avg: { score: true }, _count: true }),
+                prisma.result.count({ where: { passed: true } }),
             ]);
 
         const calculateTrend = (total: number, prev: number) => {
@@ -40,9 +43,9 @@ export const getDashboardStats = async (req: Request, res: Response) => {
             return Math.round(((total - prev) / prev) * 100);
         };
 
-        const totalScore = allResults.reduce((acc, r) => acc + r.score, 0);
-        const avgScore = allResults.length > 0 ? Math.round(totalScore / allResults.length) : 0;
-        const passRate = allResults.length > 0 ? Math.round((allResults.filter(r => r.passed).length / allResults.length) * 100) : 0;
+        const totalExams = resultStats._count;
+        const avgScore = Math.round(resultStats._avg.score ?? 0);
+        const passRate = totalExams > 0 ? Math.round((passedExams / totalExams) * 100) : 0;
 
         res.json({
             stats: {
@@ -59,8 +62,8 @@ export const getDashboardStats = async (req: Request, res: Response) => {
                 analytics: {
                     avgScore,
                     passRate,
-                    totalExams: allResults.length,
-                    passedExams: allResults.filter(r => r.passed).length
+                    totalExams,
+                    passedExams
                 }
             },
             recentEnrollments,

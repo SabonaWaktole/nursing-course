@@ -8,7 +8,7 @@ import {
   Mail, Phone, MapPin, Send, ArrowDown, Award, Star, Quote,
   DollarSignIcon
 } from 'lucide-react';
-import api from '@/lib/api';
+import { getCached } from '@/lib/api';
 import { Course } from '@/lib/types';
 import { getFileUrl } from '@/lib/url-utils';
 import CourseCard from '@/components/CourseCard';
@@ -474,11 +474,11 @@ function StatsSection() {
   const [stats, setStats] = useState(STATS);
 
   useEffect(() => {
-    api.get('/public/stats').then((res) => {
+    getCached<{ students: number; completionRate: number; clinics: number }>('/public/stats').then((data) => {
       setStats([
-        { label: 'Active Students', value: `${res.data.students}+`, icon: <Users size={24} /> },
-        { label: 'Completion Rate', value: `${res.data.completionRate}%`, icon: <Target size={24} /> },
-        { label: 'Certificates Issued', value: `${res.data.clinics}+`, icon: <Award size={24} /> },
+        { label: 'Active Students', value: `${data.students}+`, icon: <Users size={24} /> },
+        { label: 'Completion Rate', value: `${data.completionRate}%`, icon: <Target size={24} /> },
+        { label: 'Certificates Issued', value: `${data.clinics}+`, icon: <Award size={24} /> },
         { label: 'Average Rating', value: '4.9/5', icon: <Star size={24} /> }, // Hardcoded rating
       ]);
     }).catch(console.error);
@@ -663,8 +663,14 @@ function CoursesSection() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get('/courses').then((res) => {
-      setFeaturedCourses(res.data.slice(0, 3));
+    // Deliberately the same URL every card consumer uses, so the shared cache can
+    // serve it: requesting `&limit=3` here would be a different cache key, and
+    // navigating to /courses would refetch rather than hit the cache. The card
+    // payload is small and gzipped, so taking three from it costs less than the
+    // extra round trip. (The backend still supports ?limit= if the catalog grows
+    // enough to make a dedicated featured query worthwhile.)
+    getCached<Course[]>('/courses?fields=card').then((data) => {
+      setFeaturedCourses(data.slice(0, 3));
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
