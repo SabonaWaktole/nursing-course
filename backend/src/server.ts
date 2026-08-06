@@ -51,7 +51,17 @@ app.use(cors({
 
     return callback(new Error('Not allowed by CORS'));
   },
-  credentials: true
+  credentials: true,
+  // The frontend (cnaceus.…) and this API (api.…) are different origins, and every
+  // request carries Content-Type: application/json plus X-Site-Number/Authorization —
+  // none of which are CORS-safelisted. That means the browser preflights EVERY call.
+  //
+  // Without Access-Control-Max-Age, Chrome caches a preflight for only 5 seconds, so
+  // OPTIONS traffic was running at roughly 1:1 with real requests — doubling the
+  // connection slots consumed for zero useful work. 24h (Chrome caps it at 2h) lets the
+  // browser reuse one preflight instead of re-asking constantly.
+  maxAge: 86400,
+  optionsSuccessStatus: 204,
 }));
 
 import { handleWebhook } from './controllers/payment.controller';

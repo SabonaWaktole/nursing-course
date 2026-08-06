@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import prisma from '../utils/prisma';
 import { createInstructorNotification } from '../utils/notificationHelper';
 import { verifyToken } from '../utils/jwt';
+import { invalidateResponseCache } from '../middleware/cache.middleware';
 // IDE Refresh Poke 3
 
 
@@ -135,6 +136,7 @@ export const createCourse = async (req: Request, res: Response) => {
                 siteNumber: siteNumber ? parseInt(siteNumber.toString()) : 1,
             },
         });
+        invalidateResponseCache('/api/courses');
         res.status(201).json(course);
     } catch (error: any) {
         require('fs').appendFileSync('app-error.log', '\nCREATE ERROR: ' + (error?.stack || error?.message || error) + '\n');
@@ -176,6 +178,7 @@ export const updateCourse = async (req: Request, res: Response) => {
                 ...(parsedSiteNumber !== undefined ? { siteNumber: parsedSiteNumber } : {}),
             },
         });
+        invalidateResponseCache('/api/courses');
         res.json(course);
     } catch (error: any) {
         require('fs').appendFileSync('app-error.log', '\nUPDATE ERROR: ' + (error?.stack || error?.message || error) + '\n');
@@ -211,6 +214,7 @@ export const deleteCourse = async (req: Request, res: Response) => {
             })
         ]);
 
+        invalidateResponseCache('/api/courses');
         res.json({ message: 'Course deleted' });
     } catch (error: any) {
         console.error('deleteCourse error:', error);
@@ -230,6 +234,8 @@ export const addModule = async (req: Request, res: Response) => {
         const mod = await prisma.module.create({
             data: { title, courseId, order: count + 1 },
         });
+        // Module count is part of the cached course-card payload.
+        invalidateResponseCache('/api/courses');
         res.status(201).json(mod);
     } catch (error: any) {
         console.error('addModule error:', error);
@@ -241,6 +247,7 @@ export const deleteModule = async (req: Request, res: Response) => {
     try {
         const moduleId = req.params.moduleId as string;
         await prisma.module.delete({ where: { id: moduleId } });
+        invalidateResponseCache('/api/courses');
         res.json({ message: 'Module deleted' });
     } catch (error: any) {
         res.status(500).json({ message: 'Error deleting module' });

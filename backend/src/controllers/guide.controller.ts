@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import prisma from '../utils/prisma';
 import { generateDerivatives } from '../utils/image';
+import { invalidateResponseCache } from '../middleware/cache.middleware';
 
 const uploadDir = process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads');
 const guidesDir = path.join(uploadDir, 'guides');
@@ -72,6 +73,7 @@ export const uploadGuideImage = async (req: Request, res: Response) => {
             }
         });
 
+        invalidateResponseCache('/api/guide');
         res.json(image);
     } catch (error: any) {
         console.error('uploadGuideImage error:', error);
@@ -93,6 +95,7 @@ export const updateGuideImage = async (req: Request, res: Response) => {
             }
         });
 
+        invalidateResponseCache('/api/guide');
         res.json(image);
     } catch (error: any) {
         console.error('updateGuideImage error:', error);
@@ -120,6 +123,7 @@ export const reorderGuideImages = async (req: Request, res: Response) => {
         );
 
         const images = await prisma.guideImage.findMany({ orderBy: { order: 'asc' } });
+        invalidateResponseCache('/api/guide');
         res.json(images);
     } catch (error: any) {
         console.error('reorderGuideImages error:', error);
@@ -161,6 +165,7 @@ export const deleteGuideImage = async (req: Request, res: Response) => {
             } catch { }
         }
 
+        invalidateResponseCache('/api/guide');
         res.json({ message: 'Guide image deleted' });
     } catch (error: any) {
         console.error('deleteGuideImage error:', error);
