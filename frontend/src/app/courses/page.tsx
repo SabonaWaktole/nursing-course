@@ -54,8 +54,14 @@ export default function CoursesPage() {
     }, []);
 
     const filtered = courses.filter((c) => {
-        const matchesSearch = c.title.toLowerCase().includes(search.toLowerCase()) ||
-            c.description.toLowerCase().includes(search.toLowerCase());
+        const q = search.toLowerCase();
+        // Descriptions are no longer part of the listing payload, so search covers the
+        // fields the tiles actually carry: title, category and tags. (This runs entirely
+        // on the already-loaded array — it makes no API call per keystroke.)
+        const matchesSearch = !q
+            || c.title.toLowerCase().includes(q)
+            || (c.category?.toLowerCase().includes(q) ?? false)
+            || (c.tags?.some((t) => t.toLowerCase().includes(q)) ?? false);
         const matchesTag = selectedTag === 'All' || (c.tags && c.tags.includes(selectedTag));
         return matchesSearch && matchesTag;
     });
@@ -238,7 +244,6 @@ export default function CoursesPage() {
                                 key={course.id}
                                 courseId={course.id}
                                 name={course.title}
-                                overview={course.description}
                                 thumbnail={course.thumbnail ? getFileUrl(course.thumbnail) : PLACEHOLDER_IMAGES[idx % PLACEHOLDER_IMAGES.length]}
                                 link={`/courses/${course.id}`}
                                 category={course.tags && course.tags.length > 0 ? course.tags[0] : (course.category || undefined)}

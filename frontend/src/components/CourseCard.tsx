@@ -9,7 +9,12 @@ import { formatPrice } from '@/lib/utils';
 interface CourseCardProps extends Omit<HTMLMotionProps<"div">, "children"> {
   courseId: string | number;
   name: string;
-  overview: string;
+  /**
+   * Optional. The course listing no longer fetches descriptions — the tile leads with
+   * the thumbnail and the full text is loaded when the course is opened. When omitted
+   * the card gives the image more room instead of leaving a gap.
+   */
+  overview?: string;
   thumbnail: string;
   link: string;
   delay?: number;
@@ -59,8 +64,9 @@ export default function CourseCard({
       {/* Hover gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.03] via-transparent to-purple-500/[0.03] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
-      {/* Image with overlay gradient */}
-      <div className="relative h-56 overflow-hidden shrink-0">
+      {/* Image with overlay gradient. Taller when there is no description to show,
+          so an image-led tile stays balanced instead of leaving dead space. */}
+      <div className={`relative overflow-hidden shrink-0 ${overview ? 'h-56' : 'h-64'}`}>
         {category && (
           <div className="absolute top-4 left-4 z-20 bg-white/90 dark:bg-slate-900/90 backdrop-blur px-3 py-1.5 rounded-lg text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-wider shadow-lg">
             {category}
@@ -97,13 +103,15 @@ export default function CourseCard({
           </div>
         )}
 
-        <h3 className="text-lg font-bold mb-2 transition-colors duration-300 text-slate-900 dark:text-white group-hover:text-primary line-clamp-1">
+        <h3 className={`text-lg font-bold transition-colors duration-300 text-slate-900 dark:text-white group-hover:text-primary ${overview ? 'mb-2 line-clamp-1' : 'mb-4 line-clamp-2 flex-1'}`}>
           {name}
         </h3>
-        <p className="text-[14px] leading-relaxed mb-5 transition-colors duration-300 text-slate-500 dark:text-slate-400 line-clamp-2 flex-1">
-          {overview}
-        </p>
-        
+        {overview && (
+          <p className="text-[14px] leading-relaxed mb-5 transition-colors duration-300 text-slate-500 dark:text-slate-400 line-clamp-2 flex-1">
+            {overview}
+          </p>
+        )}
+
         <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800/60 mt-auto">
           {price !== undefined && (
             <div className="flex flex-col gap-0.5">
