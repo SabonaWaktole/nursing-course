@@ -22,7 +22,19 @@ export function publicCache(maxAgeSeconds = 300) {
     const swr = maxAgeSeconds * 2;
 
     return (req: Request, res: Response, next: NextFunction): void => {
-        res.setHeader('Vary', 'X-Site-Number, Authorization');
+        // MUST be res.vary(), not res.setHeader('Vary', …).
+        //
+        // setHeader REPLACES the header. The cors middleware runs first and sets
+        // `Vary: Origin` because it reflects the caller's Origin into
+        // Access-Control-Allow-Origin. Overwriting that dropped `Origin`, so a cache
+        // could hand a response minted for one site to another — producing
+        // "Access-Control-Allow-Origin has a value https://arf.… that is not equal to
+        // the supplied origin" on cnaceus.…, and blocking the request outright.
+        //
+        // res.vary() appends, preserving Origin (and compression's Accept-Encoding).
+        res.vary('Origin');
+        res.vary('X-Site-Number');
+        res.vary('Authorization');
 
         if (req.headers.authorization) {
             res.setHeader('Cache-Control', 'no-store');
