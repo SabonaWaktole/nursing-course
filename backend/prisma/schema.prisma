@@ -1,6 +1,10 @@
 generator client {
   provider = "prisma-client-js"
-  binaryTargets = ["native", "debian-openssl-1.1.x"]
+  // Only debian-openssl-1.1.x was listed, which is an old-Debian/OpenSSL 1.1 engine.
+  // Current Hostinger images run OpenSSL 3.x; loading a mismatched query-engine binary
+  // is one known source of engine-level panics. Ship the 3.x and musl variants too —
+  // Prisma picks the right one at runtime and unused binaries are harmless.
+  binaryTargets = ["native", "debian-openssl-1.1.x", "debian-openssl-3.0.x", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {

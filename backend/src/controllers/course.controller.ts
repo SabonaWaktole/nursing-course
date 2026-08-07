@@ -37,13 +37,17 @@ export const getAllCourses = async (req: Request, res: Response) => {
             ? Math.min(parsedLimit, 100)
             : undefined;
 
-        // The card view drops the `quizzes` and `enrollments` relation counts and the
-        // instructor join. Nothing on a course card renders them, and each aggregate is
-        // a separate scan over a table that has no index on its foreign key.
+        // The card view returns only what an image-forward listing tile renders.
+        //
+        // Dropped vs the full view:
+        //  - `description` (@db.Text) — measured at 47.8% of this payload on production
+        //    data. The listing shows the thumbnail, not the prose; the full description
+        //    is fetched by /api/courses/:id when a course is actually opened.
+        //  - the `quizzes` and `enrollments` relation counts and the instructor join —
+        //    nothing on a tile renders them, and each aggregate is a separate query.
         const cardSelect = {
             id: true,
             title: true,
-            description: true,
             thumbnail: true,
             price: true,
             credit: true,

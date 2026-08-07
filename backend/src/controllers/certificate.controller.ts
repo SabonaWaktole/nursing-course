@@ -1,9 +1,73 @@
 import { Request, Response } from 'express';
 import PDFDocument from 'pdfkit';
 import path from 'path';
+import fs from 'fs';
+import crypto from 'crypto';
 import QRCode from 'qrcode';
 import prisma from '../utils/prisma';
 import { createInstructorNotification } from '../utils/notificationHelper';
+
+/* ═══════════════════════════════════════════
+   PDF FONTS — loaded once, not per request
+   ═══════════════════════════════════════════
+   registerFont(name, path) re-reads and re-parses the TTF from disk on every call.
+   Certificate rendering is the most expensive thing this API does, so the font bytes
+   are read once at startup and handed to pdfkit as Buffers instead.
+*/
+const FONT_DIR = path.join(__dirname, '..', 'fonts');
+
+function loadFont(file: string): Buffer | null {
+    try {
+        return fs.readFileSync(path.join(FONT_DIR, file));
+    } catch {
+        console.warn(`⚠️ Certificate font missing: ${file} — falling back to a built-in font.`);
+        return null;
+    }
+}
+
+const GREAT_VIBES = loadFont('GreatVibes-Regular.ttf');
+const PLAYFAIR_ITALIC = loadFont('PlayfairDisplay-Italic.ttf');
+
+/* ═══════════════════════════════════════════
+   RENDERED PDF CACHE
+   ═══════════════════════════════════════════
+   A certificate is a snapshot: the org details, director, course title and hours are
+   copied onto the row when it is issued. So the same certificate renders byte-identical
+   every time, and re-rendering it on every download is pure waste.
+
+   The cache key includes every field the PDF draws, so an admin editing the certificate
+   number or changing its status produces a new key and a fresh render automatically.
+*/
+const pdfCacheDir = path.join(
+    process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads'),
+    'certificates'
+);
+
+try {
+    if (!fs.existsSync(pdfCacheDir)) fs.mkdirSync(pdfCacheDir, { recursive: true });
+} catch (err: any) {
+    console.warn(`⚠️ Could not create certificate cache dir: ${err.message}`);
+}
+
+function certificateCacheKey(certificate: any): string {
+    const material = JSON.stringify([
+        certificate.uniqueId,
+        certificate.certificateNumber,
+        certificate.status,
+        certificate.hoursAttended,
+        certificate.courseTitle,
+        certificate.organizationName,
+        certificate.organizationAddress,
+        certificate.organizationPhone,
+        certificate.directorName,
+        certificate.directorTitle,
+        certificate.providerId,
+        certificate.issuedAt,
+        certificate.user?.name,
+        certificate.course?.title,
+    ]);
+    return crypto.createHash('sha1').update(material).digest('hex').slice(0, 16);
+}
 
 // Generate certificate when student passes
 export const generateCertificate = async (req: Request, res: Response) => {
@@ -107,30 +171,63 @@ export const downloadCertificate = async (req: Request, res: Response) => {
             return res.status(404).json({ message: 'Certificate not found' });
         }
 
+        const filename = `certificate-${certificate.uniqueId}.pdf`;
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+
+        // Serve a previously rendered copy when nothing about the certificate has changed.
+        const cacheKey = certificateCacheKey(certificate);
+        const cachePath = path.join(pdfCacheDir, `${certificate.uniqueId}-${cacheKey}.pdf`);
+
+        if (fs.existsSync(cachePath)) {
+            res.setHeader('X-PDF-Cache', 'HIT');
+            res.setHeader('Cache-Control', 'private, max-age=86400');
+            fs.createReadStream(cachePath).pipe(res);
+            return;
+        }
+
+        res.setHeader('X-PDF-Cache', 'MISS');
+        res.setHeader('Cache-Control', 'private, max-age=86400');
+
         const doc = new PDFDocument({
             layout: 'landscape',
             size: 'A4',
             margins: { top: 0, bottom: 0, left: 0, right: 0 },
         });
 
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename=certificate-${certificate.uniqueId}.pdf`);
-        doc.pipe(res);
+        // Collect the output instead of piping straight to the response, so the finished
+        // bytes can be both sent and written to the cache.
+        const chunks: Buffer[] = [];
+        doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+        doc.on('end', () => {
+            const pdf = Buffer.concat(chunks);
+            res.end(pdf);
+            // Persist for next time. Written via a temp file + rename so a crash midway
+            // can never leave a truncated PDF that would be served as a cache hit.
+            const tmp = `${cachePath}.${process.pid}.tmp`;
+            fs.promises
+                .writeFile(tmp, pdf)
+                .then(() => fs.promises.rename(tmp, cachePath))
+                .catch((err) => {
+                    console.warn('Could not cache certificate PDF:', err.message);
+                    fs.promises.unlink(tmp).catch(() => { });
+                });
+        });
 
-        // Register fonts
-        const greatVibesPath = path.join(__dirname, '..', 'fonts', 'GreatVibes-Regular.ttf');
-        doc.registerFont('GreatVibes', greatVibesPath);
-
-        // Try to register Playfair Display italic; fall back to Times-Italic
-        const playfairItalicPath = path.join(__dirname, '..', 'fonts', 'PlayfairDisplay-Italic.ttf');
+        // Fonts come from preloaded buffers (see top of file), with graceful fallback to
+        // built-ins if the postbuild font copy did not run.
         let titleFont = 'Times-Italic';
         let courseTitleFont = 'Times-Italic';
-        try {
-            doc.registerFont('PlayfairItalic', playfairItalicPath);
+        let scriptFont = 'Times-Italic';
+
+        if (GREAT_VIBES) {
+            doc.registerFont('GreatVibes', GREAT_VIBES);
+            scriptFont = 'GreatVibes';
+        }
+        if (PLAYFAIR_ITALIC) {
+            doc.registerFont('PlayfairItalic', PLAYFAIR_ITALIC);
             titleFont = 'PlayfairItalic';
             courseTitleFont = 'PlayfairItalic';
-        } catch (e) {
-            // Playfair not available, use Times-Italic
         }
 
         const W = doc.page.width;   // 842
@@ -244,7 +341,7 @@ export const downloadCertificate = async (req: Request, res: Response) => {
 
         // ============ STUDENT NAME ============
         const nameY = certifyY + 25;
-        doc.font('GreatVibes').fontSize(44).fillColor(dark)
+        doc.font(scriptFont).fontSize(44).fillColor(dark)
             .text(certificate.user.name || 'Student', 0, nameY, { align: 'center' });
 
         // ============ "HAS SUCCESSFULLY COMPLETED..." ============
@@ -294,7 +391,7 @@ export const downloadCertificate = async (req: Request, res: Response) => {
         const sigRightX = W - 280;
         const sigWidth = 220;
         if (dirName) {
-            doc.font('GreatVibes').fontSize(24).fillColor(slate700)
+            doc.font(scriptFont).fontSize(24).fillColor(slate700)
                 .text(dirName, sigRightX, bottomY - 5, { width: sigWidth, align: 'center' });
         }
         doc.moveTo(sigRightX, bottomY + 20).lineTo(sigRightX + sigWidth, bottomY + 20)

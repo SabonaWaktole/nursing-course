@@ -11,7 +11,12 @@ export interface User {
 export interface Course {
     id: string;
     title: string;
-    description: string;
+    /**
+     * Absent from the listing response (`/api/courses?fields=card`) — it is roughly
+     * half the payload and nothing on a tile renders it. Present on the full view and
+     * on `/api/courses/:id`.
+     */
+    description?: string;
     thumbnail: string | null;
     category?: string | null;
     tag?: string | null;

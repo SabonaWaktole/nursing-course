@@ -113,7 +113,10 @@ export default function AdminDashboard() {
     // Computed filtered lists
     const filteredCourses = courses.filter((c) => {
         const searchTerm = (tab === 'courses' && adminSearch) ? adminSearch : courseFilter;
-        const matchesSearch = !searchTerm || c.title.toLowerCase().includes(searchTerm.toLowerCase()) || c.description.toLowerCase().includes(searchTerm.toLowerCase());
+        // Admin loads the full course view, so description is present here — optional
+        // chaining only satisfies the shared Course type, which the lighter public
+        // listing also uses.
+        const matchesSearch = !searchTerm || c.title.toLowerCase().includes(searchTerm.toLowerCase()) || (c.description?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
         const matchesCategory = courseCategoryFilter === 'All' || c.category === courseCategoryFilter;
         return matchesSearch && matchesCategory;
     });

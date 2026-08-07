@@ -3,7 +3,17 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
-import api from '@/lib/api';
+import api, { getCached, invalidate } from '@/lib/api';
+
+/** Shape returned by GET /api/admin/notifications */
+interface NotificationItem {
+    id: string;
+    title: string;
+    message: string;
+    type: string;
+    read: boolean;
+    createdAt: string;
+}
 
 export default function NotificationBell() {
     const { user } = useAuth();
@@ -29,10 +39,12 @@ export default function NotificationBell() {
             try { setNotifications(JSON.parse(cached)); } catch { }
         }
         const timer = setTimeout(() => {
-            api.get('/admin/notifications').then(res => {
-                const data = res.data || [];
-                setNotifications(data);
-                sessionStorage.setItem('student_notifications', JSON.stringify(data));
+            // The bell mounts on every page that has a header, so this used to refire on
+            // each navigation. Routed through the shared cache with a short TTL, so
+            // moving around the site costs one request per minute instead of one per page.
+            getCached<NotificationItem[]>('/admin/notifications', { ttl: 60_000 }).then(data => {
+                setNotifications(data || []);
+                sessionStorage.setItem('student_notifications', JSON.stringify(data || []));
             }).catch(() => { });
         }, 500);
         return () => clearTimeout(timer);
@@ -43,6 +55,7 @@ export default function NotificationBell() {
     const markRead = async (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
         try {
+            invalidate('/admin/notifications');
             await api.patch(`/admin/notifications/${id}/read`);
             setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
         } catch { }
@@ -50,6 +63,7 @@ export default function NotificationBell() {
 
     const markAllRead = async () => {
         try {
+            invalidate('/admin/notifications');
             await api.patch('/admin/notifications/read-all');
             setNotifications(prev => prev.map(n => ({ ...n, read: true })));
         } catch { }
@@ -57,6 +71,7 @@ export default function NotificationBell() {
 
     const clearAll = async () => {
         try {
+            invalidate('/admin/notifications');
             await api.delete('/admin/notifications');
             setNotifications([]);
             setIsOpen(false);

@@ -17,6 +17,7 @@ import settingRoutes from './routes/setting.routes';
 import paymentRoutes from './routes/payment.routes';
 import guideRoutes from './routes/guide.routes';
 import prisma from './utils/prisma';
+import { rateLimit } from './middleware/rateLimit.middleware';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -92,6 +93,21 @@ app.use('/uploads', express.static(serveUploadDir, {
 app.get('/', (req, res) => {
   res.json({ status: 'ok', message: 'Excel Community Living Inc API is running' });
 });
+
+/**
+ * Baseline abuse control. Generous enough that a real user clicking around never sees
+ * it — a full page load is a handful of calls, and the client-side cache collapses
+ * repeats — but it caps a scraper or a runaway retry loop before it can occupy every
+ * connection slot. Preflights are exempt (see the middleware).
+ *
+ * Applied only under /api: static uploads are served straight from disk and are cheap.
+ */
+app.use('/api', rateLimit({ limit: 240, windowSeconds: 60, scope: 'api' }));
+
+// Credential endpoints get a much tighter budget — these are the brute-force targets,
+// and bcrypt comparison is deliberately CPU-expensive.
+app.use('/api/auth/login', rateLimit({ limit: 10, windowSeconds: 300, scope: 'auth-login' }));
+app.use('/api/auth/register', rateLimit({ limit: 5, windowSeconds: 3600, scope: 'auth-register' }));
 
 // API Routes
 app.use('/api/auth', authRoutes);
