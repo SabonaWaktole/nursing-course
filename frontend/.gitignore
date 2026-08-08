@@ -45,3 +45,14 @@ old_db_backup/*
 resource/*
 *.png
 *.jpg
+
+# The blanket *.png rule above silently excludes committed source assets too, not
+# just generated/scratch ones — it was hiding src/app/icon.png (the Next.js App
+# Router favicon convention) from git entirely. The file built and ran fine locally
+# while being invisible to `git status`, so it would vanish on any fresh clone or CI
+# checkout with no error at commit time to catch it. Exempted explicitly rather than
+# narrowing the blanket rule, since it's unclear what else depends on *.png/*.jpg
+# being ignored (likely course/guide thumbnails fetched into a local dev uploads/
+# folder) and this only needs to unignore the one file that must ship with the repo.
+!src/app/icon.png
+!src/app/apple-icon.png

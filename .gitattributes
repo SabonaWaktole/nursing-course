@@ -1,1 +1,45 @@
 * text eol=lf
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Binary assets — exempt from the line-ending normalization above.
+#
+# `* text eol=lf` was applying to EVERY tracked file with no exclusions, including
+# binaries. Git's text-normalization rewrites any \r\n byte pair to \n on checkout,
+# and it does this blindly — it does not check whether the file is actually text.
+#
+# This corrupted frontend/src/app/favicon.ico: one of its embedded PNG frames opens
+# with the signature bytes 89 50 4E 47 0D 0A 1A 0A. The 0D 0A in there is
+# indistinguishable to Git from a Windows line ending, so checkout silently rewrote
+# it to 0A, deleting a byte and shifting everything after it in that frame. The
+# corrupted signature, misread as a little-endian uint32, is 1196314761 — the exact
+# number Turbopack reported in "Unknown bitmap header type (size=1196314761)" when
+# it failed to build. The file was never intentionally edited; Git did this on a
+# checkout, invisibly, with no error at the time.
+#
+# Every pattern below is listed explicitly rather than relying on Git's binary
+# auto-detection, which is a heuristic and has already failed silently once here.
+# ─────────────────────────────────────────────────────────────────────────────
+*.ico binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.bmp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.eot binary
+*.pdf binary
+*.zip binary
+*.mp4 binary
+*.mov binary
+*.webm binary
+
+# The vendored pdf.js worker specifically, rather than a blanket `*.mjs binary`.
+# eslint.config.mjs and postcss.config.mjs are genuine hand-edited text — marking
+# every .mjs as binary would silently disable diffing them for no benefit, since
+# they were never at risk (no \r\n byte sequences in normal JS source to mismatch).
+# The vendored worker is a minified, machine-generated blob where that risk is real.
+frontend/public/_vendor/** binary

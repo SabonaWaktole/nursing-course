@@ -1,1 +1,27 @@
 * text eol=lf
+
+# See the root .gitattributes for the full explanation: this file, being closer to
+# frontend/src/app/favicon.ico than the root one, took precedence over it and would
+# otherwise re-corrupt the same binaries on the next checkout even after the root
+# file was fixed. The same exemptions have to be repeated here.
+*.ico binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.bmp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.eot binary
+*.pdf binary
+*.zip binary
+*.mp4 binary
+*.mov binary
+*.webm binary
+
+# The vendored pdf.js worker specifically — see root .gitattributes for why not a
+# blanket *.mjs rule (eslint.config.mjs / postcss.config.mjs are genuine text).
+public/_vendor/** binary
