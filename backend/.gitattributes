@@ -1,1 +1,23 @@
 * text eol=lf
+
+# See the root .gitattributes for the full explanation. This file, being closer to
+# backend/src/fonts/*.ttf than the root one, took precedence over it and would
+# otherwise leave the certificate-rendering fonts (and any other binaries here) at
+# risk of the same silent corruption on the next checkout.
+*.ico binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.bmp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.eot binary
+*.pdf binary
+*.zip binary
+*.mp4 binary
+*.mov binary
+*.webm binary
