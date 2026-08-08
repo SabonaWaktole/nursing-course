@@ -5,7 +5,25 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+/**
+ * Served from our own origin via a Next.js route handler
+ * (src/app/api/pdf-worker/route.ts), not `public/` and not a CDN.
+ *
+ * This was `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs` — a
+ * third-party fetch on every PDF open, version-matched at request time against
+ * whatever unpkg happens to have. It was changed once before to a same-origin
+ * `public/pdf.worker.min.mjs`, which broke PDFs in production: Hostinger's static
+ * layer serves everything under `public/` directly, bypassing the Next.js process,
+ * and its MIME table has no entry for `.mjs` — the file came back as
+ * `Content-Type: text/plain`, so the browser refused to execute it as a module and
+ * pdf.js's "fake worker" fallback failed for the identical reason.
+ *
+ * The route handler is real Next.js code, not a static file, so it always runs
+ * through the Node process and sets Content-Type explicitly in application code —
+ * see the route file for the full investigation (curl comparisons against
+ * production, confirmation there is no .htaccess in this repo).
+ */
+pdfjs.GlobalWorkerOptions.workerSrc = '/api/pdf-worker';
 
 interface PdfViewerProps {
     url: string;
